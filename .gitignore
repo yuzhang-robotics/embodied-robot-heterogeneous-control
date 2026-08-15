@@ -239,6 +239,7 @@ jetson/logs/
 jetson/runs/
 jetson/data/
 jetson/models/
+jetson/runtime/
 jetson/ros2_ws/build/
 jetson/ros2_ws/install/
 jetson/ros2_ws/log/
