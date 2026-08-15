@@ -1,0 +1,48 @@
+# Normalize text files consistently across Windows and Linux.
+* text=auto
+
+# Extensionless repository metadata also uses LF.
+.gitattributes text eol=lf
+.gitignore     text eol=lf
+LICENSE        text eol=lf
+
+# Source code and project metadata use LF on both development machines.
+*.c        text eol=lf
+*.cc       text eol=lf
+*.cpp      text eol=lf
+*.h        text eol=lf
+*.hpp      text eol=lf
+*.s        text eol=lf
+*.ld       text eol=lf
+*.py       text eol=lf
+*.sh       text eol=lf
+*.md       text eol=lf
+*.txt      text eol=lf
+*.json     text eol=lf
+*.toml     text eol=lf
+*.yaml     text eol=lf
+*.yml      text eol=lf
+*.xml      text eol=lf
+*.ioc      text eol=lf
+*.uvprojx  text eol=lf
+
+# Native Windows command scripts retain CRLF.
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+*.ps1      text eol=crlf
+
+# Binary artifacts must never be line-ending normalized.
+*.pdf      binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.webp     binary
+*.wav      binary
+*.mp3      binary
+*.mp4      binary
+*.onnx     binary
+*.engine   binary
+*.pt       binary
+*.pth      binary
+*.gguf     binary

@@ -216,3 +216,63 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Operating systems and local editors
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.user
+*.suo
+
+# Local secrets and device-specific configuration
+.env.*
+!.env.example
+**/config/local.yaml
+**/config/local.yml
+**/config/*.local.yaml
+**/config/*.local.yml
+
+# Jetson runtime outputs, ROS 2 workspaces, models, and datasets
+jetson/logs/
+jetson/runs/
+jetson/data/
+jetson/models/
+jetson/ros2_ws/build/
+jetson/ros2_ws/install/
+jetson/ros2_ws/log/
+*.engine
+*.onnx
+*.pt
+*.pth
+*.gguf
+
+# STM32 / Keil / STM32CubeIDE generated files
+firmware/**/Objects/
+firmware/**/Listings/
+firmware/**/Debug/
+firmware/**/Release/
+firmware/**/.settings/
+firmware/**/*.uvoptx
+firmware/**/*.uvguix.*
+firmware/**/*.dep
+firmware/**/*.crf
+firmware/**/*.d
+firmware/**/*.o
+firmware/**/*.axf
+firmware/**/*.elf
+firmware/**/*.hex
+firmware/**/*.bin
+firmware/**/*.map
+
+# Experiment artifacts that are too large or machine-specific for Git
+experiments/raw/
+experiments/logs/
+experiments/runs/
+artifacts/
+docs/private/
+
+# Keep private source documents at the repository root out of Git.
+# Publish only a reviewed/redacted copy under docs/ when appropriate.
+/*.pdf
