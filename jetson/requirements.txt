@@ -1,0 +1,7 @@
+# Versions recorded from the bachelor-thesis Jetson environment.
+# OpenCV 4.5.4 is provided by JetPack/Ubuntu and is not installed from PyPI here.
+argostranslate==1.11.0
+numpy==1.26.4
+piper-tts==1.4.2
+pyserial==3.5
+sherpa-onnx==1.13.2
