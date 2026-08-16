@@ -252,9 +252,11 @@ jetson/ros2_ws/log/
 # STM32 / Keil / STM32CubeIDE generated files
 firmware/**/Objects/
 firmware/**/Listings/
+firmware/**/OBJ/
 firmware/**/Debug/
 firmware/**/Release/
 firmware/**/.settings/
+firmware/**/DebugConfig/
 firmware/**/*.uvoptx
 firmware/**/*.uvguix.*
 firmware/**/*.dep
@@ -266,6 +268,12 @@ firmware/**/*.elf
 firmware/**/*.hex
 firmware/**/*.bin
 firmware/**/*.map
+firmware/**/*.lst
+firmware/**/*.lnp
+firmware/**/*.sct
+firmware/**/*.htm
+firmware/**/*.scvd
+firmware/**/JLinkSettings.ini
 
 # Experiment artifacts that are too large or machine-specific for Git
 experiments/raw/
