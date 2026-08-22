@@ -61,7 +61,7 @@ KWS_TOKENS = KWS_MODEL_DIR / "tokens.txt"
 KWS_ENCODER = KWS_MODEL_DIR / "encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx"
 KWS_DECODER = KWS_MODEL_DIR / "decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx"
 KWS_JOINER = KWS_MODEL_DIR / "joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx"
-KWS_KEYWORDS = ASSETS_DIR / "keywords_zhangyuhao.txt"
+KWS_KEYWORDS = ASSETS_DIR / "keywords_octopus_zh.txt"
 
 # Jetson-STM32 communication
 SERIAL_PORT = os.environ.get("ROBOT_SERIAL_PORT", "/dev/ttyTHS1")

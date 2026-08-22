@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
+"""Synchronous voice, vision, and motion application from the thesis baseline."""
+
 import audioop
 import json
 import subprocess
 import time
-import urllib.request
 import urllib.error
+import urllib.request
 import wave
 from pathlib import Path
+
+import numpy as np
+import sherpa_onnx
 
 from .config import (
     ASSETS_DIR,
@@ -27,51 +32,33 @@ from .motion_planner import move_to_color_object_fast
 from .robot_comm import motion_enabled, send_motion_command
 from .vision_vlm import describe_scene_with_vlm
 
-import numpy as np
-import sherpa_onnx
-
 SAMPLE_RATE = 16000
 CHANNELS = 1
 SAMPLE_WIDTH = 2
 
-
-# ========== 工作文件 ==========
 INPUT_WAV = RUNTIME_DIR / "input.wav"
 ASR_OUT_BASE = RUNTIME_DIR / "asr_out"
 ASR_TXT = RUNTIME_DIR / "asr_out.txt"
 TTS_WAV = RUNTIME_DIR / "reply.wav"
 WAKE_ACK_WAV = ASSETS_DIR / "wake_ack.wav"
 
-
-# ========== KWS 音频流参数 ==========
 KWS_CHUNK_MS = 100
 KWS_CHUNK_SAMPLES = int(SAMPLE_RATE * KWS_CHUNK_MS / 1000)
 KWS_CHUNK_BYTES = KWS_CHUNK_SAMPLES * SAMPLE_WIDTH * CHANNELS
 
-
-# ========== 自动录音参数 ==========
 RECORD_CHUNK_MS = 200
 RECORD_CHUNK_BYTES = int(SAMPLE_RATE * SAMPLE_WIDTH * CHANNELS * RECORD_CHUNK_MS / 1000)
 
-# 如果检测不到说话，调低，比如 300
-# 如果环境噪声导致一直录，调高，比如 800
+# Voice activity threshold tuned for the thesis microphone and test room.
 RMS_THRESHOLD = 700
-
-# 停顿多久后结束录音
 SILENCE_END_SECONDS = 0.9
-
-# 最短录音时长
 MIN_RECORD_SECONDS = 0.8
-
-# 最长录音时长
 MAX_RECORD_SECONDS = 6
-
-# 唤醒后最多等几秒开始说话
 WAIT_SPEECH_TIMEOUT = 8
 
 
 SYSTEM_PROMPT = (
-    "你是一个运行在 Jetson Orin Nano 上的离线中文语音助手，是由太原科技大学的张钰开发的，名字叫章鱼号。"
+    "你是章鱼号，一个由 yuzhang-robotics 开发、运行在 Jetson Orin Nano 上的离线中文语音助手。"
     "请用自然、简短、适合语音播报的中文回答。"
     "不要使用 Markdown 表格。"
     "除非用户要求详细解释，否则回答控制在三到六句话。"
@@ -159,26 +146,15 @@ def clean_text(text):
 
 
 def parse_intent(user_text):
-    """
-    根据用户语音识别文本，判断当前任务类型。
-
-    返回格式示例：
-    {"type": "chat"}
-    {"type": "vision_qa"}
-    {"type": "move_to_object", "target_color": "red", "target_color_cn": "红色"}
-    {"type": "direct_motion", "command": "forward", "command_cn": "前进"}
-    {"type": "exit"}
-    """
+    """Map recognized Chinese text to one baseline task intent."""
 
     text = clean_text(user_text)
 
-    # 1. 退出类指令
     if text in {"退出", "结束", "再见", "关闭", "关机"}:
         return {
             "type": "exit"
         }
 
-    # 2. 停止类指令
     if any(k in text for k in ["停止", "停下", "别动", "不要动", "原地不动"]):
         return {
             "type": "direct_motion",
@@ -186,7 +162,6 @@ def parse_intent(user_text):
             "command_cn": "停止"
         }
 
-    # 3. 目标移动类指令
     move_keywords = ["移动到", "走到", "前往", "去到", "靠近", "移动过去", "过去", "到"]
     has_move_intent = any(k in text for k in move_keywords)
 
@@ -214,8 +189,6 @@ def parse_intent(user_text):
                 "target_color_cn": target_color_cn
             }
 
-
-    # 4. 直接运动控制类指令
     if any(k in text for k in ["前进", "往前", "向前", "向前走"]):
         return {
             "type": "direct_motion",
@@ -244,7 +217,6 @@ def parse_intent(user_text):
             "command_cn": "右转"
         }
 
-    # 5. 视觉问答类指令
     if any(k in text for k in [
         "看到了什么",
         "看到什么",
@@ -260,26 +232,20 @@ def parse_intent(user_text):
             "type": "vision_qa"
         }
 
-    # 6. 默认：普通聊天
     return {
         "type": "chat"
     }
 
 
 def handle_vision_qa():
-    """
-    调用 moondream + Argos，对当前摄像头画面进行整体场景描述。
-    """
+    """Describe the current camera frame through the local VLM pipeline."""
     reply = describe_scene_with_vlm()
     print("\n[视觉问答-VLM]", reply)
     return reply
 
 
 def handle_move_to_object(intent):
-    """
-    根据语音指令中的目标颜色，调用视觉模块和运动决策模块。
-    安全模式下只记录运动决策；显式启用运动后才会控制底盘。
-    """
+    """Run the color-target motion task selected by voice intent."""
     target_color = intent.get("target_color")
     color_cn = intent.get("target_color_cn", "目标")
 
@@ -296,11 +262,7 @@ def handle_move_to_object(intent):
 
 
 def handle_direct_motion(intent):
-    """
-    直接运动控制。
-    安全模式下把运动命令转换成标准协议并写入日志。
-    显式启用运动后，由 robot_comm.py 通过串口发送给 STM32。
-    """
+    """Execute or log one direct motion intent."""
     command = intent.get("command", "stop")
     command_cn = intent.get("command_cn", "运动")
 

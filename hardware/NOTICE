@@ -10,3 +10,8 @@ resulting products are provided without any express or implied warranty.
 
 Covered Source location:
 https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/main/hardware
+
+The licence grant covers the original schematic, PCB layout and related project
+documentation. Any third-party component symbols, footprints or 3D models
+embedded in or referenced by the EasyEDA project remain subject to their
+respective authors' or suppliers' terms.

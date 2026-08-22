@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
+"""HSV color segmentation used by the visual motion controller."""
+
 import cv2
 import numpy as np
-import time
 
-from .config import CAMERA_INDEX, FRAME_HEIGHT, FRAME_WIDTH, RUNTIME_DIR
+from .config import RUNTIME_DIR
 
-VISION_RAW_PATH = RUNTIME_DIR / "vision_raw.jpg"
 VISION_DEBUG_PATH = RUNTIME_DIR / "vision_debug.jpg"
 
 MIN_AREA = 800
@@ -127,62 +127,6 @@ def draw_result(frame, result):
     )
 
 
-def capture_frame(camera_index=CAMERA_INDEX):
-    cap = cv2.VideoCapture(camera_index, cv2.CAP_V4L2)
-
-    if not cap.isOpened():
-        print(f"无法打开摄像头 index={camera_index}")
-        return None
-
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
-
-    for _ in range(10):
-        ret, frame = cap.read()
-        time.sleep(0.05)
-
-    ret, frame = cap.read()
-    cap.release()
-
-    if not ret or frame is None:
-        print("摄像头打开成功，但读取图像失败")
-        return None
-
-    return frame
-
-
-def detect_scene():
-    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    frame = capture_frame()
-
-    if frame is None:
-        return {
-            "ok": False,
-            "error": "camera_failed",
-            "objects": []
-        }
-
-    cv2.imwrite(str(VISION_RAW_PATH), frame)
-
-    debug = frame.copy()
-
-    objects = []
-    for color in ["red", "blue", "green", "yellow"]:
-        result = find_color_object(frame, color)
-        if result.get("found"):
-            objects.append(result)
-            draw_result(debug, result)
-
-    cv2.imwrite(str(VISION_DEBUG_PATH), debug)
-
-    return {
-        "ok": True,
-        "objects": objects,
-        "raw_path": str(VISION_RAW_PATH),
-        "debug_path": str(VISION_DEBUG_PATH)
-    }
-
-
 def color_to_cn(color):
     mapping = {
         "red": "红色",
@@ -193,34 +137,8 @@ def color_to_cn(color):
     return mapping.get(color, color)
 
 
-def describe_scene():
-    scene = detect_scene()
-
-    if not scene["ok"]:
-        return "我尝试打开摄像头，但是没有成功读取画面。"
-
-    objects = scene["objects"]
-
-    if not objects:
-        return "我暂时没有看到明显的红色、蓝色、绿色或黄色物体。"
-
-    parts = []
-    for obj in objects:
-        color_cn = color_to_cn(obj["color"])
-        position = obj["position"]
-        parts.append(f"一个{color_cn}物体在画面{position}")
-
-    if len(parts) == 1:
-        return f"我看到了{parts[0]}。"
-
-    return "我看到了" + "，".join(parts) + "。"
-
-
 def detect_target_color_from_frame(frame, target_color, save_debug=False):
-    """
-    对已经读取到的一帧图像进行指定颜色目标检测。
-    这个函数不会打开摄像头，因此适合实时控制循环。
-    """
+    """Detect one target color in a frame already owned by the control loop."""
     if frame is None:
         return {
             "ok": False,
@@ -243,48 +161,3 @@ def detect_target_color_from_frame(frame, target_color, save_debug=False):
         "found": bool(result.get("found")),
         "target": result
     }
-
-
-def detect_target_color(target_color):
-    """
-    检测指定颜色目标。
-    返回示例：
-    {
-        "ok": True,
-        "found": True,
-        "target": {...},
-        "debug_path": "..."
-    }
-    """
-    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    frame = capture_frame()
-
-    if frame is None:
-        return {
-            "ok": False,
-            "found": False,
-            "error": "camera_failed"
-        }
-
-    cv2.imwrite(str(VISION_RAW_PATH), frame)
-
-    debug = frame.copy()
-    result = find_color_object(frame, target_color)
-
-    if result.get("found"):
-        draw_result(debug, result)
-
-    cv2.imwrite(str(VISION_DEBUG_PATH), debug)
-
-    return {
-        "ok": True,
-        "found": bool(result.get("found")),
-        "target": result,
-        "debug_path": str(VISION_DEBUG_PATH)
-    }
-
-
-if __name__ == "__main__":
-    scene = detect_scene()
-    print(scene)
-    print(describe_scene())

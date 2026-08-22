@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+"""Color-target approach controller used by the thesis baseline."""
+
 import time
+
 import cv2
 
 from .config import CAMERA_INDEX, FRAME_HEIGHT, FRAME_WIDTH
@@ -11,69 +14,38 @@ from .vision_color import (
 from .robot_comm import send_motion_command
 
 
-# ========== 控制参数 ==========
-# 普通对准容差：目标中心偏离画面中心超过这个值，就转向
+# Controller thresholds tuned on the physical robot.
 CENTER_TOLERANCE = 70
-
-# 近距离停止面积：目标面积达到这个值，认为已经接近目标
 STOP_AREA = 35000
-
-# 近距离停止容差：
-# 目标已经很近时，允许更大的中心偏差，避免贴近目标后还一直转向
 NEAR_STOP_CENTER_TOLERANCE = 120
-
-# 控制周期：0.10 秒约等于 10Hz
 CONTROL_INTERVAL = 0.10
-
-# 相同命令重复发送间隔：
-# 命令变化时立即发送；命令不变时，每隔这个时间重复发一次
 COMMAND_REPEAT_INTERVAL = 0.30
-
-# 最长控制时间，防止任务无限执行
 MAX_CONTROL_SECONDS = 12.0
-
-# 连续多少帧判断为 stop，才认为真正到达
 STOP_CONFIRM_FRAMES = 2
-
-# 每隔多少帧保存一次 debug 图
 SAVE_DEBUG_EVERY_N = 10
-
-# 每隔多少帧打印一次普通视觉日志
-# 命令变化、停止、未找到目标时仍然会立即打印
 PRINT_EVERY_N = 3
 
 
 def decide_motion_from_target(target):
-    """
-    根据目标位置和面积生成运动决策。
-
-    控制策略：
-    1. 如果目标已经足够近，并且没有严重偏离中心，则停止。
-    2. 如果目标偏离中心较多，则先转向对准。
-    3. 如果目标居中但还不够近，则前进。
-    """
+    """Choose a discrete motion command from target position and area."""
     if not target.get("found"):
         return "search"
 
-    cx, cy = target["center"]
+    cx, _ = target["center"]
     area = target["area"]
 
     center_x = FRAME_WIDTH / 2
     error = cx - center_x
     abs_error = abs(error)
 
-    # 目标已经很近时，优先停止，降低碰撞风险
     if area >= STOP_AREA and abs_error <= NEAR_STOP_CENTER_TOLERANCE:
         return "stop"
 
-    # 目标偏离中心明显时，先转向
     if abs_error > CENTER_TOLERANCE:
         if error < 0:
             return "turn_left"
-        else:
-            return "turn_right"
+        return "turn_right"
 
-    # 目标居中但还不够近，继续前进
     if area < STOP_AREA:
         return "forward"
 
@@ -93,14 +65,10 @@ def command_to_cn(command):
 
 
 def open_camera():
-    """
-    打开摄像头一次，供快速控制循环持续读取。
-    不要在每一轮控制中反复打开摄像头。
-    """
+    """Open one low-buffer camera stream for the control loop."""
     cap = cv2.VideoCapture(CAMERA_INDEX, cv2.CAP_V4L2)
 
     if not cap.isOpened():
-        # 如果 V4L2 后端失败，回退到默认方式
         cap = cv2.VideoCapture(CAMERA_INDEX)
 
     if not cap.isOpened():
@@ -109,10 +77,8 @@ def open_camera():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
 
-    # 尝试降低缓存，减少画面延迟
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-    # 预热几帧，让曝光稳定
     for _ in range(5):
         cap.read()
 
@@ -120,9 +86,7 @@ def open_camera():
 
 
 def should_print_step(step, command, last_command, found):
-    """
-    控制终端日志频率，避免刷屏。
-    """
+    """Limit repeated control-loop messages without hiding state changes."""
     if command != last_command:
         return True
 
@@ -136,16 +100,7 @@ def should_print_step(step, command, last_command, found):
 
 
 def move_to_color_object_fast(target_color):
-    """
-    快速视觉闭环：移动到指定颜色物体前方。
-
-    当前阶段：
-    - 打开摄像头
-    - 连续读取画面
-    - 根据目标位置和面积生成运动命令
-    - 调用 send_motion_command()
-    - 安全模式下写日志；显式启用运动后通过串口发送给 STM32
-    """
+    """Run the visual closed loop until arrival, timeout, or camera failure."""
     color_cn = color_to_cn(target_color)
 
     print(f"\n[快速目标移动] 开始寻找{color_cn}物体")
@@ -195,7 +150,7 @@ def move_to_color_object_fast(target_color):
                 }
 
             step += 1
-            save_debug = (step % SAVE_DEBUG_EVERY_N == 0)
+            save_debug = step % SAVE_DEBUG_EVERY_N == 0
 
             result = detect_target_color_from_frame(
                 frame,
@@ -237,8 +192,6 @@ def move_to_color_object_fast(target_color):
                         f"决策={command_to_cn(command)}"
                     )
 
-            # 命令变化时立即发送；
-            # 命令不变时，只按 COMMAND_REPEAT_INTERVAL 周期重复发送。
             now_send = time.time()
 
             if command != last_command or (now_send - last_send_time) >= COMMAND_REPEAT_INTERVAL:
@@ -246,14 +199,12 @@ def move_to_color_object_fast(target_color):
                 last_command = command
                 last_send_time = now_send
 
-            # 连续多帧 stop 才确认到达，避免单帧误判
             if command == "stop":
                 same_stop_count += 1
             else:
                 same_stop_count = 0
 
             if same_stop_count >= STOP_CONFIRM_FRAMES:
-                # 如果已经发过 stop，就不要重复发很多次
                 if last_command != "stop":
                     send_motion_command("stop")
 
@@ -270,11 +221,5 @@ def move_to_color_object_fast(target_color):
     finally:
         cap.release()
 
-        # 只在异常、超时前没有明确停止时补发 stop
         if not already_sent_final_stop:
             send_motion_command("stop")
-
-
-if __name__ == "__main__":
-    result = move_to_color_object_fast("red")
-    print(result)

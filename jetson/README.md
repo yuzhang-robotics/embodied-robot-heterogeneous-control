@@ -1,37 +1,119 @@
-# Jetson
+# Jetson Runtime
 
-该目录存放在 Jetson Orin Nano 上运行的毕设基线上位机代码。
+The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32.
 
-## 文件说明
+It was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. The application is a synchronous reference implementation; the planned asynchronous runtime will be developed from this baseline rather than presented as an existing feature.
 
-| 文件 | 作用 |
+> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前代码是已经完成整机验证的同步毕设基线，异步推理框架尚未合入。
+
+## Modules
+
+| Path | Role |
 | --- | --- |
-| `app.py` | 语音助手主程序与意图调度 |
-| `config.py` | 设备、模型、服务和运行路径配置 |
-| `vision_vlm.py` | 摄像头场景描述与中文转写 |
-| `vision_color.py` | HSV 颜色目标检测 |
-| `motion_planner.py` | 目标靠近视觉闭环 |
-| `robot_comm.py` | Jetson 与 STM32 串口通信 |
-| `assets/` | 唤醒词配置和提示音 |
-| `scripts/` | 环境安装辅助脚本 |
+| `app.py` | Wake word, recording, ASR, intent routing, dialogue and TTS orchestration |
+| `config.py` | Device, model, service and runtime paths |
+| `vision_vlm.py` | Camera capture, Moondream scene description and Chinese post-processing |
+| `vision_color.py` | HSV segmentation and target extraction |
+| `motion_planner.py` | Discrete visual feedback loop for approaching a colored object |
+| `robot_comm.py` | Command mapping, UART transport, STM32 responses and motion log |
+| `assets/` | sherpa-onnx keyword configuration and wake acknowledgment audio |
+| `scripts/` | One-time environment setup helpers |
 
-## 运行
+## Tested environment
 
-基线环境为 Ubuntu 22.04、Python 3.10.12 和系统 OpenCV 4.5.4，并需要
-`arecord`、`aplay`、`ollama` 以及 CUDA 版 `whisper-cli`。
+- Ubuntu 22.04 on Jetson Orin Nano Super 8GB
+- Python 3.10.12
+- OpenCV 4.5.4 from the Jetson system image
+- `arecord` and `aplay` from ALSA utilities
+- CUDA-enabled `whisper-cli` from whisper.cpp
+- llama.cpp server for Qwen dialogue and Chinese rewriting
+- Ollama with the `moondream` vision model
+- Piper Chinese TTS model
+- Python versions recorded in [`requirements.txt`](requirements.txt)
 
-从仓库根目录运行：
+The repository does not redistribute model weights. Paths in `config.py` reflect the tested machine and can be overridden with environment variables.
+
+## Installation
+
+From the repository root on the Jetson:
+
+```bash
+python3 -m pip install --user -r jetson/requirements.txt
+python3 jetson/scripts/install_argos_en_zh.py
+```
+
+OpenCV is expected to come from the Jetson/Ubuntu installation. Install ALSA utilities separately if `arecord` or `aplay` is missing.
+
+The default model locations are:
+
+```text
+~/whisper.cpp/build-cuda/bin/whisper-cli
+~/whisper.cpp/models/ggml-small.bin
+~/zh_CN-huayan-medium.onnx
+~/sherpa_onnx_models/sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/
+```
+
+## Local inference services
+
+The application expects two services to be started separately:
+
+| Service | Default endpoint | Purpose |
+| --- | --- | --- |
+| llama.cpp | `http://127.0.0.1:8080/v1/chat/completions` | Qwen dialogue and Chinese scene-description rewriting |
+| Ollama | `http://127.0.0.1:11434/api/chat` | Moondream image description |
+
+The exact llama.cpp launch flags depend on the local model and build. Confirm both services before starting the robot application:
+
+```bash
+curl --max-time 5 http://127.0.0.1:8080/v1/models
+curl --max-time 5 http://127.0.0.1:11434/api/tags
+```
+
+## Run safely
+
+Run the package from the repository root:
 
 ```bash
 python3 -m jetson.app
 ```
 
-程序默认处于安全日志模式，不会向 STM32 发送运动命令。完成离地测试并确认
-串口与急停措施后，才可显式启用真实运动：
+Motion output is disabled by default. Commands are printed and appended to `jetson/runtime/motion_commands.log`, but the serial port is not opened.
+
+Only enable the physical base after checking the 3.3 V UART wiring, STM32 firmware, command watchdog and physical motor-power switch. Keep all four wheels off the ground for the first test:
 
 ```bash
 ROBOT_ENABLE_MOTION=1 python3 -m jetson.app
 ```
 
-模型路径和设备编号可以通过 `ROBOT_*` 环境变量覆盖，默认值见 `config.py`。
-录音、识别文本、调试图片和运动日志统一写入被 Git 忽略的 `runtime/`。
+Press `Ctrl+C` to exit. The application sends a final stop command when leaving an active motion routine.
+
+## Configuration
+
+| Environment variable | Default |
+| --- | --- |
+| `ROBOT_RUNTIME_DIR` | `jetson/runtime/` |
+| `ROBOT_MIC_DEVICE` | `plughw:1,0` |
+| `ROBOT_CAMERA_INDEX` | `0` |
+| `ROBOT_LLAMA_API_URL` | `http://127.0.0.1:8080/v1/chat/completions` |
+| `ROBOT_OLLAMA_CHAT_URL` | `http://127.0.0.1:11434/api/chat` |
+| `ROBOT_VLM_MODEL` | `moondream` |
+| `ROBOT_WHISPER_DIR` | `~/whisper.cpp` |
+| `ROBOT_WHISPER_BIN` | `<WHISPER_DIR>/build-cuda/bin/whisper-cli` |
+| `ROBOT_WHISPER_MODEL` | `<WHISPER_DIR>/models/ggml-small.bin` |
+| `ROBOT_PIPER_MODEL` | `~/zh_CN-huayan-medium.onnx` |
+| `ROBOT_KWS_MODEL_DIR` | tested sherpa-onnx KWS directory under `~/sherpa_onnx_models/` |
+| `ROBOT_SERIAL_PORT` | `/dev/ttyTHS1` |
+| `ROBOT_BAUD_RATE` | `115200` |
+| `ROBOT_ENABLE_MOTION` | disabled |
+
+Audio, ASR text, captured images and communication logs are written beneath `ROBOT_RUNTIME_DIR` and ignored by Git.
+
+## Baseline limitations
+
+- The orchestration path is blocking and single-process; inference tasks do not have explicit deadlines or cancellation.
+- llama.cpp and Ollama are managed outside the application.
+- The color tracker uses fixed HSV ranges and discrete motion commands tuned on the thesis robot.
+- The Jetson sends speed percentages, while the STM32 applies open-loop PWM rather than closed-loop wheel velocity.
+- The application has no ROS 2 interface or formal experiment recorder yet.
+
+These limitations define the starting point for the asynchronous inference and real-time control study described in the [architecture notes](../docs/architecture/README.md).

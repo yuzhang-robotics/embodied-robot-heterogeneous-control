@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
+"""Camera scene description through Ollama VLM and local Chinese translation."""
+
 import base64
 import json
+import subprocess
 import time
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path
 
-import cv2
 import argostranslate.translate
-import subprocess
+import cv2
 
 from .config import (
     CAMERA_INDEX,
@@ -25,9 +27,7 @@ SCENE_IMAGE_PATH = RUNTIME_DIR / "scene_vlm.jpg"
 
 
 def translate_with_qwen(english_text):
-    """
-    使用本地 Qwen2.5-1.5B 把 moondream 的英文视觉描述改写成自然中文。
-    """
+    """Rewrite an English VLM description as concise spoken Chinese."""
     system_prompt = (
         "你是一个中文视觉描述助手。"
         "你的任务是把英文图像描述改写成自然、简短、适合语音播报的中文。"
@@ -69,9 +69,7 @@ def translate_with_qwen(english_text):
 
 
 def capture_scene_image(output_path=SCENE_IMAGE_PATH):
-    """
-    拍摄一张图片，供 VLM 描述。
-    """
+    """Capture one image for scene description."""
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     cap = cv2.VideoCapture(CAMERA_INDEX, cv2.CAP_V4L2)
 
@@ -106,10 +104,7 @@ def image_to_base64(image_path):
 
 
 def ask_moondream_english(image_path):
-    """
-    使用 moondream 对图片生成英文描述。
-    如果一次返回空，就自动换 prompt 重试。
-    """
+    """Request an English description, retrying empty responses with new prompts."""
     image_b64 = image_to_base64(image_path)
 
     prompts = [
@@ -171,9 +166,7 @@ def ask_moondream_english(image_path):
 
 
 def translate_en_to_zh(english_text):
-    """
-    使用 Argos Translate 做真实离线英译中。
-    """
+    """Translate English to Chinese with the offline Argos package."""
     if not english_text:
         return ""
 
@@ -187,10 +180,7 @@ def translate_en_to_zh(english_text):
 
 
 def translate_en_to_zh_better(english_text):
-    """
-    优先使用 Qwen 润色翻译。
-    如果 Qwen 不可用，再退回 Argos。
-    """
+    """Prefer Qwen rewriting and fall back to Argos translation."""
     try:
         chinese = translate_with_qwen(english_text)
         if chinese:
@@ -199,19 +189,14 @@ def translate_en_to_zh_better(english_text):
     except Exception as e:
         print(f"[VLM] Qwen翻译润色失败，退回 Argos：{e}")
 
-    try:
-        chinese = translate_en_to_zh(english_text)
+    chinese = translate_en_to_zh(english_text)
+    if chinese:
         print(f"[VLM] Argos中文翻译：{chinese}")
-        return chinese
-    except Exception as e:
-        print(f"[VLM] Argos 翻译失败：{e}")
-        return ""
+    return chinese
 
 
 def make_speech_friendly(chinese_text, english_text=""):
-    """
-    清理中文播报文本，让 Piper 读起来更自然。
-    """
+    """Normalize punctuation and recurring VLM wording before speech synthesis."""
     text = chinese_text.strip() if chinese_text else ""
 
     if not text:
@@ -251,29 +236,23 @@ def make_speech_friendly(chinese_text, english_text=""):
 
 
 def unload_moondream():
-    """
-    释放 Ollama 中的 moondream 模型，避免占用统一内存，
-    导致后续 whisper.cpp CUDA 申请显存失败。
-    """
+    """Release the VLM so Whisper can reclaim Jetson unified memory."""
     try:
-        print("[VLM] 正在释放 moondream 模型...")
+        print(f"[VLM] 正在释放 {VLM_MODEL} 模型...")
         subprocess.run(
-            ["ollama", "stop", "moondream"],
+            ["ollama", "stop", VLM_MODEL],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             timeout=20,
             check=False,
         )
-        print("[VLM] moondream 已请求释放")
+        print(f"[VLM] {VLM_MODEL} 已请求释放")
     except Exception as e:
         print(f"[VLM] 释放 moondream 时出现异常：{e}")
 
 
 def describe_scene_with_vlm():
-    """
-    摄像头拍照 -> moondream 英文描述 -> Argos 离线英译中。
-    关键点：moondream 用完后立刻 ollama stop，释放内存给 Whisper CUDA。
-    """
+    """Capture, describe, translate, and release the VLM after each request."""
     image_path = capture_scene_image()
 
     if image_path is None:
@@ -288,13 +267,7 @@ def describe_scene_with_vlm():
         if not english_desc:
             return "我看到了画面，但是视觉模型没有生成有效描述。"
 
-        try:
-            chinese_desc = translate_en_to_zh_better(english_desc)
-        except Exception as e:
-            print(f"[VLM] Argos 翻译失败：{e}")
-            chinese_desc = ""
-
-        print(f"[VLM] Argos中文翻译：{chinese_desc}")
+        chinese_desc = translate_en_to_zh_better(english_desc)
 
         reply = make_speech_friendly(chinese_desc, english_desc)
         print(f"[VLM] 最终播报：{reply}")
@@ -307,7 +280,3 @@ def describe_scene_with_vlm():
 
     finally:
         unload_moondream()
-
-
-if __name__ == "__main__":
-    print(describe_scene_with_vlm())

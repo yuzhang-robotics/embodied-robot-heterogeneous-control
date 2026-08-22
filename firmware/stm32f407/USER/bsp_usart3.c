@@ -1,6 +1,8 @@
 #include "bsp_usart3.h"
 #include "app_config.h"
 
+static void USART3_SendByte(uint8_t data);
+
 void USART3_BspInit(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -30,7 +32,7 @@ void USART3_BspInit(void)
     USART_Cmd(JETSON_USART, ENABLE);
 }
 
-void USART3_SendByte(uint8_t data)
+static void USART3_SendByte(uint8_t data)
 {
     while (USART_GetFlagStatus(JETSON_USART, USART_FLAG_TXE) == RESET) {}
     USART_SendData(JETSON_USART, data);
