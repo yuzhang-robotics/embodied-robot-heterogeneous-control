@@ -1,0 +1,12 @@
+Copyright 2026 yuzhang-robotics
+
+The editable hardware design sources under this directory are Open Hardware
+licensed under the CERN Open Hardware Licence Version 2 - Permissive
+(CERN-OHL-P-2.0). See LICENSE in this directory for the full licence text.
+
+You may use, study, modify, share and distribute these sources, and make
+products from them, subject to the terms of that licence. The sources and any
+resulting products are provided without any express or implied warranty.
+
+Covered Source location:
+https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/main/hardware

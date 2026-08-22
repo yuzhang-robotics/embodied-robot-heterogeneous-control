@@ -5,6 +5,7 @@
 .gitattributes text eol=lf
 .gitignore     text eol=lf
 LICENSE        text eol=lf
+NOTICE         text eol=lf
 
 # Source code and project metadata use LF on both development machines.
 *.c        text eol=lf
@@ -39,6 +40,7 @@ LICENSE        text eol=lf
 *.gif      binary
 *.webp     binary
 *.wav      binary
+*.epro2    binary
 *.mp3      binary
 *.mp4      binary
 *.onnx     binary
