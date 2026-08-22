@@ -1,7 +1,6 @@
 #include "chassis.h"
 #include "bsp_motor.h"
 #include "app_config.h"
-#include "delay.h"
 
 static volatile uint16_t g_no_cmd_ticks = 0;
 
@@ -14,7 +13,6 @@ static int16_t SpeedPercentToPWM(int speed_percent)
 
 void Chassis_Init(void)
 {
-		delay_init(168);
     Motor_Init();
     Chassis_Stop();
     g_no_cmd_ticks = 0;
@@ -54,7 +52,6 @@ void Chassis_ApplyCommand(const MotionCommand_t *cmd)
             break;
 
         case 'L':
-            /* X-layout mecanum: rotate left in place. */
             Motor_SetSpeed(MOTOR_LF, -pwm);
             Motor_SetSpeed(MOTOR_LB, -pwm);
             Motor_SetSpeed(MOTOR_RF,  pwm);
@@ -62,7 +59,6 @@ void Chassis_ApplyCommand(const MotionCommand_t *cmd)
             break;
 
         case 'R':
-            /* X-layout mecanum: rotate right in place. */
             Motor_SetSpeed(MOTOR_LF,  pwm);
             Motor_SetSpeed(MOTOR_LB,  pwm);
             Motor_SetSpeed(MOTOR_RF, -pwm);

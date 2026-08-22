@@ -13,7 +13,6 @@ typedef enum
 
 void Motor_Init(void);
 void Motor_SetSpeed(MotorID_t id, int16_t pwm_signed);
-void Motor_Stop(MotorID_t id);
 void Motor_StopAll(void);
 
 #endif

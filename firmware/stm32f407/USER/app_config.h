@@ -3,12 +3,11 @@
 
 #include "stm32f4xx.h"
 
-/* ============================================================
- * Octopus STM32F407ZGT6 chassis configuration
+/* Octopus STM32F407ZGT6 chassis configuration
  * SPL: STM32F4 Standard Peripheral Library
  * Board: ALIENTEK STM32F407ZGT6 minimum system board on the robot carrier PCB
  * Chassis: four mecanum wheels in X configuration; L/R commands rotate in place
- * ============================================================ */
+ */
 
 /* ---------------- Motor PWM: TIM8 CH1~CH4 ----------------
  * LF: PC6  TIM8_CH1
@@ -83,10 +82,7 @@
 #define MOTOR_REDUCTION_RATIO       30.0f
 #define ENCODER_QUADRATURE          4.0f
 
-/* User note: 23.5619 is wheel circumference.
- * Here it is treated as centimeter: 23.5619 cm = 0.235619 m.
- * If your unit is millimeter, change it to 0.0235619f.
- */
+/* Measured wheel circumference: 23.5619 cm. */
 #define WHEEL_CIRCUMFERENCE_M       0.235619f
 #define ENCODER_SAMPLE_DT_S         0.01f
 

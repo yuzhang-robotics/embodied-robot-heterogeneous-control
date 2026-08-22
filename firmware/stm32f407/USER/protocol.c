@@ -58,7 +58,7 @@ static void HandleMotionCommand(MotionCommand_t *cmd)
         LED1_Toggle();
     }
 
-    /* Keep Jetson ACK short and clean. Do not print debug text on this UART. */
+    /* USART3 is reserved for protocol frames; no debug output is sent here. */
     USART3_SendString("A\n");
 }
 
@@ -92,11 +92,7 @@ void Protocol_PollReceive(void)
             rx_index = 0;
             memset(rx_buf, 0, sizeof(rx_buf));
         }
-        else if (ch == '\r')
-        {
-            /* ignore */
-        }
-        else
+        else if (ch != '\r')
         {
             if (rx_index < UART_RX_BUF_SIZE - 1)
             {

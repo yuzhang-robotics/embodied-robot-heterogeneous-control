@@ -1,40 +1,100 @@
 # Embodied Robot Heterogeneous Control
 
-异构计算架构下的具身机器人异步推理与实时控制系统
+**A hardware-validated Jetson–STM32 wheeled robot, evolving from a bachelor's thesis prototype into a research platform for asynchronous inference and real-time control.**
 
-## 项目目标
+![Octopus wheeled robot](docs/hardware/assets/robot-overview.png)
 
-本项目基于 **Jetson Orin Nano Super 8GB + STM32F407** 轮式机器人平台，
-在本科毕业设计“语音交互与视觉感知轮式机器人”的基础上，进一步研究异构
-计算架构下的异步推理与实时控制。
+This repository began with my bachelor's thesis on speech interaction and visual perception for a wheeled robot. The thesis system runs fully local speech and vision pipelines on a Jetson Orin Nano, while an STM32F407 executes motion commands and enforces a communication watchdog. The same platform will now be used to study how long-running perception and inference can coexist with predictable control timing.
 
-Jetson 负责语音交互、视觉感知、模型推理和任务决策；STM32 负责电机驱动、
-编码器采集、运动控制和安全保护。项目的核心目标是将高层智能推理与底层
-实时控制解耦，提高机器人运行的实时性、稳定性和可扩展性。
+> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；异步运行时属于下一阶段工作。
 
-This project studies asynchronous inference and real-time control for a wheeled
-embodied robot using a Jetson Orin Nano and STM32 heterogeneous architecture.
+## Project status
 
-## 仓库结构
-
-| 路径 | 作用 |
+| Item | Status |
 | --- | --- |
-| `jetson/` | Jetson 上运行的语音、视觉、推理、决策与通信代码 |
-| `firmware/stm32f407/` | STM32F407 电机、编码器、运动控制与通信固件 |
-| `hardware/pcb/` | 自制底层驱动板的可编辑 PCB 设计文件 |
-| `protocol/` | Jetson 与 STM32 之间的通信协议说明 |
-| `experiments/` | 实验配置、分析代码与整理后的结果 |
-| `tools/hil/` | 硬件在环和系统联调工具 |
-| `docs/architecture/` | 系统架构与模块关系文档 |
-| `docs/hardware/` | 实物平台、引脚分配、接线与安全说明 |
+| Bachelor's thesis software and firmware | Complete and hardware validated |
+| Custom base-driver PCB | Published and tested on the physical robot |
+| Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
+| Asynchronous inference runtime | Planned research work |
 
-## 当前状态
+The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
-Jetson 与 STM32 本科毕业设计基线已完成实物联调，并标记为
-`v0.1.0-thesis-baseline`。后续工作将围绕异步推理、实时控制和系统实验展开。
+## System at a glance
+
+```mermaid
+flowchart LR
+    Inputs["Microphone + camera"] --> Jetson["Jetson Orin Nano Super 8GB<br/>speech, vision, local inference, task logic"]
+    Jetson <-->|"UART · 115200 8N1"| STM32["STM32F407ZGT6<br/>command parsing, PWM, encoders, watchdog"]
+    STM32 --> Driver["Custom PCB · 2 × TB6612FNG"]
+    Driver --> Base["Four-motor X-layout mecanum base"]
+```
+
+| Layer | Baseline implementation |
+| --- | --- |
+| Speech input | sherpa-onnx keyword spotting and CUDA-enabled whisper.cpp ASR |
+| Dialogue | Qwen2.5-1.5B served locally by llama.cpp |
+| Scene description | Moondream through Ollama, followed by local Chinese rewriting or Argos translation |
+| Speech output | Piper TTS |
+| Target approach | OpenCV HSV detection and a discrete visual feedback loop |
+| Motion transport | Line-based ASCII commands over 3.3 V TTL UART |
+| Low-level execution | STM32F407, 20 kHz motor PWM, 10 ms encoder sampling and command-loss stop |
+| Hardware | Custom two-layer base-driver PCB and four MG513P30_12V geared motors |
+
+Model weights and device-specific runtime data are intentionally not stored in Git.
+
+## What has been validated
+
+The baseline has been exercised on the assembled robot rather than only in simulation:
+
+- offline wake word, recording, speech recognition, local dialogue and speech synthesis;
+- camera scene description with a local vision-language model;
+- voice-triggered color-target approach (red tested end to end; red, blue, green and yellow classes implemented);
+- `F/B/L/R/S` chassis commands, with `L/R` defined as in-place rotation;
+- STM32 `A` acknowledgment for valid frames and `E` for malformed frames;
+- automatic motor stop about 1.2 seconds after valid commands cease;
+- four encoder channels, calibrated so forward wheel motion has a consistent sign;
+- Keil MDK build, CMSIS-DAP flashing and end-to-end Jetson–STM32 testing on the custom PCB.
+
+The STM32 currently applies open-loop PWM commands. Encoder measurements are available, but closed-loop wheel-speed control and full mecanum kinematics are not part of this thesis baseline.
+
+## From the thesis baseline to the research platform
+
+The current Jetson application is synchronous: wake-word detection, recording, ASR, dialogue or VLM inference, speech output and target tracking run as blocking stages. This is straightforward to reproduce, but inference latency can delay unrelated work and there is no explicit deadline or data-age policy.
+
+The next stage will investigate:
+
+- independent acquisition, inference, planning and control workers;
+- timestamped bounded queues, cancellation and stale-result rejection;
+- CPU/GPU resource arbitration between ASR, language and vision models;
+- a safety supervisor that remains responsive while inference is busy;
+- measurements of latency, jitter, control frequency, missed deadlines, memory and power;
+- encoder-based feedback and a broader mecanum motion interface after the runtime boundary is stable.
+
+These are research objectives, not claims about the current implementation. The present code and hardware form the reproducible comparison baseline.
+
+## Repository map
+
+| Path | Contents |
+| --- | --- |
+| [`jetson/`](jetson/) | Speech, vision, local inference, task logic and STM32 communication |
+| [`firmware/stm32f407/`](firmware/stm32f407/) | Keil/SPL firmware for motor drive, encoders, protocol handling and safety timeout |
+| [`protocol/`](protocol/) | UART frame format, responses and timing contract |
+| [`hardware/pcb/`](hardware/pcb/) | Editable EasyEDA Pro export of the custom base-driver PCB |
+| [`docs/hardware/`](docs/hardware/) | Physical platform, wiring, pin assignments, power and safety notes |
+| [`docs/architecture/`](docs/architecture/) | Current timing model and the boundary of the planned asynchronous architecture |
+
+## Reproducing the baseline
+
+Start with the component-specific notes:
+
+1. [Jetson runtime and model services](jetson/README.md)
+2. [STM32 firmware build and flashing](firmware/stm32f407/README.md)
+3. [UART protocol](protocol/README.md)
+4. [Hardware wiring and power safety](docs/hardware/README.md)
+5. [Editable PCB source](hardware/pcb/README.md)
+
+Physical motion is disabled by default in the Jetson code. Keep the wheels off the ground during first tests and review the power and UART voltage requirements before enabling motor output.
 
 ## License
 
-软件代码与项目文档采用 [MIT License](LICENSE)。`hardware/` 下的可编辑硬件设计源文件
-采用 [CERN-OHL-P-2.0](hardware/LICENSE)，适用声明见 [hardware/NOTICE](hardware/NOTICE)。
-第三方模型、数据集、元件库和厂商库遵循各自的许可证。
+Original software and documentation are released under the [MIT License](LICENSE). Editable hardware sources under `hardware/` use [CERN-OHL-P-2.0](hardware/LICENSE); see [hardware/NOTICE](hardware/NOTICE). STMicroelectronics and Arm support files retain their own notices, documented in [`firmware/stm32f407/THIRD_PARTY_NOTICES.md`](firmware/stm32f407/THIRD_PARTY_NOTICES.md). Models, datasets and external tools follow their respective licenses.

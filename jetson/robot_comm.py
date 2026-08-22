@@ -1,46 +1,27 @@
 #!/usr/bin/env python3
+"""UART transport for motion commands sent from Jetson to STM32."""
+
 import time
 
 from .config import BAUD_RATE, ENABLE_MOTION, RUNTIME_DIR, SERIAL_PORT
 
 
-# ============================================================
-# Jetson -> STM32 运动通信模块
-#
-# Jetson -> STM32:
-#   F,30\n    前进
-#   B,30\n    后退
-#   L,25\n    左转
-#   R,25\n    右转
-#   S,0\n     停止
-#
-# STM32 -> Jetson:
-#   A\n       命令正确
-#   E\n       命令错误
-# ============================================================
-
-
 MOTION_LOG = RUNTIME_DIR / "motion_commands.log"
-
-
-# 默认只打印和写日志。设置 ROBOT_ENABLE_MOTION=1 后才启用真实串口。
 LOG_ONLY = not ENABLE_MOTION
-
-
 _ser = None
 
+_COMMAND_FRAMES = {
+    "forward": "F,20",
+    "backward": "B,20",
+    "turn_left": "L,15",
+    "turn_right": "R,15",
+    "stop": "S,0",
+    "search": "L,15",
+}
 
-def command_to_serial_text(command):
-    mapping = {
-        "forward": "F,20",
-        "backward": "B,20",
-        "turn_left": "L,15",
-        "turn_right": "R,15",
-        "stop": "S,0",
-        "search": "L,15",
-    }
 
-    return mapping.get(command, "S,0")
+def command_to_serial_text(command: str) -> str:
+    return _COMMAND_FRAMES.get(command, "S,0")
 
 
 def bytes_to_hex(data: bytes) -> str:
@@ -48,9 +29,7 @@ def bytes_to_hex(data: bytes) -> str:
 
 
 def get_serial():
-    """
-    打开串口。保持和 jetson_uart_stable_test.py 一致的配置。
-    """
+    """Open and cache the STM32 serial connection."""
     global _ser
 
     if LOG_ONLY:
@@ -79,7 +58,6 @@ def get_serial():
 
         time.sleep(0.3)
 
-        # 打开后先清空缓冲
         _ser.reset_input_buffer()
         _ser.reset_output_buffer()
 
@@ -91,10 +69,7 @@ def get_serial():
 
 
 def drain_serial_input(ser, duration=0.15):
-    """
-    丢弃串口残留数据。
-    注意：这里只在发送命令前做短暂清理，避免读到旧数据。
-    """
+    """Discard stale input before waiting for the next acknowledgement."""
     end_time = time.time() + duration
 
     while time.time() < end_time:
@@ -108,16 +83,7 @@ def drain_serial_input(ser, duration=0.15):
 
 
 def read_stm32_response(ser, timeout=0.8):
-    """
-    稳定读取 STM32 响应。
-
-    目标响应：
-      A\n
-      E\n
-
-    这个函数不会只读一行就结束，而是在 timeout 内持续读取，
-    直到解析到 A 或 E。
-    """
+    """Read until an ``A`` or ``E`` response is received, or timeout expires."""
     end_time = time.time() + timeout
     raw_all = b""
 
@@ -130,7 +96,6 @@ def read_stm32_response(ser, timeout=0.8):
         if chunk:
             raw_all += chunk
 
-            # 按行解析
             lines = raw_all.splitlines()
 
             for line in lines:
@@ -142,7 +107,6 @@ def read_stm32_response(ser, timeout=0.8):
                 if s == "E":
                     return "E", raw_all
 
-            # 兼容极端情况：如果没有换行但已经出现单字节 A/E
             if raw_all == b"A" or raw_all.endswith(b"\nA"):
                 return "A", raw_all
 
@@ -173,23 +137,19 @@ def write_log(command, serial_text, response="", raw=b""):
         f.write(line)
 
 
-def send_motion_command(command):
-    """
-    发送运动命令给 STM32。
-    """
+def send_motion_command(command: str) -> str:
+    """Send one mapped motion command, or log it when motion is disabled."""
     serial_text = command_to_serial_text(command)
 
-    print(f"[发送运动命令] {serial_text}")
-
     if LOG_ONLY:
+        print(f"[运动命令-安全模式] {serial_text}")
         write_log(command, serial_text, response="LOG_ONLY")
         return serial_text
 
     ser = get_serial()
+    print(f"[发送运动命令] {serial_text}")
 
     data = (serial_text + "\n").encode("utf-8")
-
-    # 发送前清理残留
     drain_serial_input(ser, duration=0.08)
 
     try:
@@ -209,8 +169,8 @@ def send_motion_command(command):
         if raw:
             print(f"[STM32未确认，原始bytes] {repr(raw)}")
             print(f"[STM32未确认，HEX] {bytes_to_hex(raw)}")
-        #else:
-        #   print("[STM32无响应]")
+        else:
+            print("[STM32无响应]")
 
     write_log(command, serial_text, response=resp, raw=raw)
 
@@ -230,34 +190,5 @@ def close_serial():
         _ser = None
 
 
-def set_log_only(enabled):
-    global LOG_ONLY
-
-    LOG_ONLY = bool(enabled)
-
-    if LOG_ONLY:
-        close_serial()
-
-
 def motion_enabled():
     return not LOG_ONLY
-
-
-if __name__ == "__main__":
-    print("测试 robot_comm.py")
-    print(f"LOG_ONLY = {LOG_ONLY}")
-    print(f"SERIAL_PORT = {SERIAL_PORT}")
-    print(f"BAUD_RATE = {BAUD_RATE}")
-    print(f"MOTION_LOG = {MOTION_LOG}")
-
-    try:
-        for cmd in ["forward", "turn_left", "turn_right", "backward", "search", "stop"]:
-            send_motion_command(cmd)
-            time.sleep(1.0)
-
-    except KeyboardInterrupt:
-        print("\n用户中断。")
-
-    finally:
-        close_serial()
-        print(f"运动命令日志已保存：{MOTION_LOG}")

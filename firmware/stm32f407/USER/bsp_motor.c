@@ -10,9 +10,7 @@ static void Motor_SetDirPins(GPIO_TypeDef *gpio, uint16_t in1, uint16_t in2, int
 
 void Motor_Init(void)
 {
-    /* Critical for your PCB: TB6612 STBY is tied high.
-     * Therefore all PWM and IN pins must be driven low as early as possible.
-     */
+    /* TB6612 STBY is tied high, so force all control pins low before PWM setup. */
     Motor_AllControlPinsAsLowGPIO();
     Motor_DirGPIOInit();
     Motor_PWMGPIOInit();
@@ -26,7 +24,7 @@ static void Motor_AllControlPinsAsLowGPIO(void)
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOG, ENABLE);
 
-    /* PC0~PC5 direction + PC6~PC9 PWM: first force all as low output. */
+    /* PC0-PC5: direction; PC6-PC9: PWM. */
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 |
                                   GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 |
                                   GPIO_Pin_8 | GPIO_Pin_9;
@@ -37,7 +35,7 @@ static void Motor_AllControlPinsAsLowGPIO(void)
     GPIO_Init(GPIOC, &GPIO_InitStructure);
     GPIO_ResetBits(GPIOC, GPIO_InitStructure.GPIO_Pin);
 
-    /* PG6~PG7 direction: force low. */
+    /* PG6-PG7: left-front direction. */
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
     GPIO_Init(GPIOG, &GPIO_InitStructure);
     GPIO_ResetBits(GPIOG, GPIO_InitStructure.GPIO_Pin);
@@ -199,11 +197,6 @@ void Motor_SetSpeed(MotorID_t id, int16_t pwm_signed)
 
     pwm_abs = (pwm_signed >= 0) ? (uint16_t)pwm_signed : (uint16_t)(-pwm_signed);
     Motor_SetPWM(id, pwm_abs);
-}
-
-void Motor_Stop(MotorID_t id)
-{
-    Motor_SetSpeed(id, 0);
 }
 
 void Motor_StopAll(void)
