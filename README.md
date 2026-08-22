@@ -21,17 +21,20 @@ embodied robot using a Jetson Orin Nano and STM32 heterogeneous architecture.
 | --- | --- |
 | `jetson/` | Jetson 上运行的语音、视觉、推理、决策与通信代码 |
 | `firmware/stm32f407/` | STM32F407 电机、编码器、运动控制与通信固件 |
+| `hardware/pcb/` | 自制底层驱动板的可编辑 PCB 设计文件 |
 | `protocol/` | Jetson 与 STM32 之间的通信协议说明 |
 | `experiments/` | 实验配置、分析代码与整理后的结果 |
 | `tools/hil/` | 硬件在环和系统联调工具 |
 | `docs/architecture/` | 系统架构与模块关系文档 |
+| `docs/hardware/` | 实物平台、引脚分配、接线与安全说明 |
 
 ## 当前状态
 
-仓库正在进行基础结构初始化，后续将分别导入 Jetson 与 STM32 的本科毕业设计
-基线代码。
+Jetson 与 STM32 本科毕业设计基线已完成实物联调，并标记为
+`v0.1.0-thesis-baseline`。后续工作将围绕异步推理、实时控制和系统实验展开。
 
 ## License
 
-本项目采用 [MIT License](LICENSE)。第三方模型、数据集和厂商库遵循各自的
-许可证。
+软件代码与项目文档采用 [MIT License](LICENSE)。`hardware/` 下的可编辑硬件设计源文件
+采用 [CERN-OHL-P-2.0](hardware/LICENSE)，适用声明见 [hardware/NOTICE](hardware/NOTICE)。
+第三方模型、数据集、元件库和厂商库遵循各自的许可证。
