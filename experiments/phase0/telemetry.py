@@ -149,7 +149,7 @@ class EventRecorder:
 
 _RAM_RE = re.compile(
     r"\bRAM\s+(?P<used>\d+)/(?P<total>\d+)MB\s+"
-    r"\(lfb\s+(?P<count>\d+)x(?P<size>\d+)MB\)"
+    r"\(lfb\s+(?P<count>\d+)x(?P<size>\d+)(?P<size_unit>MB|kB)\)"
 )
 _SWAP_RE = re.compile(
     r"\bSWAP\s+(?P<used>\d+)/(?P<total>\d+)MB\s+"
@@ -220,12 +220,15 @@ def parse_tegrastats_line(line: str) -> dict[str, Any]:
 
     ram = _RAM_RE.search(line)
     if ram:
+        lfb_size = int(ram.group("size"))
+        if ram.group("size_unit") == "kB":
+            lfb_size /= 1024
         row.update(
             {
                 "ram_used_mb": int(ram.group("used")),
                 "ram_total_mb": int(ram.group("total")),
                 "ram_lfb_count": int(ram.group("count")),
-                "ram_lfb_size_mb": int(ram.group("size")),
+                "ram_lfb_size_mb": lfb_size,
             }
         )
     else:
