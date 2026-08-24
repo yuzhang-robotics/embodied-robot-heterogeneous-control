@@ -82,5 +82,28 @@ runner commit and timing-stage consistency before reporting descriptive
 statistics, including LLM token metrics when present. Pilot output is
 explicitly labelled as non-inferential.
 
+Analyze a complete formal dataset with three balanced sessions using:
+
+```bash
+python3 -m experiments.phase0.analyze_formal_runs \
+  experiments/runs/formal-main-<runner> \
+  --bootstrap-resamples 100000 \
+  --bootstrap-seed 20260824 \
+  --json-output experiments/runs/formal-main-<runner>/analysis/formal.json \
+  --markdown-output experiments/runs/formal-main-<runner>/analysis/formal.md
+```
+
+The formal analyzer validates all warm-up and measured directories, requires
+the predeclared session/repetition layout and 200 ms telemetry interval, and
+refuses dirty, invalid or mixed-commit data. It reports nearest-rank p95 plus
+session-stratified percentile bootstrap 95% confidence intervals for means and
+medians. The fixed seed makes the analysis reproducible. It also reports LLM
+length-normalized throughput and VLM within-session warm-state trends; no
+post-hoc outlier exclusion is applied.
+
+> 中文简介：正式分析器校验三个会话的完整性，并报告 p95、按会话分层的
+> bootstrap 95% 置信区间、LLM 长度归一化吞吐和 VLM 会话内热状态趋势；
+> 不进行事后异常值删除。
+
 Raw experiment inputs and outputs belong under `experiments/raw/` and
 `experiments/runs/`; both paths are ignored by Git.
