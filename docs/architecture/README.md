@@ -96,6 +96,13 @@ The first experiments will address these questions:
 4. Which safety actions must remain on the STM32, and which supervisory states belong on the Jetson?
 5. How does encoder feedback change approach accuracy and stopping repeatability compared with the open-loop thesis baseline?
 
+The proposed task model, lifecycle invariants, queue policies, cancellation
+semantics, and Phase 1 safety Gates are specified in the
+[Phase 1 runtime contract](phase1-runtime-contract.md). That document is a
+design and correctness boundary. The initial host-only task model and bounded
+broker do not yet constitute a validated Jetson runtime or a performance
+result.
+
 ## Evaluation plan
 
 Future experiments should record at least:
