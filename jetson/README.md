@@ -1,8 +1,8 @@
 # Jetson Runtime
 
-The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32.
+The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32. It also contains the host-testable Phase 1 task-runtime kernel, which is not yet connected to the robot application or model services.
 
-It was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. The application is a synchronous reference implementation; the planned asynchronous runtime will be developed from this baseline rather than presented as an existing feature.
+The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 kernel currently covers host-only task identity, bounded ownership and lifecycle correctness; worker threads, Jetson pilots and application integration remain research work.
 
 > 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前代码是已经完成整机验证的同步毕设基线，异步推理框架尚未合入。
 
@@ -16,6 +16,7 @@ It was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python
 | `vision_color.py` | HSV segmentation and target extraction |
 | `motion_planner.py` | Discrete visual feedback loop for approaching a colored object |
 | `robot_comm.py` | Command mapping, UART transport, STM32 responses and motion log |
+| `phase1_runtime/` | Host-testable task/result contracts and bounded lifecycle broker |
 | `assets/` | sherpa-onnx keyword configuration and wake acknowledgment audio |
 | `scripts/` | One-time environment setup helpers |
 
@@ -111,6 +112,7 @@ Audio, ASR text, captured images and communication logs are written beneath `ROB
 ## Baseline limitations
 
 - The orchestration path is blocking and single-process; inference tasks do not have explicit deadlines or cancellation.
+- The Phase 1 host-only kernel is not yet connected to acquisition, inference services, TTS or the synchronous application loop.
 - llama.cpp and Ollama are managed outside the application.
 - The color tracker uses fixed HSV ranges and discrete motion commands tuned on the thesis robot.
 - The Jetson sends speed percentages, while the STM32 applies open-loop PWM rather than closed-loop wheel velocity.
