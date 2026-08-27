@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/embodied-robot/phase1-event.schema.json",
+  "title": "Phase 1 Asynchronous Runtime Trace Event",
+  "description": "One bounded UTF-8 JSON object per line. Primary ordering uses seq and monotonic_ns; workload durations use the explicit monotonic timestamps in details.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "seq",
+    "event",
+    "component",
+    "status",
+    "monotonic_ns",
+    "wall_time_ns",
+    "pid",
+    "thread_id",
+    "details"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.2.0"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z_phase1_[a-z][a-z0-9_]{0,31}_(simulated|vlm|asr|llm)_[0-9]{3}$"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "event": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
+    "component": {
+      "enum": ["executor", "worker", "probe"]
+    },
+    "status": {
+      "enum": [
+        "started",
+        "ok",
+        "error",
+        "timeout",
+        "cancelled",
+        "dropped",
+        "stale",
+        "rejected",
+        "info"
+      ]
+    },
+    "monotonic_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "wall_time_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pid": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "thread_id": {
+      "type": ["integer", "string"]
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "task_kind": {
+      "enum": ["simulated", "vlm", "asr", "llm"]
+    },
+    "parent_task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "source_monotonic_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "deadline_monotonic_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "state_scope_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "state_generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "details": {
+      "type": "object",
+      "maxProperties": 32,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "description": "Bounded scalar metadata only. Raw payloads, paths, prompts, model outputs, secrets, and tracebacks are forbidden."
+    }
+  }
+}

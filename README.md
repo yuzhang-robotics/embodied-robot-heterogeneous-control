@@ -6,7 +6,7 @@
 
 This repository began with my bachelor's thesis on speech interaction and visual perception for a wheeled robot. The thesis system runs fully local speech and vision pipelines on a Jetson Orin Nano, while an STM32F407 executes motion commands and enforces a communication watchdog. The same platform will now be used to study how long-running perception and inference can coexist with predictable control timing.
 
-> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 正从 host-only 运行时内核开始推进，尚未接入整机应用。
+> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立 host-only 有界运行时、可观测 worker 和周期探针，尚未接入 Jetson 模型或整机应用。
 
 ## Project status
 
@@ -15,7 +15,7 @@ This repository began with my bachelor's thesis on speech interaction and visual
 | Bachelor's thesis software and firmware | Complete and hardware validated |
 | Custom base-driver PCB | Published and tested on the physical robot |
 | Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
-| Asynchronous inference runtime | Phase 1 host-only kernel under development; not yet integrated |
+| Asynchronous inference runtime | Host-only bounded executor, periodic probe and trace replay implemented; Jetson integration pending |
 
 The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
@@ -61,10 +61,11 @@ The STM32 currently applies open-loop PWM commands. Encoder measurements are ava
 
 The current Jetson application is synchronous: wake-word detection, recording, ASR, dialogue or VLM inference, speech output and target tracking run as blocking stages. This is straightforward to reproduce, but inference latency can delay unrelated work and there is no explicit deadline or data-age policy.
 
-Phase 1 has started with an immutable task/result model, bounded task ownership,
-scoped state generations and host-only lifecycle tests. These components are
-not yet connected to the Jetson application or model services. The broader
-research stage will investigate:
+Phase 1 now has an immutable task/result model, bounded task ownership, scoped
+state generations, a single-worker observable executor, an absolute-schedule
+periodic probe and independent lifecycle trace replay. These components remain
+host-only and are not yet connected to the Jetson application or model
+services. The broader research stage will investigate:
 
 - independent acquisition, inference, planning and control workers;
 - timestamped bounded queues, cancellation and stale-result rejection;
@@ -86,7 +87,7 @@ These are research objectives, not claims about the current implementation. The 
 | [`docs/hardware/`](docs/hardware/) | Physical platform, wiring, pin assignments, power and safety notes |
 | [`docs/architecture/`](docs/architecture/) | Current timing model and the boundary of the planned asynchronous architecture |
 | [`experiments/phase0/`](experiments/phase0/) | Synchronous fixed-input measurement, validation and formal analysis tools |
-| [`experiments/phase1/`](experiments/phase1/) | Host tests and planned experiment tools for the asynchronous runtime study |
+| [`experiments/phase1/`](experiments/phase1/) | Host tests, Phase 1 trace schema, recorder and independent lifecycle replay |
 
 ## Reproducing the baseline
 

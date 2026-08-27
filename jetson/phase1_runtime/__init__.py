@@ -15,6 +15,19 @@ from .broker import (
     SubmissionResult,
     TerminalTransition,
 )
+from .events import (
+    EventScalar,
+    EventStatus,
+    NullEventSink,
+    RuntimeEvent,
+    RuntimeEventSink,
+)
+from .executor import (
+    ExecutorShutdownReport,
+    ObservableExecutor,
+    SimulatedAdapter,
+    WorkloadAdapter,
+)
 from .model import (
     CancellationReport,
     CancellationToken,
@@ -28,31 +41,52 @@ from .model import (
     TaskLocation,
 )
 from .policies import LaneConfig, OverflowPolicy
+from .probe import (
+    PeriodicProbe,
+    ProbeStopReport,
+    ProbeTick,
+    build_probe_tick,
+    select_release,
+)
 
 __all__ = [
     "BoundedTaskBroker",
     "BrokerSnapshot",
     "BrokerState",
     "BrokerStateError",
-    "CancellationResult",
     "CancellationReport",
+    "CancellationResult",
     "CancellationToken",
     "ClaimedTask",
     "ClaimResult",
     "CompletionResult",
     "ConsumptionResult",
+    "EventScalar",
+    "EventStatus",
     "ExecutionOutcome",
+    "ExecutorShutdownReport",
     "FinalDisposition",
     "LaneConfig",
+    "NullEventSink",
+    "ObservableExecutor",
     "OverflowPolicy",
     "PayloadRef",
+    "PeriodicProbe",
+    "ProbeStopReport",
+    "ProbeTick",
     "ResultEnvelope",
+    "RuntimeEvent",
+    "RuntimeEventSink",
     "ShutdownResult",
-    "StateToken",
     "StateAdvanceResult",
+    "StateToken",
+    "SimulatedAdapter",
     "SubmissionResult",
     "TaskEnvelope",
     "TaskKind",
     "TaskLocation",
     "TerminalTransition",
+    "WorkloadAdapter",
+    "build_probe_tick",
+    "select_release",
 ]
