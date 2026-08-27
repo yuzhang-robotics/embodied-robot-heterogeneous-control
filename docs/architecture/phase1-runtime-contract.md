@@ -2,17 +2,19 @@
 
 This document defines the correctness and safety contract for the first
 asynchronous runtime used by the Octopus robot research platform. The
-host-only model, broker, observable executor, periodic probe and trace replay
-have been implemented. Jetson behavior and performance remain unvalidated.
+host-only model, broker, observable executor, periodic probes, trace replay and
+portable simulation protocol have been implemented. Jetson behavior and
+performance remain unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
-> 快速周期代理和安全边界。host-only worker、周期探针和 trace replay 已实现；Jetson pilot、
-> 真实模型接入和正式实验仍需按 Gate 逐步完成。
+> 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
+> Jetson pilot、真实模型接入和正式实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1.2 host-only observable executor
+- Phase: Phase 1.3 portable simulation protocol
 - Contract status: frozen and implemented for the host-only boundary
+- Simulation-runner starting point: `main@4514d97`
 - Observable-executor starting point: `main@1d29b14`
 - Initial runtime-kernel starting point: `main@043e1bb`
 - Synchronous functional baseline: `61db058`
@@ -29,11 +31,13 @@ The current host implementation includes:
 - bounded pending, active, result-mailbox, state-scope and terminal ownership;
 - one non-daemon worker with cooperative cancellation and finite join reports;
 - a simulated adapter with finite service time and explicit cancellation facts;
-- an independent absolute-schedule periodic probe;
-- schema `0.2.0` JSONL recording and offline lifecycle replay.
+- inline and independent absolute-schedule periodic probes;
+- schema `0.2.0` JSONL recording and profile-aware offline lifecycle replay;
+- R0--R4 simulated-condition orchestration, atomic manifests, validation and
+  descriptive summaries.
 
-It does not include the Jetson simulation runner, real workload adapters,
-resource telemetry integration or formal performance data.
+It does not include Jetson resource telemetry, a completed Jetson simulation
+pilot, real workload adapters or formal performance data.
 
 ## Research objective
 
@@ -416,9 +420,10 @@ The experiment layer provides both:
 
 The probe is a software scheduling proxy, not a motor controller.
 
-The independent threaded probe and its pure release/tick calculations are now
-implemented. The inline condition belongs to the next simulation-runner
-milestone so that both paths can invoke the same scenario workload.
+Both probe paths and their pure release/tick calculations are implemented. The
+inline path advances on the caller thread and therefore records releases
+skipped while a direct synchronous adapter call owns that thread. The threaded
+path advances independently. Both invoke the same scenario adapter contract.
 
 ## Event and replay requirements
 
@@ -465,7 +470,16 @@ The replay implementation imports no runtime classes. It validates the
 serialized schema fields, reconstructs every task location and state
 generation, checks recorded depths against its own counts, enforces pending,
 active and result capacities, and rejects stale consumption or incomplete
-shutdown.
+shutdown. Completion uses an explicit trace profile:
+
+- `inline_probe` requires a stopped probe and forbids worker lifecycle events;
+- `threaded_probe` requires a stopped and joined probe and forbids worker
+  lifecycle events;
+- `runtime` requires a closed and joined worker, with an optional probe;
+- `runtime_threaded_probe` requires both complete lifecycles.
+
+The validator never infers a weaker completion contract from whichever events
+happen to be present.
 
 ## Experimental decomposition
 
@@ -480,18 +494,31 @@ tests, not inferential performance comparisons.
 
 ### Responsiveness
 
-The planned conditions are:
+The implemented portable conditions are:
 
 | Condition | Probe | Slow work | Runtime |
 | --- | --- | --- | --- |
-| `R0` | independent | none | none |
-| `R1` | inline | direct synchronous | none |
-| `R2` | independent | direct synchronous | none |
-| `R3` | independent | worker | bounded runtime |
-| `R4` | independent | worker plus invalidation/overflow | bounded runtime |
+| `R0_IDLE` | independent | none | none |
+| `R1_INLINE_SYNC` | inline | direct synchronous | none |
+| `R2_THREADED_SYNC` | independent | direct synchronous | none |
+| `R3_ASYNC` | independent | worker | bounded runtime |
+| `R4_STALE` | independent | non-cooperative worker plus state advance | bounded runtime |
+| `R4_OVERFLOW` | independent | worker plus excess arrivals | bounded runtime |
 
 `R2` separates the benefit of an independent fast timing domain from the
-additional semantics and overhead of the full broker.
+additional semantics and overhead of the full broker. R0--R3 form the primary
+responsiveness decomposition. Stale-result and overflow tests remain separate
+zero-tolerance correctness conditions so their different arrival and
+invalidation patterns do not confound that comparison. R4 uses a claim barrier
+to inject its state change or excess arrivals at a deterministic lifecycle
+location; timings that include this barrier are not used for the direct-versus-
+worker overhead comparison.
+
+Each run records an atomic manifest, scenario facts, an event trace and a
+descriptive summary. A manifest becomes `completed` only after explicit-profile
+replay, condition-specific Gates, artifact hashing and final directory
+validation pass. Pilot summaries are marked descriptive-only and cannot
+authorize a performance claim.
 
 ### Runtime overhead
 

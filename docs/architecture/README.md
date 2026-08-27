@@ -100,8 +100,9 @@ The proposed task model, lifecycle invariants, queue policies, cancellation
 semantics, and Phase 1 safety Gates are specified in the
 [Phase 1 runtime contract](phase1-runtime-contract.md). That document is a
 design and correctness boundary. The host-only model, bounded broker,
-observable worker, periodic probe and lifecycle replay do not yet constitute a
-validated Jetson runtime or a performance result.
+observable worker, periodic probe, lifecycle replay and simulated-condition
+runner do not yet constitute a validated Jetson runtime or a performance
+result.
 
 ## Evaluation plan
 
