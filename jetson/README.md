@@ -2,9 +2,9 @@
 
 The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32. It also contains the host-testable Phase 1 task-runtime kernel, which is not yet connected to the robot application or model services.
 
-The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 kernel currently covers host-only task identity, bounded ownership and lifecycle correctness; worker threads, Jetson pilots and application integration remain research work.
+The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-only task identity, bounded ownership, a single-worker observable executor and a software periodic probe. Jetson pilots and application integration remain research work.
 
-> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前代码是已经完成整机验证的同步毕设基线，异步推理框架尚未合入。
+> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前整机应用仍使用已验证的同步路径；Phase 1 的 host-only worker 与周期探针尚未接入真实模型或运动控制。
 
 ## Modules
 
@@ -16,7 +16,7 @@ The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubu
 | `vision_color.py` | HSV segmentation and target extraction |
 | `motion_planner.py` | Discrete visual feedback loop for approaching a colored object |
 | `robot_comm.py` | Command mapping, UART transport, STM32 responses and motion log |
-| `phase1_runtime/` | Host-testable task/result contracts and bounded lifecycle broker |
+| `phase1_runtime/` | Host-testable contracts, bounded broker, observable worker and periodic probe |
 | `assets/` | sherpa-onnx keyword configuration and wake acknowledgment audio |
 | `scripts/` | One-time environment setup helpers |
 

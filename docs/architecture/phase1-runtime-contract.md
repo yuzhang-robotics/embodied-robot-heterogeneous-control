@@ -1,19 +1,20 @@
 # Phase 1 Runtime Contract
 
-This document defines the proposed correctness and safety contract for the
-first asynchronous runtime used by the Octopus robot research platform. It is
-a design specification, not a claim that the runtime has already been
-implemented or validated.
+This document defines the correctness and safety contract for the first
+asynchronous runtime used by the Octopus robot research platform. The
+host-only model, broker, observable executor, periodic probe and trace replay
+have been implemented. Jetson behavior and performance remain unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
-> 快速周期代理和安全边界。当前状态仍是设计草案；实现、Jetson pilot 和正式实验将按 Gate
-> 逐步完成。
+> 快速周期代理和安全边界。host-only worker、周期探针和 trace replay 已实现；Jetson pilot、
+> 真实模型接入和正式实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1.1 host-only runtime kernel
-- Contract status: frozen for the first implementation milestone
-- Starting point: `main@043e1bb`
+- Phase: Phase 1.2 host-only observable executor
+- Contract status: frozen and implemented for the host-only boundary
+- Observable-executor starting point: `main@1d29b14`
+- Initial runtime-kernel starting point: `main@043e1bb`
 - Synchronous functional baseline: `61db058`
 - Physical motion: disabled and outside this phase
 - UART and STM32 firmware: unchanged
@@ -21,6 +22,18 @@ implemented or validated.
 The contract was reviewed before the host-only implementation began. Later
 implementation findings may require an explicit contract revision, but the
 contract must not be changed silently after formal data collection starts.
+
+The current host implementation includes:
+
+- immutable task, result, state and payload-reference contracts;
+- bounded pending, active, result-mailbox, state-scope and terminal ownership;
+- one non-daemon worker with cooperative cancellation and finite join reports;
+- a simulated adapter with finite service time and explicit cancellation facts;
+- an independent absolute-schedule periodic probe;
+- schema `0.2.0` JSONL recording and offline lifecycle replay.
+
+It does not include the Jetson simulation runner, real workload adapters,
+resource telemetry integration or formal performance data.
 
 ## Research objective
 
@@ -356,6 +369,30 @@ shutdown. Real HTTP adapters use finite transport and overall budgets so that
 failure is eventually observable, but Phase 1 does not claim instantaneous
 backend preemption.
 
+## Observable executor boundary
+
+`ObservableExecutor` is the only traced orchestration entry for one broker.
+Producers submit, cancel, advance state and consume results through this
+facade; the worker uses the same boundary for claim and completion. Callers
+must not mutate the owned broker directly while claiming a replayable trace.
+
+The short boundary lock covers one broker operation, its before/after depth
+accounting and synchronous event emission. It never covers workload adapter
+execution. This makes concurrent producer operations totally ordered in the
+trace without serializing the slow inference interval.
+
+The worker does not automatically consume a successful result. Consumption is
+an explicit upper-layer action so result-mailbox pressure and the second
+freshness check remain observable. Normal adapter exceptions become bounded
+`adapter_exception` execution results; exception messages and tracebacks are
+not written to events. An event-sink failure stops admission and requests
+cancel shutdown. A closed broker with a worker, probe or event-recording error
+is not reported as a successful run.
+
+The simulated adapter can model finite service time, execution errors,
+timeouts, cooperative cancellation and a finite non-cooperative interval. It
+does not model GPU work or prove backend preemption.
+
 ## Periodic probe contract
 
 The nominal period is 100 ms. Releases use an absolute schedule:
@@ -379,10 +416,20 @@ The experiment layer provides both:
 
 The probe is a software scheduling proxy, not a motor controller.
 
+The independent threaded probe and its pure release/tick calculations are now
+implemented. The inline condition belongs to the next simulation-runner
+milestone so that both paths can invoke the same scenario workload.
+
 ## Event and replay requirements
 
 Phase 1 creates a new event schema and run root. Phase 0 schema version `0.1.0`
 remains frozen.
+
+Schema `0.2.0` uses one shared recorder lock to assign contiguous
+sequence numbers and primary monotonic timestamps. Runtime and probe threads
+may share that recorder. Payload references, raw inputs, prompts, model output,
+secrets and exception tracebacks are excluded; only bounded scalar event
+details are accepted.
 
 Every lifecycle event includes enough bounded information to replay:
 
@@ -402,6 +449,23 @@ capacity violations, duplicate terminals, identity mismatches, missing final
 states, non-monotonic sequence/timestamps, or a consumed stale result.
 
 Runtime counters alone are not accepted as correctness evidence.
+
+The implemented lifecycle vocabulary is:
+
+- `task.enqueued`, `task.rejected`, `task.started`, `task.finished` and
+  `task.terminal`;
+- `task.cancel_requested`, `task.cancel_missing` and `state.advanced`;
+- `result.accepted` and `result.rejected`;
+- `shutdown.requested`, `worker.started`, `worker.failed`, `worker.stopped`
+  and `worker.joined`;
+- `probe.started`, `probe.skipped`, `probe.tick`, `probe.failed`,
+  `probe.stopped` and `probe.joined`.
+
+The replay implementation imports no runtime classes. It validates the
+serialized schema fields, reconstructs every task location and state
+generation, checks recorded depths against its own counts, enforces pending,
+active and result capacities, and rejects stale consumption or incomplete
+shutdown.
 
 ## Experimental decomposition
 
