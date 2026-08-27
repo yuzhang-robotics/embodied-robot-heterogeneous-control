@@ -2,7 +2,7 @@
 
 The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32. It also contains the host-testable Phase 1 task-runtime kernel, which is not yet connected to the robot application or model services.
 
-The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-only task identity, bounded ownership, a single-worker observable executor and a software periodic probe. Jetson pilots and application integration remain research work.
+The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-only task identity, bounded ownership, a single-worker observable executor and a software periodic probe. A portable simulated-condition runner is available under `experiments/phase1/`, but Jetson pilots and application integration remain research work.
 
 > 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前整机应用仍使用已验证的同步路径；Phase 1 的 host-only worker 与周期探针尚未接入真实模型或运动控制。
 

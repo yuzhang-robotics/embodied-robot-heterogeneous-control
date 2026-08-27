@@ -9,6 +9,7 @@ import re
 import sys
 from collections import Counter
 from dataclasses import asdict, dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Iterable, Mapping
 
@@ -65,6 +66,15 @@ class ReplayError(ValueError):
     """A trace cannot represent a legal bounded runtime history."""
 
 
+class TraceProfile(str, Enum):
+    """Explicit completion contract for one Phase 1 trace."""
+
+    RUNTIME = "runtime"
+    RUNTIME_THREADED_PROBE = "runtime_threaded_probe"
+    THREADED_PROBE = "threaded_probe"
+    INLINE_PROBE = "inline_probe"
+
+
 @dataclass(slots=True)
 class _ReplayTask:
     admitted: bool
@@ -84,6 +94,7 @@ class _ReplayTask:
 @dataclass(frozen=True, slots=True)
 class ReplaySummary:
     run_id: str
+    trace_profile: str
     event_count: int
     submission_attempts: int
     admitted_total: int
@@ -97,6 +108,8 @@ class ReplaySummary:
     probe_deadline_miss_count: int
     disposition_counts: tuple[tuple[str, int], ...]
     worker_joined: bool
+    probe_stopped: bool
+    probe_joined: bool
     final_broker_state: str | None
 
 
@@ -163,12 +176,15 @@ class _LifecycleReplay:
         self.broker_state = "open"
         self.worker_error = False
         self.probe_started = False
+        self.probe_stopped = False
         self.probe_joined = False
+        self.probe_join_event_seen = False
         self.probe_error = False
         self.probe_period_ns: int | None = None
         self.probe_deadline_ns: int | None = None
         self.probe_previous_started_ns: int | None = None
         self.probe_skipped_releases = 0
+        self.runtime_event_seen = False
 
     def _depths(self) -> tuple[int, int, int]:
         pending = sum(task.location == "queued" for task in self.tasks.values())
@@ -367,6 +383,11 @@ class _LifecycleReplay:
         if ("state_scope_id" in event) != ("state_generation" in event):
             raise ReplayError("state scope and generation must be recorded together")
 
+        if event_name.startswith(
+            ("task.", "result.", "state.", "shutdown.", "worker.")
+        ):
+            self.runtime_event_seen = True
+
         if event_name in {"task.enqueued", "task.rejected"}:
             task_id = _require_str(event, "task_id")
             if task_id in self.tasks:
@@ -556,14 +577,26 @@ class _LifecycleReplay:
             self.probe_skipped_releases += skipped
 
         elif event_name == "probe.stopped":
+            if not self.probe_started:
+                raise ReplayError("probe.stopped appeared before probe.started")
+            if self.probe_stopped:
+                raise ReplayError("probe.stopped appeared more than once")
             if _require_int(details, "tick_count") != self.probe_ticks:
                 raise ReplayError("probe stopped with an inconsistent tick count")
             if _require_int(details, "skipped_releases") != self.probe_skipped_releases:
                 raise ReplayError("probe stopped with an inconsistent skip count")
             if _require_int(details, "deadline_miss_count") != self.probe_misses:
                 raise ReplayError("probe stopped with an inconsistent miss count")
+            if details.get("error_code") is not None:
+                self.probe_error = True
+            self.probe_stopped = True
 
         elif event_name == "probe.joined":
+            if not self.probe_stopped:
+                raise ReplayError("probe.joined appeared before probe.stopped")
+            if self.probe_join_event_seen:
+                raise ReplayError("probe.joined appeared more than once")
+            self.probe_join_event_seen = True
             if details.get("joined") is True:
                 self.probe_joined = True
             if details.get("error_code") is not None:
@@ -652,7 +685,13 @@ class _LifecycleReplay:
 
         self._check_depths(details)
 
-    def finish(self, event_count: int, *, require_complete: bool) -> ReplaySummary:
+    def finish(
+        self,
+        event_count: int,
+        *,
+        require_complete: bool,
+        profile: TraceProfile,
+    ) -> ReplaySummary:
         terminal_admitted = sum(
             task.admitted and task.location == _TERMINAL for task in self.tasks.values()
         )
@@ -663,7 +702,16 @@ class _LifecycleReplay:
             raise ReplayError("terminal task is missing a final disposition")
         if sum(self.dispositions.values()) != len(terminal_tasks):
             raise ReplayError("final disposition accounting does not close")
-        if require_complete:
+        runtime_profile = profile in {
+            TraceProfile.RUNTIME,
+            TraceProfile.RUNTIME_THREADED_PROBE,
+        }
+        if runtime_profile and not self.runtime_event_seen:
+            raise ReplayError("runtime trace profile contains no runtime events")
+        if not runtime_profile and self.runtime_event_seen:
+            raise ReplayError("probe-only trace contains runtime lifecycle events")
+
+        if require_complete and runtime_profile:
             if not self.shutdown_seen:
                 raise ReplayError("complete trace is missing shutdown.requested")
             if not self.worker_stopped or not self.worker_joined:
@@ -679,13 +727,30 @@ class _LifecycleReplay:
                 raise ReplayError("complete trace did not close the broker")
             if self.worker_error:
                 raise ReplayError("complete trace contains a runtime worker error")
-            if self.probe_started and not self.probe_joined:
+        if require_complete:
+            probe_required = profile in {
+                TraceProfile.RUNTIME_THREADED_PROBE,
+                TraceProfile.THREADED_PROBE,
+                TraceProfile.INLINE_PROBE,
+            }
+            if probe_required and not self.probe_started:
+                raise ReplayError("trace profile requires a periodic probe")
+            if self.probe_started and not self.probe_stopped:
+                raise ReplayError("complete trace is missing probe.stopped")
+            threaded_probe_expected = profile in {
+                TraceProfile.RUNTIME_THREADED_PROBE,
+                TraceProfile.THREADED_PROBE,
+            } or (profile is TraceProfile.RUNTIME and self.probe_started)
+            if threaded_probe_expected and not self.probe_joined:
                 raise ReplayError("complete trace is missing a successful probe join")
+            if profile is TraceProfile.INLINE_PROBE and self.probe_join_event_seen:
+                raise ReplayError("inline probe trace must not contain probe.joined")
             if self.probe_error:
                 raise ReplayError("complete trace contains a periodic probe error")
         assert self.run_id is not None
         return ReplaySummary(
             run_id=self.run_id,
+            trace_profile=profile.value,
             event_count=event_count,
             submission_attempts=self.submission_attempts,
             admitted_total=self.admitted_total,
@@ -699,6 +764,8 @@ class _LifecycleReplay:
             probe_deadline_miss_count=self.probe_misses,
             disposition_counts=tuple(sorted(self.dispositions.items())),
             worker_joined=self.worker_joined,
+            probe_stopped=self.probe_stopped,
+            probe_joined=self.probe_joined,
             final_broker_state=self.final_broker_state,
         )
 
@@ -707,9 +774,12 @@ def replay_events(
     events: Iterable[Mapping[str, object]],
     *,
     require_complete: bool = True,
+    profile: TraceProfile = TraceProfile.RUNTIME,
 ) -> ReplaySummary:
     """Reconstruct one trace using only serialized public event fields."""
 
+    if not isinstance(profile, TraceProfile):
+        raise TypeError("profile must be a TraceProfile")
     replay = _LifecycleReplay()
     count = 0
     for count, event in enumerate(events, start=1):
@@ -718,15 +788,24 @@ def replay_events(
         replay.apply(event, count - 1)
     if count == 0:
         raise ReplayError("trace must contain at least one event")
-    return replay.finish(count, require_complete=require_complete)
+    return replay.finish(
+        count,
+        require_complete=require_complete,
+        profile=profile,
+    )
 
 
 def replay_file(
     path: Path | str,
     *,
     require_complete: bool = True,
+    profile: TraceProfile = TraceProfile.RUNTIME,
 ) -> ReplaySummary:
-    return replay_events(load_events(path), require_complete=require_complete)
+    return replay_events(
+        load_events(path),
+        require_complete=require_complete,
+        profile=profile,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -739,11 +818,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="validate the recorded prefix without requiring closed shutdown",
     )
+    parser.add_argument(
+        "--profile",
+        choices=[profile.value for profile in TraceProfile],
+        default=TraceProfile.RUNTIME.value,
+        help="explicit lifecycle contract for the recorded condition",
+    )
     args = parser.parse_args(argv)
     try:
         summary = replay_file(
             args.events,
             require_complete=not args.allow_incomplete,
+            profile=TraceProfile(args.profile),
         )
     except (OSError, ReplayError) as exc:
         print(f"INVALID: {exc}", file=sys.stderr)

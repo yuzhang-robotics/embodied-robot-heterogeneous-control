@@ -203,6 +203,15 @@ class TraceTests(unittest.TestCase):
         self.assertTrue(shutdown.complete)
         self.assertGreater(summary.probe_tick_count, 0)
         self.assertEqual(summary.accepted_result_count, 1)
+        missing_join = [
+            json.loads(json.dumps(event))
+            for event in events
+            if event["event"] != "probe.joined"
+        ]
+        for index, event in enumerate(missing_join):
+            event["seq"] = index
+        with self.assertRaisesRegex(ReplayError, "probe join"):
+            replay_events(missing_join)
         tick = next(event for event in events if event["event"] == "probe.tick")
         tick["details"]["execution_ns"] += 1
         with self.assertRaisesRegex(ReplayError, "execution duration"):
