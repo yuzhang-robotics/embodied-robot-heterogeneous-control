@@ -1,13 +1,14 @@
 # Phase 1 Asynchronous Runtime Research
 
 This directory contains the host tests, simulated-condition runner, trace
-recorder, event schema, independent lifecycle replay, run validation and
-descriptive summaries for the Phase 1 asynchronous runtime study. Jetson
-pilots and Phase 1 performance results have not been completed yet.
+recorder, event schema, independent lifecycle replay, run validation, Jetson
+pilot orchestration and descriptive summaries for the Phase 1 asynchronous
+runtime study. The Jetson pilot and Phase 1 performance results have not been
+completed yet.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
-> 单 worker 执行层、100 ms 周期探针、独立 trace replay 和模拟条件运行器；尚未开展
-> Jetson pilot、真实模型接入或 Phase 1 正式数据采集。
+> 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
+> pilot 基础设施；尚未执行真实 Jetson pilot、接入真实模型或采集 Phase 1 正式数据。
 
 ## Current status
 
@@ -19,7 +20,8 @@ pilots and Phase 1 performance results have not been completed yet.
 - Inline synchronous-path probe: implemented and tested
 - Phase 1 schema `0.2.0`, JSONL recorder and lifecycle replay: implemented
 - Reproducible R0--R4 simulated-condition runner: implemented and host-tested
-- Jetson resource telemetry and simulation pilot: not started
+- Jetson preflight, continuous resource telemetry and pilot runner: host-tested
+- Jetson simulation pilot: not run
 - Real VLM/ASR/LLM slices: not started
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
@@ -107,6 +109,70 @@ The summary reports nearest-rank p50/p95/p99 timing statistics and lifecycle
 counts. It is explicitly marked descriptive-only and cannot be used as a
 formal improvement claim.
 
+## Jetson simulation pilot
+
+The Jetson pilot reuses the validated single-run protocol. One non-daemon
+`tegrastats` reader remains active across the complete session, avoiding a
+resource-sampler restart between conditions. Samples are assigned to each run
+using the run's monotonic start and finish timestamps.
+
+The preflight refuses to create a session unless all of the following hold:
+
+- the process runs on Linux ARM64 with an L4T release identity;
+- `tegrastats` is available;
+- the source tree is clean, on `main`, synchronized with `origin/main`, and has
+  a complete Git identity;
+- motion is unset or explicitly disabled;
+- robot application, motion-planner and UART modules are not loaded.
+
+After this implementation is merged to `main`, run the descriptive pilot on
+the Jetson with explicit simulated service durations:
+
+```bash
+export ROBOT_ENABLE_MOTION=0
+python3 -m experiments.phase1.run_jetson_pilot \
+  --service-times-s 2 5 70 \
+  --correctness-service-time-s 2 \
+  --repetitions 1
+```
+
+The responsiveness matrix runs R0--R3 at each service duration. R4-stale and
+R4-overflow run once per repetition at the separate correctness duration. The
+order, durations, capacities, probe settings and 200 ms resource interval are
+frozen in `pilot_plan.json` before the first condition starts. Resource rows use
+the separate [`0.1.0` JSON Schema](schemas/resource.schema.json).
+
+The ignored session directory contains:
+
+```text
+experiments/runs/phase1-jetson-pilot/
+└── <session_id>/
+    ├── session_manifest.json
+    ├── pilot_plan.json
+    ├── preflight.json
+    ├── resources.jsonl
+    ├── pilot_summary.json
+    └── <condition>/<run_id>/
+        ├── manifest.json
+        ├── scenario.json
+        ├── events.jsonl
+        └── summary.json
+```
+
+The session manifest becomes `completed` only after every single-run validator,
+the continuous resource trace, per-run resource coverage, sampler shutdown,
+artifact hashes and an independent pilot-summary rebuild pass. Validate it
+again with:
+
+```bash
+python3 -m experiments.phase1.validate_jetson_pilot /path/to/session_dir
+```
+
+The pilot is descriptive evidence used to design the later formal protocol. It
+does not authorize an asynchronous-performance or hard-real-time claim.
+Condition-level power summaries use instantaneous rail samples; the
+`tegrastats`-reported average is retained only as a session-window diagnostic.
+
 ## Planned implementation order
 
 1. freeze the task, result, lifecycle, queue, cancellation, and freshness
@@ -116,12 +182,13 @@ formal improvement claim.
    independent trace replay — complete;
 4. implement the portable R0--R4 simulation protocol and run artifacts —
    complete;
-5. add Jetson resource telemetry and run the safe simulation pilot with
-   `ROBOT_ENABLE_MOTION=0`;
-6. integrate the fixed-input VLM slice;
-7. extend the same adapter/runtime boundary to ASR and LLM;
-8. freeze formal thresholds and collect balanced synchronous/asynchronous data;
-9. add an opt-in motion-disabled application slice after the research Gates
+5. implement and host-test Jetson preflight, continuous resource telemetry and
+   pilot session validation — complete;
+6. run the safe Jetson simulation pilot with `ROBOT_ENABLE_MOTION=0`;
+7. integrate the fixed-input VLM slice;
+8. extend the same adapter/runtime boundary to ASR and LLM;
+9. freeze formal thresholds and collect balanced synchronous/asynchronous data;
+10. add an opt-in motion-disabled application slice after the research Gates
    pass.
 
 Contract changes are reviewed before implementation, and the formal protocol
@@ -150,13 +217,20 @@ The reusable, hardware-independent kernel lives under
 
 ```text
 experiments/phase1/
+├── jetson_preflight.py
+├── jetson_telemetry.py
 ├── manifest.py
+├── pilot.py
+├── run_jetson_pilot.py
 ├── run_simulation.py
-├── schemas/event.schema.json
+├── schemas/
+│   ├── event.schema.json
+│   └── resource.schema.json
 ├── simulation.py
 ├── summarize_run.py
 ├── tests/
 ├── telemetry.py
+├── validate_jetson_pilot.py
 ├── validate_run.py
 ├── replay_lifecycle.py
 └── README.md

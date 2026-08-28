@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/embodied-robot/phase1-resource.schema.json",
+  "title": "Phase 1 Jetson Resource Sample",
+  "description": "One bounded tegrastats observation in the session-level UTF-8 JSONL resource trace.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "resource_schema_version",
+    "seq",
+    "sample_monotonic_ns",
+    "sample_wall_time_ns",
+    "tegrastats_time",
+    "ram",
+    "swap",
+    "cpu",
+    "emc",
+    "gr3d",
+    "temperatures_c",
+    "power",
+    "parse_errors",
+    "parse_warnings",
+    "raw_line"
+  ],
+  "properties": {
+    "resource_schema_version": {
+      "const": "0.1.0"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sample_monotonic_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sample_wall_time_ns": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tegrastats_time": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
+    },
+    "ram": {
+      "$ref": "#/$defs/memory"
+    },
+    "swap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["used_mb", "total_mb", "cached_mb"],
+      "properties": {
+        "used_mb": {"type": "integer", "minimum": 0},
+        "total_mb": {"type": "integer", "minimum": 0},
+        "cached_mb": {"type": "integer", "minimum": 0}
+      }
+    },
+    "cpu": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["index", "online", "usage_pct", "frequency_mhz"],
+        "properties": {
+          "index": {"type": "integer", "minimum": 0, "maximum": 31},
+          "online": {"type": "boolean"},
+          "usage_pct": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 100
+          },
+          "frequency_mhz": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "emc": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["usage_pct", "frequency_mhz"],
+          "properties": {
+            "usage_pct": {"type": "integer", "minimum": 0, "maximum": 100},
+            "frequency_mhz": {"type": ["integer", "null"], "minimum": 0}
+          }
+        }
+      ]
+    },
+    "gr3d": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["usage_pct", "frequencies_mhz"],
+      "properties": {
+        "usage_pct": {"type": "integer", "minimum": 0, "maximum": 100},
+        "frequencies_mhz": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "temperatures_c": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 64,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+      "additionalProperties": {"type": "number"}
+    },
+    "power": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 64,
+      "propertyNames": {"pattern": "^VDD_[A-Z0-9_]+$"},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["instant_mw", "average_mw"],
+        "properties": {
+          "instant_mw": {"type": "integer", "minimum": 0},
+          "average_mw": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "parse_errors": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    },
+    "parse_warnings": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    },
+    "raw_line": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    }
+  },
+  "$defs": {
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["used_mb", "total_mb", "lfb_count", "lfb_size_mb"],
+      "properties": {
+        "used_mb": {"type": "integer", "minimum": 0},
+        "total_mb": {"type": "integer", "minimum": 0},
+        "lfb_count": {"type": "integer", "minimum": 0},
+        "lfb_size_mb": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}
