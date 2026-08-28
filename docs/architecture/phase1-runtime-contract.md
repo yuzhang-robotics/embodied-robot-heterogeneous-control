@@ -12,8 +12,9 @@ performance remain unvalidated.
 
 ## Status
 
-- Phase: Phase 1.3 portable simulation protocol
-- Contract status: frozen and implemented for the host-only boundary
+- Phase: Phase 1.4 Jetson simulation-pilot protocol
+- Contract status: frozen and host-tested through the pilot infrastructure
+- Jetson-pilot starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
 - Observable-executor starting point: `main@1d29b14`
 - Initial runtime-kernel starting point: `main@043e1bb`
@@ -25,7 +26,7 @@ The contract was reviewed before the host-only implementation began. Later
 implementation findings may require an explicit contract revision, but the
 contract must not be changed silently after formal data collection starts.
 
-The current host implementation includes:
+The current implementation includes:
 
 - immutable task, result, state and payload-reference contracts;
 - bounded pending, active, result-mailbox, state-scope and terminal ownership;
@@ -34,10 +35,12 @@ The current host implementation includes:
 - inline and independent absolute-schedule periodic probes;
 - schema `0.2.0` JSONL recording and profile-aware offline lifecycle replay;
 - R0--R4 simulated-condition orchestration, atomic manifests, validation and
-  descriptive summaries.
+  descriptive summaries;
+- fail-closed Jetson preflight, a continuous non-daemon `tegrastats` sampler,
+  an immutable pilot matrix and independent session reconstruction.
 
-It does not include Jetson resource telemetry, a completed Jetson simulation
-pilot, real workload adapters or formal performance data.
+It does not include a completed Jetson simulation pilot, real workload adapters
+or formal performance data.
 
 ## Research objective
 
@@ -530,6 +533,107 @@ retains module-import, Moondream, rewrite/fallback, and unload stages.
 Formal analysis treats a run or paired block as the experimental unit. Probe
 ticks within one run are temporally dependent and are not treated as hundreds
 of independent experimental samples.
+
+## Jetson simulation-pilot evidence contract
+
+The first Jetson experiment remains a simulated-load pilot. It tests whether
+the portable protocol and its evidence chain remain valid under real Jetson
+scheduling and resource behavior; it does not test a model and does not make a
+performance-improvement claim.
+
+### Preflight
+
+The pilot refuses to create a session unless it records all of the following:
+
+- Linux on ARM64 with a non-empty NVIDIA L4T identity;
+- `tegrastats` available in `PATH`;
+- a clean, named `main` branch synchronized with the recorded `origin/main`
+  commit, with zero ahead/behind counts;
+- `ROBOT_ENABLE_MOTION` unset or explicitly false;
+- `jetson.app`, `jetson.motion_planner`, and `jetson.robot_comm` absent from the
+  loaded module set.
+
+The preflight uses read-only software-identity commands. It never imports a
+robot device module, checks a serial device, or opens UART. Each individual run
+must repeat the same Git commit, branch, cleanliness and motion facts captured
+by the session preflight.
+
+### Pilot matrix
+
+The plan is written atomically before the resource sampler or first condition
+starts. For every predeclared service duration and repetition, the
+responsiveness block contains R0, R1, R2 and R3. R4-stale and R4-overflow run
+once per repetition at a separate correctness duration. Their timing remains
+excluded from the responsiveness and overhead comparison.
+
+The first descriptive pilot uses explicit simulated durations selected from
+the Phase 0 workload scale. The command records the exact values; no duration,
+condition or repetition is added after looking at the results. Formal condition
+order, thresholds and sample size remain unfrozen until this pilot is reviewed.
+
+### Continuous resource trace
+
+One non-daemon `tegrastats` reader spans the complete session. Starting and
+stopping a separate resource process for every condition would add a systematic
+boundary disturbance and break resource continuity, so the pilot does not do
+that. The reader must produce a parseable first sample before R0 begins and
+must terminate or be killed and joined within finite time after the final run.
+
+Resource schema `0.1.0` is separate from runtime-event schema `0.2.0`. Each
+JSONL sample has its own sequence, monotonic timestamp and wall timestamp.
+Required parsed observations are RAM, swap, per-core CPU state and frequency,
+GR3D usage, at least one temperature and at least one power rail. EMC and the
+`tegrastats` wall-clock prefix are recorded when available but are not assumed
+to exist on every supported format. Sensor and power-rail names are discovered
+from the line rather than fixed to one board revision. The bounded raw line is
+retained so a parser decision can be audited. Session validation reparses every
+raw line and requires the reconstructed object to match the recorded fields.
+
+Condition-level power descriptions use the instantaneous rail values. The
+second value reported by `tegrastats` is retained as
+`power_reported_average_mw` for diagnostics, but its averaging window may span
+the continuous session and is not treated as an independent per-condition
+mean.
+
+Resource samples are associated with a condition only when their monotonic
+timestamps fall within that run's recorded start and finish interval. Cross-run
+absolute monotonic values are never compared as durations. A run with no
+resource sample inside its interval fails the pilot Gate.
+
+### Session artifacts and completion
+
+One session contains:
+
+```text
+<session_id>/
+├── session_manifest.json
+├── pilot_plan.json
+├── preflight.json
+├── resources.jsonl
+├── pilot_summary.json
+└── <condition>/<run_id>/
+    ├── manifest.json
+    ├── scenario.json
+    ├── events.jsonl
+    └── summary.json
+```
+
+The session manifest advances from `running` to `completed` only after:
+
+1. every predeclared run passes the existing run-directory validator;
+2. run paths, conditions, service times and Git identities match the plan and
+   preflight;
+3. the resource sequence closes with zero unexplained parse errors;
+4. the sampler process and reader thread stop with no leak;
+5. every run has resource coverage and zero stale result consumption;
+6. top-level artifacts and every child manifest have recorded SHA-256 values;
+7. an independent validator reconstructs the complete pilot summary.
+
+A failed sampler, missing or unexpected artifact, path escape, dirty or
+different source identity, failed child Gate, uncovered run or summary mismatch
+leaves the session failed.
+The summary is permanently marked `descriptive_only=true` and
+`inference_claim_permitted=false`.
 
 ## Gates
 

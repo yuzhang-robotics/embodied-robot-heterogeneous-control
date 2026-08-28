@@ -72,7 +72,7 @@ def write_json_atomic(path: Path | str, data: dict[str, Any]) -> None:
     os.replace(temporary, target)
 
 
-def _command_snapshot(
+def command_snapshot(
     command: list[str],
     *,
     cwd: Path | str | None = None,
@@ -104,15 +104,31 @@ def _command_snapshot(
 
 def git_snapshot(repo_root: Path | str) -> dict[str, object]:
     root = Path(repo_root)
-    commit = _command_snapshot(["git", "rev-parse", "HEAD"], cwd=root)
-    branch = _command_snapshot(["git", "branch", "--show-current"], cwd=root)
-    status = _command_snapshot(["git", "status", "--porcelain"], cwd=root)
+    commit = command_snapshot(["git", "rev-parse", "HEAD"], cwd=root)
+    branch = command_snapshot(["git", "branch", "--show-current"], cwd=root)
+    status = command_snapshot(["git", "status", "--porcelain"], cwd=root)
+    upstream = command_snapshot(
+        ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
+        cwd=root,
+    )
+    upstream_commit = command_snapshot(["git", "rev-parse", "@{upstream}"], cwd=root)
+    ahead_behind = command_snapshot(
+        ["git", "rev-list", "--left-right", "--count", "HEAD...@{upstream}"],
+        cwd=root,
+    )
     status_output = status["output"] if isinstance(status["output"], str) else ""
     return {
         "commit": commit["output"],
         "branch": branch["output"],
         "dirty": bool(status_output),
         "status_porcelain": status_output.splitlines(),
+        "upstream": upstream["output"] if upstream["returncode"] == 0 else "",
+        "upstream_commit": (
+            upstream_commit["output"] if upstream_commit["returncode"] == 0 else ""
+        ),
+        "ahead_behind": (
+            ahead_behind["output"] if ahead_behind["returncode"] == 0 else ""
+        ),
         "error_codes": [
             value
             for value in (

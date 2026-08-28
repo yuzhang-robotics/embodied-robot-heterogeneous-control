@@ -101,8 +101,9 @@ semantics, and Phase 1 safety Gates are specified in the
 [Phase 1 runtime contract](phase1-runtime-contract.md). That document is a
 design and correctness boundary. The host-only model, bounded broker,
 observable worker, periodic probe, lifecycle replay and simulated-condition
-runner do not yet constitute a validated Jetson runtime or a performance
-result.
+runner are implemented. The Jetson preflight, continuous resource sampler and
+pilot-session validator are host-tested, but they do not yet constitute a
+validated Jetson runtime or a performance result.
 
 ## Evaluation plan
 
