@@ -6,7 +6,7 @@
 
 This repository began with my bachelor's thesis on speech interaction and visual perception for a wheeled robot. The thesis system runs fully local speech and vision pipelines on a Jetson Orin Nano, while an STM32F407 executes motion commands and enforces a communication watchdog. The same platform will now be used to study how long-running perception and inference can coexist with predictable control timing.
 
-> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立 host-only 有界运行时、可观测 worker、周期探针、模拟实验运行器和 Jetson pilot 基础设施，尚未执行 Jetson pilot 或接入整机应用。
+> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，完成首次 Jetson simulation pilot 及独立验证，并通过固定输入 VLM 接入的主机测试；真实模型实机采集和整机应用适配尚未开始。
 
 ## Project status
 
@@ -15,7 +15,7 @@ This repository began with my bachelor's thesis on speech interaction and visual
 | Bachelor's thesis software and firmware | Complete and hardware validated |
 | Custom base-driver PCB | Published and tested on the physical robot |
 | Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
-| Asynchronous inference runtime | Bounded executor, probe, trace replay, simulation runner and host-tested Jetson pilot harness implemented; Jetson pilot pending |
+| Asynchronous inference runtime | Bounded executor, probe and replay validated by a Jetson simulation pilot; fixed-input VLM runner host-tested, with Jetson execution pending |
 
 The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
@@ -65,9 +65,14 @@ Phase 1 now has an immutable task/result model, bounded task ownership, scoped
 state generations, a single-worker observable executor, an absolute-schedule
 periodic probe, independent lifecycle trace replay and a reproducible
 simulated-condition runner. A fail-closed Jetson preflight, continuous
-`tegrastats` recorder and pilot-session validator are also host-tested. No
-Jetson pilot or model-service integration result is claimed yet. The broader
-research stage will investigate:
+`tegrastats` recorder and pilot-session validator are also implemented. A
+motion-disabled Jetson simulation pilot completed all session Gates; its
+[descriptive report](experiments/phase1/results/20260828T121142Z_phase1_jetson_pilot/)
+separates timing-domain isolation from the additional bounded-runtime
+semantics. A fixed-input Moondream/Qwen adapter, single-request nominal/stale
+runner and independent validator are now host-tested, but have not yet been
+executed on the Jetson. Neither milestone authorizes a performance-superiority
+claim. The broader research stage will investigate:
 
 - independent acquisition, inference, planning and control workers;
 - timestamped bounded queues, cancellation and stale-result rejection;
@@ -89,7 +94,7 @@ These are research objectives, not claims about the current implementation. The 
 | [`docs/hardware/`](docs/hardware/) | Physical platform, wiring, pin assignments, power and safety notes |
 | [`docs/architecture/`](docs/architecture/) | Current timing model and the boundary of the planned asynchronous architecture |
 | [`experiments/phase0/`](experiments/phase0/) | Synchronous fixed-input measurement, validation and formal analysis tools |
-| [`experiments/phase1/`](experiments/phase1/) | Host tests, simulated-condition runner, Jetson pilot harness, Phase 1 trace schema and validation |
+| [`experiments/phase1/`](experiments/phase1/) | Host tests, simulation and fixed-input VLM runners, Jetson pilot, deterministic analysis, trace schemas and validation |
 
 ## Reproducing the baseline
 

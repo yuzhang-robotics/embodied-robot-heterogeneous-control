@@ -3,18 +3,23 @@
 This document defines the correctness and safety contract for the first
 asynchronous runtime used by the Octopus robot research platform. The
 host-only model, broker, observable executor, periodic probes, trace replay and
-portable simulation protocol have been implemented. Jetson behavior and
-performance remain unvalidated.
+portable simulation protocol have been implemented. One motion-disabled Jetson
+simulation pilot has validated the protocol and runtime semantics. The first
+fixed-input VLM adapter and runner are host-tested; real-model Jetson execution
+and formal performance behavior remain unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
-> Jetson pilot、真实模型接入和正式实验仍需按 Gate 逐步完成。
+> Jetson simulation pilot 已完成并通过独立验证；固定输入 VLM 接入已通过主机测试，
+> 真实模型实机运行和正式实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1.4 Jetson simulation-pilot protocol
-- Contract status: frozen and host-tested through the pilot infrastructure
-- Jetson-pilot starting point: `main@844b633`
+- Phase: Phase 1C fixed-input VLM implementation; Jetson execution pending
+- Contract status: frozen through one independently validated Jetson simulation
+  pilot
+- Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
+- Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
 - Observable-executor starting point: `main@1d29b14`
 - Initial runtime-kernel starting point: `main@043e1bb`
@@ -37,10 +42,14 @@ The current implementation includes:
 - R0--R4 simulated-condition orchestration, atomic manifests, validation and
   descriptive summaries;
 - fail-closed Jetson preflight, a continuous non-daemon `tegrastats` sampler,
-  an immutable pilot matrix and independent session reconstruction.
+  an immutable pilot matrix and independent session reconstruction;
+- a lazy fixed-input VLM adapter, nominal/stale single-request orchestration,
+  model-service preflight, resource trace and independent run validation.
 
-It does not include a completed Jetson simulation pilot, real workload adapters
-or formal performance data.
+The VLM implementation has not yet run on the Jetson and it does not include
+formal performance data. The completed simulation pilot remains descriptive
+protocol evidence and does not authorize an asynchronous-performance,
+hard-real-time or heterogeneous-inference claim.
 
 ## Research objective
 
@@ -275,9 +284,13 @@ The kernel provides policies; workload adapters select them explicitly.
 
 ### VLM
 
-- pending capacity: 1;
-- coalesce related pending tasks by `supersession_key`;
-- replacement emits a dropped disposition for the replaced pending task;
+- the fixed-input Phase 1C slice admits exactly one task with pending and
+  result capacities of one and `reject_new` overflow;
+- later live acquisition may coalesce related pending tasks by
+  `supersession_key`, but that policy is not inferred from the single-request
+  slice;
+- any later replacement must emit a dropped disposition for the replaced
+  pending task;
 - a new image does not silently claim to stop an active backend request;
 - active result invalidation requires an explicit cancel or state-generation
   change.
@@ -528,7 +541,7 @@ authorize a performance claim.
 A queue-empty, single-task direct condition is compared with a queue-empty,
 single-task worker condition. Both invoke the same workload adapter. ASR is the
 sensitive low-variance control; LLM retains token-normalized metrics; VLM
-retains module-import, Moondream, rewrite/fallback, and unload stages.
+retains module-import, Moondream, rewrite/fallback, and unload-request stages.
 
 Formal analysis treats a run or paired block as the experimental unit. Probe
 ticks within one run are temporally dependent and are not treated as hundreds
@@ -635,6 +648,69 @@ leaves the session failed.
 The summary is permanently marked `descriptive_only=true` and
 `inference_claim_permitted=false`.
 
+### First pilot outcome
+
+Session `20260828T121142Z_phase1_jetson_pilot` completed the 14-run matrix on
+`main@77138f2` with all seven session Gates passing. The inline condition
+produced service-time-scale probe gaps and skipped releases, while the threaded
+direct and bounded-runtime conditions recorded no skipped releases. R4 rejected
+one old-state result, bounded pending and result depth at one, and consumed zero
+stale results.
+
+The public
+[derived report](../../experiments/phase1/results/20260828T121142Z_phase1_jetson_pilot/)
+also records the limits discovered by the pilot. It contains one fixed-order
+repetition, all resource rows report `emc_missing`, the unprivileged
+`jetson_clocks --show` snapshot is unavailable, and sustained unattributed CPU
+activity crosses condition boundaries. No resource difference is therefore
+assigned causally to R0--R4, and no sample is excluded post hoc.
+
+## Fixed-input VLM evidence contract
+
+Phase 1C reuses the exact Phase 0 C100 JPEG identity (320 × 193, 9009 bytes,
+SHA-256 `607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7`).
+The adapter invokes the existing Moondream description, Qwen rewrite with
+Argos fallback, speech-oriented normalization and per-request Moondream unload
+functions. Those dependencies are imported only inside the explicit worker
+call; importing the Phase 1 runtime or experiment modules must not start a
+model, service request, camera or device.
+
+The first real-workload protocol contains one request per run:
+
+| Condition | Injection | Required terminal result |
+| --- | --- | --- |
+| `vlm_async` | no state change | `consumed` once |
+| `vlm_stale` | generation advances after Moondream starts | `rejected_state` once |
+
+Both conditions use pending and result capacities of one, an independent
+100 ms probe, finite service and join budgets, and a continuous 200 ms
+`tegrastats` trace. The stale condition intentionally does not attempt to
+interrupt the Ollama request. It records whether the worker later observes the
+cancellation token while leaving `backend_stop_confirmed` unknown. State
+invalidation and backend preemption remain separate facts.
+
+The input is hashed before admission, rechecked immediately before model work
+and rechecked again after the pipeline finishes. A size or hash change makes
+the result an execution error. Public scenario and summary artifacts contain
+the input identity, output SHA-256 and character count, translation route,
+stage durations, cancellation facts and lifecycle decisions. They do not
+contain the file path, prompt, English description, Chinese output or captured
+stdout/stderr.
+
+Before creating a run directory, preflight requires the existing Jetson safety
+and synchronized-`main` checks plus the fixed input, local-only Ollama and
+llama.cpp endpoints, installed Moondream and Qwen model identities, and the
+Ollama CLI plus OpenCV/Argos dependencies. A completed manifest additionally
+requires resource coverage during the adapter interval, valid replay, exactly one terminal
+disposition, zero stale consumption, a returned model-unload request,
+worker/probe/sampler joins,
+artifact hashes and an independently rebuilt summary.
+
+The host implementation and fault-injection tests do not count as a real-model
+result. The first Jetson runs remain descriptive correctness evidence. They do
+not measure visual accuracy, compare synchronous and asynchronous performance,
+prove GPU preemption or authorize a heterogeneous-compute performance claim.
+
 ## Gates
 
 The following correctness thresholds are fixed before the pilot:
@@ -648,10 +724,21 @@ The following correctness thresholds are fixed before the pilot:
 - zero unexplained telemetry parse errors;
 - zero Phase 0 artifact modifications.
 
-Numerical jitter and non-inferiority thresholds are frozen after an independent
-pilot and before formal data. The current 300 ms unchanged-command refresh
-target is a Phase 2 readiness reference; the STM32 1.2 s watchdog is a last
-defense and must not be used as the Jetson scheduling success target.
+The fixed-input VLM slice adds these zero-tolerance Gates:
+
+- the C100 identity matches before and after the request;
+- Moondream, one translation route, normalization and the unload call close;
+- the artifact records an unload request without claiming confirmed eviction;
+- raw model text and the private input path are absent from public artifacts;
+- `vlm_async` consumes exactly one result;
+- `vlm_stale` records exactly one `rejected_state` and zero accepted results;
+- cancellation evidence does not claim backend stop without confirmation;
+- at least one valid resource sample falls inside the adapter interval.
+
+Numerical jitter and non-inferiority thresholds will be frozen during the next
+protocol review and before formal data. The current 300 ms unchanged-command
+refresh target is a Phase 2 readiness reference; the STM32 1.2 s watchdog is a
+last defense and must not be used as the Jetson scheduling success target.
 
 ## Phase 1 completion boundary
 
