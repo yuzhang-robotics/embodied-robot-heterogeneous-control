@@ -1,10 +1,10 @@
 # Jetson Runtime
 
-The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32. It also contains the host-testable Phase 1 task-runtime kernel, which is not yet connected to the robot application or model services.
+The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32. It also contains the host-testable Phase 1 task-runtime kernel. The experiment layer now connects that kernel to the fixed Phase 0 VLM input without changing the robot application.
 
-The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-safe task identity, bounded ownership, a single-worker observable executor and a software periodic probe. A portable simulated-condition runner and host-tested Jetson pilot harness are available under `experiments/phase1/`, but the Jetson pilot and application integration remain research work.
+The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-safe task identity, bounded ownership, a single-worker observable executor and a software periodic probe. The portable simulated-condition runner and Jetson pilot harness under `experiments/phase1/` have completed one motion-disabled, independently validated simulation pilot. The fixed-input VLM runner is implemented and host-tested; its Jetson execution and application integration remain research work.
 
-> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前整机应用仍使用已验证的同步路径；Phase 1 的 host-only worker 与周期探针尚未接入真实模型或运动控制。
+> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前整机应用仍使用已验证的同步路径；Phase 1 已完成固定输入 VLM 接入的主机测试，但尚未进行 Jetson 实机采集，也未接入运动控制。
 
 ## Modules
 
@@ -112,7 +112,7 @@ Audio, ASR text, captured images and communication logs are written beneath `ROB
 ## Baseline limitations
 
 - The orchestration path is blocking and single-process; inference tasks do not have explicit deadlines or cancellation.
-- The Phase 1 host-only kernel is not yet connected to acquisition, inference services, TTS or the synchronous application loop.
+- The Phase 1 VLM experiment uses one fixed file and is not connected to live acquisition, TTS or the synchronous application loop.
 - llama.cpp and Ollama are managed outside the application.
 - The color tracker uses fixed HSV ranges and discrete motion commands tuned on the thesis robot.
 - The Jetson sends speed percentages, while the STM32 applies open-loop PWM rather than closed-loop wheel velocity.

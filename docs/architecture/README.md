@@ -102,8 +102,13 @@ semantics, and Phase 1 safety Gates are specified in the
 design and correctness boundary. The host-only model, bounded broker,
 observable worker, periodic probe, lifecycle replay and simulated-condition
 runner are implemented. The Jetson preflight, continuous resource sampler and
-pilot-session validator are host-tested, but they do not yet constitute a
-validated Jetson runtime or a performance result.
+pilot-session validator have also completed one motion-disabled simulation
+pilot on the Jetson. The independently reconstructed
+[descriptive result](../../experiments/phase1/results/20260828T121142Z_phase1_jetson_pilot/)
+validates the evidence chain and runtime semantics, but it is not a real-model
+or formal performance result. The fixed-input VLM adapter and its nominal/stale
+single-request evidence path are host-tested; Jetson execution is the next
+Gate.
 
 ## Evaluation plan
 

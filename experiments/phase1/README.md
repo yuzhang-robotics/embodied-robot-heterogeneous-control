@@ -2,13 +2,15 @@
 
 This directory contains the host tests, simulated-condition runner, trace
 recorder, event schema, independent lifecycle replay, run validation, Jetson
-pilot orchestration and descriptive summaries for the Phase 1 asynchronous
-runtime study. The Jetson pilot and Phase 1 performance results have not been
-completed yet.
+pilot orchestration, deterministic analysis, fixed-input VLM integration and
+descriptive summaries for the Phase 1 asynchronous runtime study. The first
+Jetson simulation pilot is complete. The VLM slice is implemented and
+host-tested, but its Jetson runs and all formal Phase 1 data remain uncollected.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
-> pilot 基础设施；尚未执行真实 Jetson pilot、接入真实模型或采集 Phase 1 正式数据。
+> pilot 证据链，并完成首次 Jetson simulation pilot 及确定性分析；固定输入 VLM
+> 适配器和证据链已通过主机测试，Jetson 实机运行与 Phase 1 正式数据尚未采集。
 
 ## Current status
 
@@ -20,9 +22,12 @@ completed yet.
 - Inline synchronous-path probe: implemented and tested
 - Phase 1 schema `0.2.0`, JSONL recorder and lifecycle replay: implemented
 - Reproducible R0--R4 simulated-condition runner: implemented and host-tested
-- Jetson preflight, continuous resource telemetry and pilot runner: host-tested
-- Jetson simulation pilot: not run
-- Real VLM/ASR/LLM slices: not started
+- Jetson preflight, continuous resource telemetry and pilot runner: implemented
+- Jetson simulation pilot: completed and independently validated
+- Deterministic pilot analysis and public descriptive report: implemented
+- Fixed-input VLM adapter, single-request runner and validator: host-tested;
+  Jetson execution pending
+- Real ASR/LLM slices: not started
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
 
@@ -125,8 +130,8 @@ The preflight refuses to create a session unless all of the following hold:
 - motion is unset or explicitly disabled;
 - robot application, motion-planner and UART modules are not loaded.
 
-After this implementation is merged to `main`, run the descriptive pilot on
-the Jetson with explicit simulated service durations:
+Run the descriptive pilot on a clean, synchronized Jetson `main` branch with
+explicit simulated service durations:
 
 ```bash
 export ROBOT_ENABLE_MOTION=0
@@ -168,10 +173,84 @@ again with:
 python3 -m experiments.phase1.validate_jetson_pilot /path/to/session_dir
 ```
 
+Build deterministic JSON and Markdown derivatives outside the ignored session
+directory:
+
+```bash
+python3 -m experiments.phase1.analyze_jetson_pilot /path/to/session_dir \
+  --source-archive-sha256 <sha256> \
+  --json-output /path/to/analysis.json \
+  --markdown-output /path/to/report.md
+```
+
+The analyzer reruns the independent session validator before reading results.
+It preserves the non-inferential claim boundary, reports missing resource
+capabilities rather than converting them to zero, and applies a declared CPU
+activity screen without excluding samples. It refuses to write into the source
+session because an extra file would invalidate the evidence directory.
+
+The first public derived result is the
+[`20260828T121142Z` Jetson simulation pilot](results/20260828T121142Z_phase1_jetson_pilot/).
+It contains one fixed-order repetition and a simulated workload. The report is
+therefore descriptive evidence for protocol and runtime behavior, not a causal
+resource comparison or heterogeneous-inference result.
+
 The pilot is descriptive evidence used to design the later formal protocol. It
 does not authorize an asynchronous-performance or hard-real-time claim.
 Condition-level power summaries use instantaneous rail samples; the
 `tegrastats`-reported average is retained only as a session-window diagnostic.
+
+## Fixed-input VLM slice
+
+The first real-workload integration reuses the exact Phase 0 C100 JPEG, the
+Moondream request path, Qwen rewrite with Argos fallback, output normalization
+and the per-request unload policy. `vlm_adapter.py` imports the model-facing
+module only inside the worker call. Importing the experiment package on a host
+does not load OpenCV, Argos, a camera or either model service.
+
+The initial protocol has two separate single-request correctness conditions:
+
+| Condition | State action | Required disposition |
+| --- | --- | --- |
+| `vlm_async` | none | one result consumed |
+| `vlm_stale` | advance generation after Moondream starts | one `rejected_state`, zero consumed |
+
+State invalidation does not claim that Ollama stopped GPU inference. The
+adapter allows the backend path to finish, records
+`backend_stop_confirmed=null`, and relies on the broker's generation check to
+reject the completed result. Public artifacts retain only input identity,
+output hash and length, translation route, stage durations and lifecycle
+facts. Model text, prompts and the private input path are not serialized.
+
+After this implementation is merged, run each condition from a clean,
+synchronized Jetson `main` branch:
+
+```bash
+export ROBOT_ENABLE_MOTION=0
+python3 -m experiments.phase1.run_vlm_slice \
+  --condition vlm_async \
+  --session-id 20260829T000000Z_phase1_vlm_pilot \
+  --repetition 1
+
+python3 -m experiments.phase1.run_vlm_slice \
+  --condition vlm_stale \
+  --session-id 20260829T000000Z_phase1_vlm_pilot \
+  --repetition 1
+```
+
+The runner refuses to create a directory unless platform, Git, motion, module,
+fixed-input, dependency, Ollama CLI, Moondream and Qwen checks all pass. Each
+run contains `preflight.json`, the event and resource JSONL traces, `scenario.json`,
+`summary.json` and an atomic manifest. Validate either directory again with:
+
+```bash
+python3 -m experiments.phase1.validate_vlm_slice /path/to/run_dir
+```
+
+These two runs establish integration and stale-result correctness only. They
+do not form a balanced synchronous/asynchronous comparison, prove backend
+preemption, measure visual accuracy or authorize a heterogeneous-performance
+claim.
 
 ## Planned implementation order
 
@@ -184,8 +263,10 @@ Condition-level power summaries use instantaneous rail samples; the
    complete;
 5. implement and host-test Jetson preflight, continuous resource telemetry and
    pilot session validation — complete;
-6. run the safe Jetson simulation pilot with `ROBOT_ENABLE_MOTION=0`;
-7. integrate the fixed-input VLM slice;
+6. run and independently analyze the safe Jetson simulation pilot with
+   `ROBOT_ENABLE_MOTION=0` — complete;
+7. implement and host-test the fixed-input VLM slice — complete; Jetson
+   execution pending;
 8. extend the same adapter/runtime boundary to ASR and LLM;
 9. freeze formal thresholds and collect balanced synchronous/asynchronous data;
 10. add an opt-in motion-disabled application slice after the research Gates
@@ -223,18 +304,28 @@ experiments/phase1/
 ├── pilot.py
 ├── run_jetson_pilot.py
 ├── run_simulation.py
+├── run_vlm_slice.py
 ├── schemas/
 │   ├── event.schema.json
 │   └── resource.schema.json
 ├── simulation.py
 ├── summarize_run.py
+├── summarize_vlm_slice.py
 ├── tests/
 ├── telemetry.py
 ├── validate_jetson_pilot.py
 ├── validate_run.py
+├── validate_vlm_slice.py
+├── vlm_adapter.py
+├── vlm_preflight.py
+├── vlm_slice.py
 ├── replay_lifecycle.py
 └── README.md
 ```
+
+`analyze_jetson_pilot.py` validates an ignored raw session and produces the
+tracked, deterministic derivatives under `results/`. The raw session remains
+outside Git.
 
 The experiment layer owns condition scheduling, run directories, manifests,
 validation and summaries. The executor continues to own all traced broker
