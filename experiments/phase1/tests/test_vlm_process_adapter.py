@@ -35,6 +35,9 @@ UNRESPONSIVE_FACTORY = (
     "experiments.phase1.tests.vlm_process_fixture:UnresponsiveVLMAdapter"
 )
 ERROR_FACTORY = "experiments.phase1.tests.vlm_process_fixture:ErrorVLMAdapter"
+LINGERING_THREAD_FACTORY = (
+    "experiments.phase1.tests.vlm_process_fixture:LingeringThreadVLMAdapter"
+)
 
 
 class ProcessIsolatedVLMAdapterTests(unittest.TestCase):
@@ -179,6 +182,23 @@ class ProcessIsolatedVLMAdapterTests(unittest.TestCase):
         self.assertIsNone(record.output_sha256)
         self.assertTrue(report.protocol_complete)
         self.assertEqual(report.exit_code, 0)
+
+    def test_completed_child_exit_is_not_blocked_by_runtime_threads(self) -> None:
+        adapter = ProcessIsolatedVLMAdapter(
+            factory_ref=LINGERING_THREAD_FACTORY,
+            execution_timeout_s=5.0,
+            join_timeout_s=1.0,
+        )
+        result = adapter(self.claimed())
+        report = adapter.last_process_report
+
+        self.assertEqual(result.execution_outcome, ExecutionOutcome.OK)
+        self.assertIsNotNone(report)
+        assert report is not None
+        self.assertTrue(report.protocol_complete)
+        self.assertEqual(report.exit_code, 0)
+        self.assertFalse(report.terminate_requested)
+        self.assertFalse(report.terminate_confirmed)
 
     def test_unresponsive_child_is_terminated_and_reaped(self) -> None:
         adapter = ProcessIsolatedVLMAdapter(
