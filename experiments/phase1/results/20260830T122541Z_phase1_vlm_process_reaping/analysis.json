@@ -1,0 +1,611 @@
+{
+  "analysis_schema_version": "0.1.0",
+  "analysis_kind": "phase1_fixed_input_vlm_process_pilot",
+  "session_id": "20260830T122541Z_phase1_vlm_process_reaping",
+  "source": {
+    "git_commit": "1818c83de574f44e0253216ab591d3be8c57d2f3",
+    "git_branch": "main",
+    "source_archive_sha256": "7074838c73ce23720b47decd9165f96fb6033e734fc010574969482d0d088dc2",
+    "run_artifacts": {
+      "vlm_async": {
+        "preflight.json": {
+          "size_bytes": 8141,
+          "sha256": "5042c58ef4c1da3c3b716fe4dab150787e937c6b0dffc7d42983ad77a84127ed"
+        },
+        "events.jsonl": {
+          "size_bytes": 415290,
+          "sha256": "9487e5ebcbee9f765714bae50dc4f753dd82b6910c5f9b08bc7c1800fe2f05cb"
+        },
+        "resources.jsonl": {
+          "size_bytes": 448239,
+          "sha256": "3989230b2dc566ecd8e30da6f1b0615aef6ce4d2fedb59e3d6ecbc80d2d81722"
+        },
+        "scenario.json": {
+          "size_bytes": 3674,
+          "sha256": "e66393d8a05fd6c4f8ee242a021883d5279596d0c562ab6dd80d926a45663416"
+        },
+        "summary.json": {
+          "size_bytes": 13929,
+          "sha256": "5394eb7ceaf7aaf6beca6240e6f5d3b9b2821bf1d359bacc48517852f6b62f3e"
+        },
+        "process.json": {
+          "size_bytes": 2306,
+          "sha256": "dac930c81c5b82a3854bce32c2b7f9c810f1095f4fe6361cb9bc7dc15ad434d5"
+        }
+      },
+      "vlm_stale": {
+        "preflight.json": {
+          "size_bytes": 8141,
+          "sha256": "332a2b16ee713228a40eb09559fa2df34c895236f900c6bd796f8ae515345315"
+        },
+        "events.jsonl": {
+          "size_bytes": 371615,
+          "sha256": "b9d272fbd71ce40202a134b508a601f17dba7acd474ef13bd3463d93c1587dd4"
+        },
+        "resources.jsonl": {
+          "size_bytes": 400439,
+          "sha256": "b4ab36389b5a664c0dc224f4600e41b4f95bf99edefca4c7e795c0bddc27307f"
+        },
+        "scenario.json": {
+          "size_bytes": 3706,
+          "sha256": "424d5b460a5de6bdcb19d1e8943cadcdd56e91224dd29bf0825d63ed3a36829c"
+        },
+        "summary.json": {
+          "size_bytes": 13983,
+          "sha256": "4e2fd78552fab89c5df2ff8e217ebfc4a2e23d6e97d1b9f54179d1f00bcd5d07"
+        },
+        "process.json": {
+          "size_bytes": 2323,
+          "sha256": "ac0261d2844796f48342a0bb7189593cbb679d63b8135c8fa32a6bf321299cc4"
+        }
+      }
+    },
+    "thread_reference": {
+      "analysis_sha256": "9d5835453ffe857c33e180f9c75840396d199f8c6cb10a1facb63d1b6e15f04d",
+      "analysis_kind": "phase1_fixed_input_vlm_pilot",
+      "analysis_schema_version": "0.1.0",
+      "session_id": "20260830T073825Z_phase1_vlm_pilot",
+      "git_commit": "aebd1a22f8d9a9bfce1cd8dfd2f089e1cc48a204",
+      "source_archive_sha256": "01869a420203929bc895c589082ec1d60244b2ba2ec8865fc6249bfaf07cae23",
+      "workload_identity_matched": true,
+      "conditions": {
+        "vlm_async": {
+          "adapter_total_ms": 79757.102262,
+          "probe_skipped_releases": 85,
+          "probe_deadline_miss_count": 0,
+          "probe_max_lateness_ms": 88.396307,
+          "probe_maximum_observed_gap_ms": 4262.87556
+        },
+        "vlm_stale": {
+          "adapter_total_ms": 61776.669919,
+          "probe_skipped_releases": 63,
+          "probe_deadline_miss_count": 0,
+          "probe_max_lateness_ms": 93.880989,
+          "probe_maximum_observed_gap_ms": 2700.37549
+        }
+      }
+    }
+  },
+  "identity": {
+    "input": {
+      "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+      "size_bytes": 9009,
+      "media_type": "image/jpeg",
+      "path_recorded": false
+    },
+    "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+    "qwen_model_ids": [
+      "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    ]
+  },
+  "claim_boundary": {
+    "design_role": "correctness_pilot",
+    "descriptive_only": true,
+    "real_workload_integration_observed": true,
+    "stale_result_rejection_observed": true,
+    "timing_domain_isolation_claim_permitted": false,
+    "asynchronous_performance_superiority_claim_permitted": false,
+    "hard_real_time_claim_permitted": false,
+    "heterogeneous_inference_claim_permitted": false,
+    "condition_resource_attribution_permitted": false,
+    "process_boundary_correctness_observed": true,
+    "periodic_probe_continuity_observed": true
+  },
+  "validation": {
+    "run_count": 2,
+    "all_runs_valid": true,
+    "correctness_observed": true,
+    "listener_binding_evidence_complete": true,
+    "all_process_gates_passed": true,
+    "process_boundary_correctness_observed": true,
+    "periodic_probe_continuity_observed": true
+  },
+  "runs": [
+    {
+      "condition": "vlm_async",
+      "run_id": "20260830T122546Z_phase1_vlm_process_async_vlm_001",
+      "session_id": "20260830T122541Z_phase1_vlm_process_reaping",
+      "source": {
+        "git_commit": "1818c83de574f44e0253216ab591d3be8c57d2f3",
+        "git_branch": "main",
+        "artifacts": {
+          "preflight.json": {
+            "size_bytes": 8141,
+            "sha256": "5042c58ef4c1da3c3b716fe4dab150787e937c6b0dffc7d42983ad77a84127ed"
+          },
+          "events.jsonl": {
+            "size_bytes": 415290,
+            "sha256": "9487e5ebcbee9f765714bae50dc4f753dd82b6910c5f9b08bc7c1800fe2f05cb"
+          },
+          "resources.jsonl": {
+            "size_bytes": 448239,
+            "sha256": "3989230b2dc566ecd8e30da6f1b0615aef6ce4d2fedb59e3d6ecbc80d2d81722"
+          },
+          "scenario.json": {
+            "size_bytes": 3674,
+            "sha256": "e66393d8a05fd6c4f8ee242a021883d5279596d0c562ab6dd80d926a45663416"
+          },
+          "summary.json": {
+            "size_bytes": 13929,
+            "sha256": "5394eb7ceaf7aaf6beca6240e6f5d3b9b2821bf1d359bacc48517852f6b62f3e"
+          },
+          "process.json": {
+            "size_bytes": 2306,
+            "sha256": "dac930c81c5b82a3854bce32c2b7f9c810f1095f4fe6361cb9bc7dc15ad434d5"
+          }
+        }
+      },
+      "input": {
+        "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+        "size_bytes": 9009,
+        "media_type": "image/jpeg",
+        "path_recorded": false
+      },
+      "services": {
+        "moondream_model": "moondream",
+        "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+        "qwen_model_ids": [
+          "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        ],
+        "listener_evidence": {
+          "preflight_schema_version": "0.2.0",
+          "complete": true,
+          "services": {
+            "ollama": {
+              "recorded": true,
+              "addresses": [
+                "127.0.0.1"
+              ],
+              "loopback_only": true
+            },
+            "qwen": {
+              "recorded": true,
+              "addresses": [
+                "127.0.0.1"
+              ],
+              "loopback_only": true
+            }
+          }
+        }
+      },
+      "validation": {
+        "manifest_status": "completed",
+        "summary_valid": true,
+        "all_gates_passed": true,
+        "real_vlm_path_executed": true,
+        "process_summary_valid": true,
+        "all_process_gates_passed": true
+      },
+      "result": {
+        "execution_outcome": "ok",
+        "translation_route": "qwen",
+        "disposition_counts": {
+          "consumed": 1
+        },
+        "accepted_result_count": 1,
+        "stale_consumed_count": 0,
+        "raw_text_recorded": false,
+        "model_unload": {
+          "unload_requested": true,
+          "unload_confirmed": null
+        },
+        "cancellation": {
+          "requested": false,
+          "worker_observed": false,
+          "client_wait_stopped": false,
+          "backend_stop_confirmed": null
+        }
+      },
+      "timing": {
+        "adapter_total_ms": 67677.763076,
+        "stages": [
+          {
+            "stage": "input_verify_before",
+            "status": "ok",
+            "duration_ms": 0.414259
+          },
+          {
+            "stage": "module_import",
+            "status": "ok",
+            "duration_ms": 14380.694291
+          },
+          {
+            "stage": "moondream_inference",
+            "status": "ok",
+            "duration_ms": 30949.416803
+          },
+          {
+            "stage": "qwen_rewrite",
+            "status": "ok",
+            "duration_ms": 21756.256282
+          },
+          {
+            "stage": "output_normalization",
+            "status": "ok",
+            "duration_ms": 0.042786
+          },
+          {
+            "stage": "model_unload",
+            "status": "ok",
+            "duration_ms": 400.827722
+          },
+          {
+            "stage": "input_verify_after",
+            "status": "ok",
+            "duration_ms": 3.052746
+          }
+        ],
+        "probe": {
+          "period_ms": 100.0,
+          "deadline_ms": 100.0,
+          "tick_count": 698,
+          "skipped_releases": 0,
+          "scheduled_release_count": 698,
+          "skipped_release_rate": 0.0,
+          "deadline_miss_count": 0,
+          "max_lateness_ms": 0.780063,
+          "maximum_observed_gap_ms": 100.647451,
+          "joined": true,
+          "error_code": null,
+          "skipped_releases_by_adapter_stage": {}
+        }
+      },
+      "resources": {
+        "sample_count": 339,
+        "inference_interval_sample_count": 329,
+        "parse_error_count": 0,
+        "parse_warning_counts": {
+          "emc_missing": 339
+        },
+        "sample_interval_ms": {
+          "mean": 205.967483,
+          "p95": 206.512601,
+          "p99": 206.964335,
+          "max": 217.594618
+        },
+        "ram_used_mb": {
+          "mean": 4682.702065,
+          "p95": 5712.0,
+          "max": 5714.0
+        },
+        "gr3d_usage_pct": {
+          "mean": 5.781711,
+          "p95": 32.0,
+          "max": 99.0
+        },
+        "junction_temperature_c": {
+          "mean": 51.773699,
+          "p95": 52.125,
+          "max": 53.906
+        },
+        "vdd_in_instant_mw": {
+          "mean": 5926.339233,
+          "p95": 8412.0,
+          "max": 16646.0
+        }
+      },
+      "adapter_isolation": "spawned_process",
+      "process": {
+        "protocol_version": "0.1.0",
+        "start_method": "spawn",
+        "process_id_recorded": true,
+        "protocol_complete": true,
+        "exit_code": 0,
+        "cancellation_forwarded": false,
+        "terminate_requested": false,
+        "terminate_confirmed": false,
+        "error_code": null,
+        "valid": true,
+        "gate_results": {
+          "spawned_process": true,
+          "bounded_protocol": true,
+          "process_reaped": true,
+          "boundary_order": true,
+          "cancellation_forwarding": true
+        },
+        "timing_ms": {
+          "spawn_to_child_start": 180.499904,
+          "child_start_to_inference": 14382.295292,
+          "inference_to_completion_receipt": 53111.195803,
+          "completion_receipt_to_join": 61.043623,
+          "total_supervision": 67735.034622
+        }
+      }
+    },
+    {
+      "condition": "vlm_stale",
+      "run_id": "20260830T123150Z_phase1_vlm_process_stale_vlm_001",
+      "session_id": "20260830T122541Z_phase1_vlm_process_reaping",
+      "source": {
+        "git_commit": "1818c83de574f44e0253216ab591d3be8c57d2f3",
+        "git_branch": "main",
+        "artifacts": {
+          "preflight.json": {
+            "size_bytes": 8141,
+            "sha256": "332a2b16ee713228a40eb09559fa2df34c895236f900c6bd796f8ae515345315"
+          },
+          "events.jsonl": {
+            "size_bytes": 371615,
+            "sha256": "b9d272fbd71ce40202a134b508a601f17dba7acd474ef13bd3463d93c1587dd4"
+          },
+          "resources.jsonl": {
+            "size_bytes": 400439,
+            "sha256": "b4ab36389b5a664c0dc224f4600e41b4f95bf99edefca4c7e795c0bddc27307f"
+          },
+          "scenario.json": {
+            "size_bytes": 3706,
+            "sha256": "424d5b460a5de6bdcb19d1e8943cadcdd56e91224dd29bf0825d63ed3a36829c"
+          },
+          "summary.json": {
+            "size_bytes": 13983,
+            "sha256": "4e2fd78552fab89c5df2ff8e217ebfc4a2e23d6e97d1b9f54179d1f00bcd5d07"
+          },
+          "process.json": {
+            "size_bytes": 2323,
+            "sha256": "ac0261d2844796f48342a0bb7189593cbb679d63b8135c8fa32a6bf321299cc4"
+          }
+        }
+      },
+      "input": {
+        "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+        "size_bytes": 9009,
+        "media_type": "image/jpeg",
+        "path_recorded": false
+      },
+      "services": {
+        "moondream_model": "moondream",
+        "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+        "qwen_model_ids": [
+          "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        ],
+        "listener_evidence": {
+          "preflight_schema_version": "0.2.0",
+          "complete": true,
+          "services": {
+            "ollama": {
+              "recorded": true,
+              "addresses": [
+                "127.0.0.1"
+              ],
+              "loopback_only": true
+            },
+            "qwen": {
+              "recorded": true,
+              "addresses": [
+                "127.0.0.1"
+              ],
+              "loopback_only": true
+            }
+          }
+        }
+      },
+      "validation": {
+        "manifest_status": "completed",
+        "summary_valid": true,
+        "all_gates_passed": true,
+        "real_vlm_path_executed": true,
+        "process_summary_valid": true,
+        "all_process_gates_passed": true
+      },
+      "result": {
+        "execution_outcome": "cancel_observed",
+        "translation_route": "qwen",
+        "disposition_counts": {
+          "rejected_state": 1
+        },
+        "accepted_result_count": 0,
+        "stale_consumed_count": 0,
+        "raw_text_recorded": false,
+        "model_unload": {
+          "unload_requested": true,
+          "unload_confirmed": null
+        },
+        "cancellation": {
+          "requested": true,
+          "worker_observed": true,
+          "client_wait_stopped": false,
+          "backend_stop_confirmed": null
+        }
+      },
+      "timing": {
+        "adapter_total_ms": 60210.021036,
+        "stages": [
+          {
+            "stage": "input_verify_before",
+            "status": "ok",
+            "duration_ms": 0.416307
+          },
+          {
+            "stage": "module_import",
+            "status": "ok",
+            "duration_ms": 15281.018932
+          },
+          {
+            "stage": "moondream_inference",
+            "status": "ok",
+            "duration_ms": 27780.61775
+          },
+          {
+            "stage": "qwen_rewrite",
+            "status": "ok",
+            "duration_ms": 16547.200885
+          },
+          {
+            "stage": "output_normalization",
+            "status": "ok",
+            "duration_ms": 0.139782
+          },
+          {
+            "stage": "model_unload",
+            "status": "ok",
+            "duration_ms": 402.480788
+          },
+          {
+            "stage": "input_verify_after",
+            "status": "ok",
+            "duration_ms": 5.877826
+          }
+        ],
+        "probe": {
+          "period_ms": 100.0,
+          "deadline_ms": 100.0,
+          "tick_count": 624,
+          "skipped_releases": 0,
+          "scheduled_release_count": 624,
+          "skipped_release_rate": 0.0,
+          "deadline_miss_count": 0,
+          "max_lateness_ms": 0.418757,
+          "maximum_observed_gap_ms": 100.2719,
+          "joined": true,
+          "error_code": null,
+          "skipped_releases_by_adapter_stage": {}
+        }
+      },
+      "resources": {
+        "sample_count": 303,
+        "inference_interval_sample_count": 293,
+        "parse_error_count": 0,
+        "parse_warning_counts": {
+          "emc_missing": 303
+        },
+        "sample_interval_ms": {
+          "mean": 205.902815,
+          "p95": 206.523216,
+          "p99": 206.745794,
+          "max": 206.86821
+        },
+        "ram_used_mb": {
+          "mean": 4517.339934,
+          "p95": 5647.0,
+          "max": 5662.0
+        },
+        "gr3d_usage_pct": {
+          "mean": 6.346535,
+          "p95": 55.0,
+          "max": 99.0
+        },
+        "junction_temperature_c": {
+          "mean": 51.414944,
+          "p95": 51.781,
+          "max": 53.375
+        },
+        "vdd_in_instant_mw": {
+          "mean": 5881.009901,
+          "p95": 8491.0,
+          "max": 16215.0
+        }
+      },
+      "adapter_isolation": "spawned_process",
+      "process": {
+        "protocol_version": "0.1.0",
+        "start_method": "spawn",
+        "process_id_recorded": true,
+        "protocol_complete": true,
+        "exit_code": 0,
+        "cancellation_forwarded": true,
+        "terminate_requested": false,
+        "terminate_confirmed": false,
+        "error_code": null,
+        "valid": true,
+        "gate_results": {
+          "spawned_process": true,
+          "bounded_protocol": true,
+          "process_reaped": true,
+          "boundary_order": true,
+          "cancellation_forwarding": true
+        },
+        "timing_ms": {
+          "spawn_to_child_start": 181.304827,
+          "child_start_to_inference": 15282.647228,
+          "inference_to_completion_receipt": 44743.006797,
+          "completion_receipt_to_join": 104.366986,
+          "total_supervision": 60311.325838
+        }
+      }
+    }
+  ],
+  "data_quality": {
+    "total_probe_skipped_releases": 0,
+    "limitations": [
+      "single_run_per_condition",
+      "fixed_condition_order",
+      "no_real_workload_synchronous_condition",
+      "formal_thresholds_not_frozen",
+      "model_unload_not_independently_confirmed",
+      "resource_activity_not_attributed_to_a_model_or_processor",
+      "emc_unavailable",
+      "thread_process_comparison_crosses_sessions",
+      "thread_process_order_not_randomized_or_balanced",
+      "thread_process_source_commits_differ",
+      "backend_stop_not_confirmed_by_process_exit"
+    ],
+    "total_probe_deadline_misses": 0
+  },
+  "adapter_isolation": "spawned_process",
+  "thread_process_comparison": {
+    "comparison_role": "cross_session_descriptive_reference",
+    "conditions": {
+      "vlm_async": {
+        "thread": {
+          "adapter_total_ms": 79757.102262,
+          "probe_skipped_releases": 85,
+          "probe_deadline_miss_count": 0,
+          "probe_max_lateness_ms": 88.396307,
+          "probe_maximum_observed_gap_ms": 4262.87556
+        },
+        "spawned_process": {
+          "adapter_total_ms": 67677.763076,
+          "probe_skipped_releases": 0,
+          "probe_deadline_miss_count": 0,
+          "probe_max_lateness_ms": 0.780063,
+          "probe_maximum_observed_gap_ms": 100.647451
+        },
+        "observed_skipped_release_difference": -85
+      },
+      "vlm_stale": {
+        "thread": {
+          "adapter_total_ms": 61776.669919,
+          "probe_skipped_releases": 63,
+          "probe_deadline_miss_count": 0,
+          "probe_max_lateness_ms": 93.880989,
+          "probe_maximum_observed_gap_ms": 2700.37549
+        },
+        "spawned_process": {
+          "adapter_total_ms": 60210.021036,
+          "probe_skipped_releases": 0,
+          "probe_deadline_miss_count": 0,
+          "probe_max_lateness_ms": 0.418757,
+          "probe_maximum_observed_gap_ms": 100.2719
+        },
+        "observed_skipped_release_difference": -63
+      }
+    },
+    "total_probe_skipped_releases": {
+      "thread": 148,
+      "spawned_process": 0
+    },
+    "descriptive_mitigation_signal_observed": true,
+    "causal_attribution_permitted": false,
+    "performance_superiority_claim_permitted": false
+  }
+}

@@ -76,11 +76,14 @@ shows that all skipped releases occurred during lazy module import in the
 independent Python probe, so thread-level timing isolation does not generalize
 from the simulated sleep workload. A spawned-process VLM adapter now keeps the
 broker, freshness checks and periodic probe in the parent process while moving
-the lazy adapter path behind bounded IPC. Its lifecycle, cancellation, crash,
-timeout and child-reaping paths are host-tested; it has not yet produced a
-Jetson result. Neither completed pilot authorizes a
-performance-superiority, hard-real-time or heterogeneous-inference claim. The
-broader research stage will investigate:
+the lazy adapter path behind bounded IPC. A subsequent
+[process-isolated correctness pilot](experiments/phase1/results/20260830T122541Z_phase1_vlm_process_reaping/)
+completed both real-model conditions with normally reaped children, zero stale
+consumption and no skipped 100 ms probe releases. The earlier thread reference
+recorded 148 skipped releases, but this cross-session single-run contrast is a
+descriptive mitigation signal rather than a causal comparison. No pilot
+authorizes a performance-superiority, hard-real-time or heterogeneous-inference
+claim. The broader research stage will investigate:
 
 - independent acquisition, inference, planning and control workers;
 - timestamped bounded queues, cancellation and stale-result rejection;

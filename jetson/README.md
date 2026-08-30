@@ -2,9 +2,9 @@
 
 The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32. It also contains the host-testable Phase 1 task-runtime kernel. The experiment layer now connects that kernel to the fixed Phase 0 VLM input without changing the robot application.
 
-The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-safe task identity, bounded ownership, a single-worker observable executor and a software periodic probe. The experiment harness under `experiments/phase1/` has completed one motion-disabled simulation pilot and one fixed-input VLM correctness pilot on the Jetson. The real-model pilot validated nominal consumption and stale-result rejection, but also recorded skipped probe releases during lazy Python module import. A spawned-process VLM adapter is now host-tested to address that boundary; its Jetson pilot, formal comparison and application integration remain research work.
+The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-safe task identity, bounded ownership, a single-worker observable executor and a software periodic probe. The experiment harness under `experiments/phase1/` has completed one motion-disabled simulation pilot, one threaded fixed-input VLM correctness pilot and one spawned-process VLM correctness pilot on the Jetson. The threaded real-model pilot recorded skipped probe releases during lazy Python module import. The process pilot completed both lifecycle conditions with normally reaped children and no skipped probe releases, but formal comparison and application integration remain research work.
 
-> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前整机应用仍使用已验证的同步路径；Phase 1 已完成固定输入 VLM 的 Jetson correctness pilot，进程隔离路径已通过 host-only 测试、尚待实机 pilot，正式对比实验与运动控制接入尚未开始。
+> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前整机应用仍使用已验证的同步路径；Phase 1 已完成线程版与进程隔离版固定输入 VLM 的 Jetson correctness pilot，正式对比实验与运动控制接入尚未开始。
 
 ## Modules
 
@@ -116,7 +116,7 @@ Audio, ASR text, captured images and communication logs are written beneath `ROB
 
 - The orchestration path is blocking and single-process; inference tasks do not have explicit deadlines or cancellation.
 - The Phase 1 VLM experiment uses one fixed file and is not connected to live acquisition, TTS or the synchronous application loop.
-- The spawned-process VLM path is an experiment runner boundary, not an application worker pool; no Jetson timing result has been collected from it yet.
+- The spawned-process VLM path is an experiment runner boundary, not an application worker pool; its two Jetson observations are descriptive correctness evidence rather than a formal timing result.
 - llama.cpp and Ollama are managed outside the application.
 - The color tracker uses fixed HSV ranges and discrete motion commands tuned on the thesis robot.
 - The Jetson sends speed percentages, while the STM32 applies open-loop PWM rather than closed-loop wheel velocity.

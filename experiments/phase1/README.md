@@ -5,14 +5,15 @@ recorder, event schema, independent lifecycle replay, run validation, Jetson
 pilot orchestration, deterministic analysis, fixed-input VLM integration and
 descriptive summaries for the Phase 1 asynchronous runtime study. The first
 Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
-A spawned-process VLM adapter and evidence path are host-tested; their Jetson
-pilot and all formal synchronous/asynchronous data remain uncollected.
+A spawned-process VLM adapter has also completed one independently validated
+Jetson correctness pilot. Formal synchronous/asynchronous data remain
+uncollected.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
 > pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
-> 当前已验证真实模型接入和陈旧结果拒绝，VLM 进程隔离路径已完成 host-only 测试、尚待
-> Jetson pilot，正式对比数据尚未采集。
+> 当前已验证真实模型接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
+> Jetson correctness pilot；正式对比数据尚未采集。
 
 ## Current status
 
@@ -30,8 +31,10 @@ pilot and all formal synchronous/asynchronous data remain uncollected.
 - Fixed-input VLM adapter, single-request runner and validator: completed one
   independently validated Jetson correctness pilot
 - Deterministic VLM pilot analysis and listener-binding preflight: implemented
-- Spawned-process VLM adapter, cleanup evidence and runner mode: host-tested;
-  Jetson process pilot not yet run
+- Spawned-process VLM adapter, cleanup evidence and runner mode: completed one
+  independently validated Jetson correctness pilot
+- Deterministic process-pilot reconstruction and descriptive thread reference:
+  implemented
 - Real ASR/LLM slices: not started
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
@@ -213,6 +216,16 @@ were scheduled during lazy module import. The result therefore validates
 nominal consumption and stale-result rejection while explicitly withholding a
 thread-level timing-isolation claim.
 
+The third public derived result is the
+[`20260830T122541Z` process-isolated VLM pilot](results/20260830T122541Z_phase1_vlm_process_reaping/).
+Both spawned children completed the bounded protocol, exited with code zero
+and were reaped without forced termination. The 100 ms probe recorded zero
+skipped releases and zero deadline misses in both conditions. The previously
+published thread pilot recorded 148 skipped releases, but the two sessions are
+single, fixed-order observations from different commits. The public report
+therefore labels the contrast as a descriptive mitigation signal and continues
+to prohibit causal performance and timing-isolation claims.
+
 ## Fixed-input VLM slice
 
 The first real-workload integration reuses the exact Phase 0 C100 JPEG, the
@@ -271,6 +284,19 @@ python3 -m experiments.phase1.analyze_vlm_pilot \
   --markdown-output /path/to/README.md
 ```
 
+For a process-isolated session, add the published thread analysis as a frozen
+workload-identity reference:
+
+```bash
+python3 -m experiments.phase1.analyze_vlm_pilot \
+  /path/to/process_session_dir \
+  --source-archive-sha256 <process_archive_sha256> \
+  --thread-reference-analysis \
+    experiments/phase1/results/20260830T073825Z_phase1_vlm_pilot/analysis.json \
+  --json-output /path/to/analysis.json \
+  --markdown-output /path/to/README.md
+```
+
 The first VLM pilot was collected under preflight schema `0.1.0`. Its request
 URLs were loopback addresses, and the operator checked the llama.cpp listener
 before execution, but actual listener bindings were not stored in the archive.
@@ -305,8 +331,7 @@ reaping during interpreter shutdown. If a final Gate still fails, the run is
 marked failed after its completed scenario, process and slice diagnostics are
 written and hashed.
 
-After this implementation is merged and the Jetson is synchronized to that
-`main` commit, the two motion-disabled pilot conditions can be run with:
+The two motion-disabled pilot conditions can be reproduced with:
 
 ```bash
 export ROBOT_ENABLE_MOTION=0
@@ -327,10 +352,11 @@ python3 -m experiments.phase1.run_vlm_slice \
   --repetition 1
 ```
 
-These commands are a correctness and timing-isolation pilot, not a formal
-thread/process comparison. The two earlier thread runs remain unchanged and
-valid. Process-level timing behavior is not claimed until the new Jetson
-artifacts are collected and independently analyzed.
+These commands define a correctness pilot, not a formal thread/process
+comparison. Session `20260830T122541Z_phase1_vlm_process_reaping` completed
+both conditions on `main@1818c83`; the Jetson and Windows independent validators
+and every slice and process Gate passed. The result is published as descriptive
+evidence and does not freeze a formal timing threshold.
 
 ## Planned implementation order
 
@@ -349,11 +375,11 @@ artifacts are collected and independently analyzed.
    slice — complete;
 8. record actual model-service listener bindings and qualify the simulated
    thread-isolation result with real-workload evidence — complete;
-9. implement and host-test process-level VLM isolation — complete; run and
-   independently analyze its Jetson pilot, then extend the adapter/runtime
-   boundary to ASR and LLM;
-10. freeze formal thresholds and collect balanced synchronous/asynchronous data;
-11. add an opt-in motion-disabled application slice after the research Gates
+9. implement process-level VLM isolation and independently analyze its Jetson
+   correctness pilot — complete;
+10. extend the adapter/runtime boundary to ASR and LLM;
+11. freeze formal thresholds and collect balanced synchronous/asynchronous data;
+12. add an opt-in motion-disabled application slice after the research Gates
    pass.
 
 Contract changes are reviewed before implementation, and the formal protocol
