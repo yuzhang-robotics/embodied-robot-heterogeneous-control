@@ -7,11 +7,12 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable
+from typing import Callable, Protocol
 
 from jetson.phase1_runtime import (
     BoundedTaskBroker,
     BrokerSnapshot,
+    ClaimedTask,
     ExecutorShutdownReport,
     FinalDisposition,
     LaneConfig,
@@ -21,12 +22,24 @@ from jetson.phase1_runtime import (
     PeriodicProbe,
     ProbeStopReport,
     RuntimeEventSink,
+    ResultEnvelope,
     StateToken,
     TaskEnvelope,
     TaskKind,
 )
 
 from .vlm_adapter import FixedInputVLMAdapter, VLMExecutionRecord
+
+
+class VLMAdapter(Protocol):
+    """Minimum parent-side contract shared by thread and process adapters."""
+
+    inference_started_event: threading.Event
+
+    @property
+    def last_record(self) -> VLMExecutionRecord | None: ...
+
+    def __call__(self, claimed: ClaimedTask) -> ResultEnvelope: ...
 
 
 class VLMSliceCondition(str, Enum):
@@ -233,7 +246,7 @@ def run_vlm_slice(
     payload: PayloadRef,
     event_sink: RuntimeEventSink,
     *,
-    adapter: FixedInputVLMAdapter | None = None,
+    adapter: VLMAdapter | None = None,
     task_id: str = "vlm-001",
 ) -> VLMSliceReport:
     """Run one nominal or invalidated VLM request and close all threads."""

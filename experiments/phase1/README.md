@@ -5,12 +5,14 @@ recorder, event schema, independent lifecycle replay, run validation, Jetson
 pilot orchestration, deterministic analysis, fixed-input VLM integration and
 descriptive summaries for the Phase 1 asynchronous runtime study. The first
 Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
-Formal synchronous/asynchronous data remain uncollected.
+A spawned-process VLM adapter and evidence path are host-tested; their Jetson
+pilot and all formal synchronous/asynchronous data remain uncollected.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
 > pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
-> 当前已验证真实模型接入和陈旧结果拒绝，正式对比数据尚未采集。
+> 当前已验证真实模型接入和陈旧结果拒绝，VLM 进程隔离路径已完成 host-only 测试、尚待
+> Jetson pilot，正式对比数据尚未采集。
 
 ## Current status
 
@@ -28,6 +30,8 @@ Formal synchronous/asynchronous data remain uncollected.
 - Fixed-input VLM adapter, single-request runner and validator: completed one
   independently validated Jetson correctness pilot
 - Deterministic VLM pilot analysis and listener-binding preflight: implemented
+- Spawned-process VLM adapter, cleanup evidence and runner mode: host-tested;
+  Jetson process pilot not yet run
 - Real ASR/LLM slices: not started
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
@@ -279,6 +283,49 @@ do not form a balanced synchronous/asynchronous comparison, prove backend
 preemption, measure visual accuracy or authorize a heterogeneous-performance
 claim.
 
+### Spawned-process VLM variant
+
+The process-isolated variant keeps the broker, state generations, result
+freshness checks, event recorder and periodic probe in the parent process. It
+moves only the lazy VLM adapter call into one child created with `spawn`. The
+child receives one task through bounded private IPC and returns the same
+hash-only result and stage facts as the thread adapter. It cannot mutate the
+broker or choose a final disposition.
+
+Each process run adds a distinct condition directory and `process.json`. The
+process summary is independently rebuilt from supervisor facts in
+`scenario.json` and requires a complete protocol, ordered boundaries, correct
+cancellation forwarding, exit code zero and a normally reaped child. A forced
+child termination is recorded separately and never becomes a claim that the
+Ollama backend stopped inference.
+
+After this implementation is merged and the Jetson is synchronized to that
+`main` commit, the two motion-disabled pilot conditions can be run with:
+
+```bash
+export ROBOT_ENABLE_MOTION=0
+python3 -m experiments.phase1.run_vlm_slice \
+  --condition vlm_async \
+  --adapter-isolation spawned_process \
+  --process-execution-timeout-s 600 \
+  --completion-timeout-s 720 \
+  --session-id 20260830T000000Z_phase1_vlm_process_pilot \
+  --repetition 1
+
+python3 -m experiments.phase1.run_vlm_slice \
+  --condition vlm_stale \
+  --adapter-isolation spawned_process \
+  --process-execution-timeout-s 600 \
+  --completion-timeout-s 720 \
+  --session-id 20260830T000000Z_phase1_vlm_process_pilot \
+  --repetition 1
+```
+
+These commands are a correctness and timing-isolation pilot, not a formal
+thread/process comparison. The two earlier thread runs remain unchanged and
+valid. Process-level timing behavior is not claimed until the new Jetson
+artifacts are collected and independently analyzed.
+
 ## Planned implementation order
 
 1. freeze the task, result, lifecycle, queue, cancellation, and freshness
@@ -296,8 +343,9 @@ claim.
    slice — complete;
 8. record actual model-service listener bindings and qualify the simulated
    thread-isolation result with real-workload evidence — complete;
-9. evaluate process-level isolation, then extend the adapter/runtime boundary
-   to ASR and LLM;
+9. implement and host-test process-level VLM isolation — complete; run and
+   independently analyze its Jetson pilot, then extend the adapter/runtime
+   boundary to ASR and LLM;
 10. freeze formal thresholds and collect balanced synchronous/asynchronous data;
 11. add an opt-in motion-disabled application slice after the research Gates
    pass.
@@ -341,6 +389,7 @@ experiments/phase1/
 │   └── resource.schema.json
 ├── simulation.py
 ├── summarize_run.py
+├── summarize_vlm_process_slice.py
 ├── summarize_vlm_slice.py
 ├── tests/
 ├── telemetry.py
@@ -349,6 +398,7 @@ experiments/phase1/
 ├── validate_vlm_slice.py
 ├── vlm_adapter.py
 ├── vlm_preflight.py
+├── vlm_process_adapter.py
 ├── vlm_slice.py
 ├── replay_lifecycle.py
 └── README.md

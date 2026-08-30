@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import multiprocessing
 import os
 import tempfile
 import threading
@@ -13,6 +14,7 @@ from experiments.phase1.jetson_preflight import build_jetson_preflight
 from experiments.phase1.jetson_telemetry import TegrastatsSampler
 from experiments.phase1.manifest import sha256_file
 from experiments.phase1.run_vlm_slice import build_parser, run_once
+from experiments.phase1.summarize_vlm_process_slice import VLM_PROCESS_ISOLATION
 from experiments.phase1.tests.test_jetson_pilot import clean_environment
 from experiments.phase1.tests.test_jetson_telemetry import sampler_command
 from experiments.phase1.validate_vlm_slice import validate_vlm_slice_dir
@@ -27,11 +29,15 @@ from experiments.phase1.vlm_preflight import (
     probe_vlm_services,
     vlm_preflight_errors,
 )
+from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
 from experiments.phase1.vlm_slice import VLMSliceCondition
 
 
 SESSION_ID = "20260828T170000Z_phase1_vlm_test"
 REPO_ROOT = Path(__file__).resolve().parents[3]
+PROCESS_FIXTURE_FACTORY = (
+    "experiments.phase1.tests.vlm_process_fixture:FixtureVLMAdapter"
+)
 
 
 def service_status() -> dict[str, object]:
@@ -132,6 +138,15 @@ class VLMRunnerTests(unittest.TestCase):
             ]
         )
 
+    def process_args(self, condition: VLMSliceCondition):
+        args = self.args(condition)
+        args.adapter_isolation = VLM_PROCESS_ISOLATION
+        args.result_validity_s = 5.0
+        args.completion_timeout_s = 3.0
+        args.join_timeout_s = 3.0
+        args.process_execution_timeout_s = 2.0
+        return args
+
     def preflight_builder(self, _root, *, input_payload, expected_branch):
         self.assertEqual(expected_branch, "main")
         return build_vlm_preflight(
@@ -164,6 +179,13 @@ class VLMRunnerTests(unittest.TestCase):
                 normalize_output=lambda chinese, _english: chinese + "。",
                 unload_model=lambda: None,
             )
+        )
+
+    @staticmethod
+    def process_adapter_factory() -> ProcessIsolatedVLMAdapter:
+        return ProcessIsolatedVLMAdapter(
+            factory_ref=PROCESS_FIXTURE_FACTORY,
+            execution_timeout_s=2.0,
         )
 
     def test_local_service_probe_records_identity_without_endpoint_text(self) -> None:
@@ -400,6 +422,112 @@ class VLMRunnerTests(unittest.TestCase):
         self.assertEqual(stale_summary["lifecycle"]["accepted_result_count"], 0)
         remaining_threads = {thread.name for thread in threading.enumerate()}
         self.assertEqual(remaining_threads, baseline_threads)
+
+    def test_process_conditions_add_independently_validated_cleanup_evidence(
+        self,
+    ) -> None:
+        baseline_children = {child.pid for child in multiprocessing.active_children()}
+        with (
+            patch.dict(os.environ, {"ROBOT_ENABLE_MOTION": "0"}),
+            patch(
+                "experiments.phase1.run_vlm_slice.collect_environment",
+                return_value=clean_environment(),
+            ),
+        ):
+            run_dirs = [
+                run_once(
+                    self.process_args(condition),
+                    repo_root=REPO_ROOT,
+                    preflight_builder=self.preflight_builder,
+                    sampler_factory=self.sampler_factory,
+                    adapter_factory=self.process_adapter_factory,
+                )
+                for condition in VLMSliceCondition
+            ]
+
+        for run_dir, condition in zip(run_dirs, VLMSliceCondition):
+            with self.subTest(condition=condition.value):
+                self.assertEqual(validate_vlm_slice_dir(run_dir), [])
+                manifest = json.loads(
+                    (run_dir / "manifest.json").read_text(encoding="utf-8")
+                )
+                process = json.loads(
+                    (run_dir / "process.json").read_text(encoding="utf-8")
+                )
+                self.assertEqual(
+                    manifest["artifact_kind"],
+                    "phase1_fixed_input_vlm_process_run",
+                )
+                self.assertEqual(manifest["adapter_isolation"], VLM_PROCESS_ISOLATION)
+                self.assertIn("process.json", manifest["artifacts"])
+                self.assertTrue(process["valid"])
+                self.assertTrue(all(gate["passed"] for gate in process["gates"]))
+                self.assertEqual(process["process"]["exit_code"], 0)
+                self.assertFalse(process["process"]["terminate_requested"])
+                combined = "\n".join(
+                    (run_dir / name).read_text(encoding="utf-8")
+                    for name in (
+                        "manifest.json",
+                        "scenario.json",
+                        "summary.json",
+                        "process.json",
+                    )
+                )
+                self.assertNotIn(str(self.input_path), combined)
+                self.assertNotIn("bounded fixture output", combined)
+
+        remaining_children = {child.pid for child in multiprocessing.active_children()}
+        self.assertEqual(remaining_children, baseline_children)
+
+    def test_process_timeout_budget_is_rejected_before_output_creation(self) -> None:
+        args = self.process_args(VLMSliceCondition.ASYNC)
+        args.process_execution_timeout_s = args.completion_timeout_s
+        with patch.dict(os.environ, {"ROBOT_ENABLE_MOTION": "0"}):
+            with self.assertRaisesRegex(RuntimeError, "process execution timeout"):
+                run_once(
+                    args,
+                    repo_root=REPO_ROOT,
+                    preflight_builder=self.preflight_builder,
+                    sampler_factory=self.sampler_factory,
+                    adapter_factory=self.process_adapter_factory,
+                )
+        self.assertFalse((self.root / "runs" / SESSION_ID).exists())
+
+    def test_process_validator_rebuilds_hash_consistent_summary(self) -> None:
+        with (
+            patch.dict(os.environ, {"ROBOT_ENABLE_MOTION": "0"}),
+            patch(
+                "experiments.phase1.run_vlm_slice.collect_environment",
+                return_value=clean_environment(),
+            ),
+        ):
+            run_dir = run_once(
+                self.process_args(VLMSliceCondition.ASYNC),
+                repo_root=REPO_ROOT,
+                preflight_builder=self.preflight_builder,
+                sampler_factory=self.sampler_factory,
+                adapter_factory=self.process_adapter_factory,
+            )
+        process_path = run_dir / "process.json"
+        process = json.loads(process_path.read_text(encoding="utf-8"))
+        process["process"]["exit_code"] = 9
+        process_path.write_text(
+            json.dumps(process, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        manifest_path = run_dir / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["artifacts"]["process.json"] = {
+            "size_bytes": process_path.stat().st_size,
+            "sha256": sha256_file(process_path),
+        }
+        manifest_path.write_text(
+            json.dumps(manifest, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
+        errors = validate_vlm_slice_dir(run_dir)
+        self.assertTrue(any("independently rebuilt Gates" in error for error in errors))
 
     def test_validator_rebuilds_summary_after_hash_consistent_tampering(self) -> None:
         with (

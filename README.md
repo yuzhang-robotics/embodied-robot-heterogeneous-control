@@ -6,7 +6,7 @@
 
 This repository began with my bachelor's thesis on speech interaction and visual perception for a wheeled robot. The thesis system runs fully local speech and vision pipelines on a Jetson Orin Nano, while an STM32F407 executes motion commands and enforces a communication watchdog. The same platform will now be used to study how long-running perception and inference can coexist with predictable control timing.
 
-> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，完成 Jetson simulation pilot 和固定输入 VLM correctness pilot；真实模型正式对比实验与整机应用适配尚未开始。
+> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，完成 Jetson simulation pilot 和固定输入 VLM correctness pilot，并开始对真实 VLM 适配器进行进程级隔离；正式对比实验与整机应用适配尚未开始。
 
 ## Project status
 
@@ -15,7 +15,7 @@ This repository began with my bachelor's thesis on speech interaction and visual
 | Bachelor's thesis software and firmware | Complete and hardware validated |
 | Custom base-driver PCB | Published and tested on the physical robot |
 | Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
-| Asynchronous inference runtime | Bounded executor, probe and replay validated by Jetson simulation and fixed-input VLM correctness pilots; formal comparison pending |
+| Asynchronous inference runtime | Bounded executor, probe and replay validated by Jetson simulation and fixed-input VLM correctness pilots; spawned VLM adapter host-tested, Jetson process pilot pending |
 
 The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
@@ -74,7 +74,11 @@ nominal consumption and old-generation rejection. Its
 [descriptive report](experiments/phase1/results/20260830T073825Z_phase1_vlm_pilot/)
 shows that all skipped releases occurred during lazy module import in the
 independent Python probe, so thread-level timing isolation does not generalize
-from the simulated sleep workload. Neither pilot authorizes a
+from the simulated sleep workload. A spawned-process VLM adapter now keeps the
+broker, freshness checks and periodic probe in the parent process while moving
+the lazy adapter path behind bounded IPC. Its lifecycle, cancellation, crash,
+timeout and child-reaping paths are host-tested; it has not yet produced a
+Jetson result. Neither completed pilot authorizes a
 performance-superiority, hard-real-time or heterogeneous-inference claim. The
 broader research stage will investigate:
 
@@ -98,7 +102,7 @@ These are research objectives, not claims about the current implementation. The 
 | [`docs/hardware/`](docs/hardware/) | Physical platform, wiring, pin assignments, power and safety notes |
 | [`docs/architecture/`](docs/architecture/) | Current timing model and the boundary of the planned asynchronous architecture |
 | [`experiments/phase0/`](experiments/phase0/) | Synchronous fixed-input measurement, validation and formal analysis tools |
-| [`experiments/phase1/`](experiments/phase1/) | Host tests, simulation and fixed-input VLM runners, Jetson pilot, deterministic analysis, trace schemas and validation |
+| [`experiments/phase1/`](experiments/phase1/) | Host tests, simulation and thread/process fixed-input VLM runners, Jetson pilots, deterministic analysis, trace schemas and validation |
 
 ## Reproducing the baseline
 
