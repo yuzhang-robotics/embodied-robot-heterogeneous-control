@@ -16,6 +16,11 @@ from experiments.phase1.summarize_vlm_slice import (
     VLM_SUMMARY_SCHEMA_VERSION,
     build_vlm_summary,
 )
+from experiments.phase1.summarize_vlm_process_slice import (
+    VLM_PROCESS_ISOLATION,
+    VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
+    build_vlm_process_summary,
+)
 from experiments.phase1.telemetry import SCHEMA_VERSION as EVENT_SCHEMA_VERSION
 from experiments.phase1.vlm_adapter import (
     C100_INPUT_MEDIA_TYPE,
@@ -61,6 +66,24 @@ _ADAPTER_KEYS = {
     "stage_status",
     "cancellation",
 }
+_PROCESS_REPORT_KEYS = {
+    "protocol_version",
+    "start_method",
+    "process_name",
+    "process_id",
+    "spawn_requested_monotonic_ns",
+    "child_started_monotonic_ns",
+    "inference_started_monotonic_ns",
+    "completion_received_monotonic_ns",
+    "joined_monotonic_ns",
+    "exit_code",
+    "cancellation_forwarded",
+    "cancellation_forwarded_monotonic_ns",
+    "terminate_requested",
+    "terminate_confirmed",
+    "protocol_complete",
+    "error_code",
+}
 
 
 def _read_object(path: Path, errors: list[str]) -> dict[str, Any]:
@@ -83,11 +106,13 @@ def _check_artifacts(
     directory: Path,
     artifacts: object,
     errors: list[str],
+    *,
+    required_files: tuple[str, ...] = REQUIRED_FILES,
 ) -> None:
     if not isinstance(artifacts, Mapping):
         errors.append("manifest artifact identities are missing")
         return
-    expected = set(REQUIRED_FILES) - {"manifest.json"}
+    expected = set(required_files) - {"manifest.json"}
     if set(artifacts) != expected:
         errors.append("manifest artifact identity set is incomplete or unsupported")
     for name in sorted(expected):
@@ -120,6 +145,21 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
     if errors:
         return errors
 
+    artifact_kind = manifest.get("artifact_kind")
+    process_isolated = artifact_kind == "phase1_fixed_input_vlm_process_run"
+    required_files = (
+        REQUIRED_FILES + ("process.json",) if process_isolated else REQUIRED_FILES
+    )
+    process_summary: dict[str, Any] = {}
+    if process_isolated:
+        process_path = directory / "process.json"
+        if not process_path.is_file():
+            errors.append("missing file: process.json")
+        else:
+            process_summary = _read_object(process_path, errors)
+    if errors:
+        return errors
+
     run_id = manifest.get("run_id")
     if not isinstance(run_id, str) or run_id != directory.name:
         errors.append("manifest run_id does not match the run directory")
@@ -127,8 +167,17 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
         errors.append("unsupported manifest schema version")
     if manifest.get("event_schema_version") != EVENT_SCHEMA_VERSION:
         errors.append("unsupported event schema version")
-    if manifest.get("artifact_kind") != "phase1_fixed_input_vlm_run":
+    if artifact_kind not in {
+        "phase1_fixed_input_vlm_run",
+        "phase1_fixed_input_vlm_process_run",
+    }:
         errors.append("manifest artifact kind is not a fixed-input VLM run")
+    adapter_isolation = manifest.get("adapter_isolation")
+    if process_isolated:
+        if adapter_isolation != VLM_PROCESS_ISOLATION:
+            errors.append("manifest process adapter isolation is inconsistent")
+    elif adapter_isolation not in {None, "thread"}:
+        errors.append("manifest thread adapter isolation is inconsistent")
     if manifest.get("trace_profile") != "runtime_threaded_probe":
         errors.append("manifest trace profile is not runtime_threaded_probe")
     if manifest.get("status") != "completed":
@@ -245,6 +294,7 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
         return errors
     spec = manifest.get("spec")
     report = scenario.get("report")
+    process_report = scenario.get("process")
     if spec != scenario.get("spec"):
         errors.append("manifest and scenario specifications differ")
     if not isinstance(spec, Mapping):
@@ -255,6 +305,20 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
         or spec.get("request_count") != 1
     ):
         errors.append("manifest VLM specification is inconsistent")
+    elif process_isolated and spec.get("adapter_isolation") != VLM_PROCESS_ISOLATION:
+        errors.append("process specification isolation is inconsistent")
+    elif not process_isolated and spec.get("adapter_isolation") not in {
+        None,
+        "thread",
+    }:
+        errors.append("thread specification isolation is inconsistent")
+    if process_isolated:
+        if not isinstance(process_report, Mapping):
+            errors.append("scenario process report is missing")
+        elif set(process_report) != _PROCESS_REPORT_KEYS:
+            errors.append("scenario process report fields are unsupported")
+    elif process_report is not None:
+        errors.append("thread scenario unexpectedly contains a process report")
     if not isinstance(report, Mapping):
         errors.append("scenario VLM report is missing")
     elif report.get("condition") != condition.value:
@@ -295,7 +359,12 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
             }:
                 errors.append("scenario model-residency fields are unsupported")
 
-    _check_artifacts(directory, manifest.get("artifacts"), errors)
+    _check_artifacts(
+        directory,
+        manifest.get("artifacts"),
+        errors,
+        required_files=required_files,
+    )
     try:
         samples = load_resource_samples(directory / "resources.jsonl")
     except (OSError, UnicodeError, ValueError) as exc:
@@ -345,6 +414,42 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
         for gate in gates
     ):
         errors.append("one or more VLM summary Gates failed")
+
+    if process_isolated:
+        if (
+            process_summary.get("vlm_process_summary_schema_version")
+            != VLM_PROCESS_SUMMARY_SCHEMA_VERSION
+        ):
+            errors.append("unsupported VLM process summary schema version")
+        if process_summary.get("adapter_isolation") != VLM_PROCESS_ISOLATION:
+            errors.append("process summary isolation is inconsistent")
+        if process_summary.get("condition") != condition.value:
+            errors.append("process summary condition is inconsistent")
+        if process_summary.get("valid") is not True:
+            errors.append("process summary Gates did not all pass")
+        process_gates = process_summary.get("gates")
+        if not isinstance(process_gates, list) or not process_gates:
+            errors.append("process summary contains no Gates")
+        elif any(
+            not isinstance(gate, Mapping) or gate.get("passed") is not True
+            for gate in process_gates
+        ):
+            errors.append("one or more process summary Gates failed")
+        if isinstance(process_report, Mapping):
+            try:
+                rebuilt_process = build_vlm_process_summary(
+                    process_report,
+                    condition=condition,
+                )
+            except (TypeError, ValueError) as exc:
+                errors.append(
+                    "process summary rebuild failed: " f"{type(exc).__name__}: {exc}"
+                )
+            else:
+                if process_summary != _json_value(rebuilt_process):
+                    errors.append(
+                        "process summary does not match independently rebuilt Gates"
+                    )
 
     if isinstance(spec, Mapping) and isinstance(report, Mapping) and samples:
         try:

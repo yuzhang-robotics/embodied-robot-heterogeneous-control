@@ -6,21 +6,23 @@ host-only model, broker, observable executor, periodic probes, trace replay and
 portable simulation protocol have been implemented. One motion-disabled Jetson
 simulation pilot has validated the protocol and runtime semantics. A
 fixed-input VLM correctness pilot has also completed nominal consumption and
-old-generation rejection on the Jetson. Formal performance behavior remains
-unvalidated.
+old-generation rejection on the Jetson. A spawned-process VLM adapter and its
+evidence Gates are host-tested, but no process-isolated Jetson result has been
+collected. Formal performance behavior remains unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
-> 正式同步/异步对比实验仍需按 Gate 逐步完成。
+> VLM 进程隔离路径已完成 host-only 测试，尚待 Jetson pilot；正式同步/异步对比实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1C fixed-input VLM pilot analysis and evidence hardening
+- Phase: Phase 1C process-isolated VLM pilot preparation
 - Contract status: frozen through independently validated Jetson simulation
   and fixed-input VLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
   `20260830T073825Z_phase1_vlm_pilot`
+- VLM-pilot public analysis: `main@95a839d`
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -49,7 +51,9 @@ The current implementation includes:
 - a lazy fixed-input VLM adapter, nominal/stale single-request orchestration,
   model-service preflight, resource trace and independent run validation;
 - deterministic VLM-pilot reconstruction and fail-closed recording of actual
-  model-service listener bindings for subsequent runs.
+  model-service listener bindings for subsequent runs;
+- a per-request spawned-process VLM supervisor, bounded IPC, explicit process
+  cleanup facts and independently rebuilt process Gates.
 
 The VLM pilot includes no formal performance data. It validates the real-model
 integration and result-freshness path, while its skipped probe releases show
@@ -452,6 +456,54 @@ module import even though inference ran in the worker thread. Thread ownership
 alone is not accepted as evidence of timing isolation. Both paths invoke the
 same scenario adapter contract.
 
+## Process-isolated VLM boundary
+
+The first mitigation keeps task admission, queue ownership, state generations,
+result validation, event recording and the periodic probe in the parent
+process. Only the fixed-input VLM adapter invocation moves into one child
+created with the `spawn` start method. `fork` is excluded because the parent is
+already multithreaded and may have initialized library state that is unsafe to
+inherit.
+
+The parent remains the only lifecycle authority. The child cannot mutate the
+broker, consume a result, advance state or emit a final disposition. It receives
+one immutable task descriptor through a private pipe and returns only the
+existing bounded result and adapter records. Application messages are encoded
+as JSON with a 65,536-byte maximum. The fixed input path is needed inside that
+private message but remains excluded from the scenario, summary and process
+artifacts. Model text, prompts, stdout, stderr and exception tracebacks do not
+cross the evidence boundary.
+
+One process is created per request in this initial correctness experiment. This
+keeps ownership and cleanup observable without introducing a persistent worker
+pool or model concurrency. The supervisor records the spawn request, child
+start, inference-start signal, completion receipt, join, exit code and any
+forced termination. Every successful invocation must close the protocol, exit
+with code zero and be reaped without `terminate`. An EOF, malformed message,
+unexpected child exit or execution timeout becomes a bounded adapter error;
+the parent still reaps or terminates the child within finite budgets.
+
+Cancellation is forwarded through a process-safe event. For `vlm_stale`, the
+parent advances the generation only after receiving the child inference-start
+signal. The child may later report that it observed cancellation, but the
+broker still owns the `rejected_state` decision. Terminating or reaping the
+Python child proves only the local worker-process fact. It does not prove that
+Ollama, llama.cpp or GPU work stopped, so `backend_stop_confirmed` remains
+unknown unless a separate backend acknowledgement is introduced.
+
+The process runner adds `adapter_isolation=spawned_process`, a distinct run ID
+and `process.json`. The latter is rebuilt from the supervisor facts in
+`scenario.json` and fails closed unless spawn ownership, protocol completion,
+boundary order, cancellation forwarding and normal child reaping all pass.
+The original thread mode remains the default and the first VLM pilot remains
+valid under its earlier artifact contract.
+
+Host fault-injection covers nominal completion, state invalidation, child-side
+execution errors, abrupt exit and timeout termination. These tests validate
+the boundary implementation, not Jetson scheduling behavior. A motion-disabled
+real-model pilot is required before deciding whether this mitigation removes
+the module-import-scale probe gaps.
+
 ## Event and replay requirements
 
 Phase 1 creates a new event schema and run root. Phase 0 schema version `0.1.0`
@@ -778,6 +830,17 @@ The fixed-input VLM slice adds these zero-tolerance Gates:
 - `vlm_stale` records exactly one `rejected_state` and zero accepted results;
 - cancellation evidence does not claim backend stop without confirmation;
 - at least one valid resource sample falls inside the adapter interval.
+
+The process-isolated variant additionally requires:
+
+- the adapter uses `spawn` and records one positive child process identity;
+- the bounded process protocol completes without an error;
+- spawn, child start, inference start, completion and join boundaries are
+  present and ordered;
+- `vlm_stale` forwards cancellation after inference starts, while `vlm_async`
+  forwards none;
+- the child exits with code zero and is reaped without forced termination;
+- process cleanup is not represented as confirmed model-backend cancellation.
 
 Numerical jitter and non-inferiority thresholds will be frozen during the next
 protocol review and before formal data. The current 300 ms unchanged-command

@@ -110,8 +110,10 @@ or formal performance result. The fixed-input VLM adapter has since completed
 one nominal/stale correctness pilot on the Jetson. Its independently derived
 [report](../../experiments/phase1/results/20260830T073825Z_phase1_vlm_pilot/)
 confirms stale-result rejection while also recording module-import-scale gaps
-in the threaded periodic probe. Process-level isolation or an equivalent
-mitigation must therefore be evaluated before timing isolation is claimed.
+in the threaded periodic probe. The next implementation moves the VLM adapter
+call into a spawned child process while the broker, freshness authority and
+periodic probe remain in the parent. This path is host-tested but has not yet
+been evaluated on the Jetson, so timing isolation is still not claimed.
 
 ## Evaluation plan
 

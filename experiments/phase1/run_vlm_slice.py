@@ -22,12 +22,17 @@ from experiments.phase1.manifest import (
     write_json_atomic,
 )
 from experiments.phase1.summarize_vlm_slice import build_vlm_summary
+from experiments.phase1.summarize_vlm_process_slice import (
+    VLM_PROCESS_ISOLATION,
+    build_vlm_process_summary,
+)
 from experiments.phase1.telemetry import EventRecorder, SCHEMA_VERSION
 from experiments.phase1.vlm_adapter import FixedInputVLMAdapter, fixed_c100_payload
 from experiments.phase1.vlm_preflight import (
     build_vlm_preflight,
     vlm_preflight_errors,
 )
+from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
 from experiments.phase1.vlm_slice import (
     VLMSliceCondition,
     VLMSliceSpec,
@@ -44,6 +49,7 @@ DEFAULT_INPUT = (
 )
 DEFAULT_OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "runs" / "phase1-vlm-slice"
 _SESSION_ID_RE = re.compile(r"^[0-9]{8}T[0-9]{6}Z_phase1_vlm_[a-z][a-z0-9_-]{0,31}$")
+THREAD_ISOLATION = "thread"
 
 
 class VLMRunError(RuntimeError):
@@ -54,6 +60,7 @@ def make_vlm_run_id(
     condition: VLMSliceCondition,
     repetition: int,
     *,
+    adapter_isolation: str = THREAD_ISOLATION,
     now: datetime | None = None,
 ) -> str:
     if not isinstance(condition, VLMSliceCondition):
@@ -64,11 +71,16 @@ def make_vlm_run_id(
         or not 0 <= repetition <= 999
     ):
         raise ValueError("repetition must be an integer from 0 to 999")
+    if adapter_isolation not in {THREAD_ISOLATION, VLM_PROCESS_ISOLATION}:
+        raise ValueError("adapter_isolation must be thread or spawned_process")
     current = now or datetime.now(timezone.utc)
     if current.tzinfo is None:
         raise ValueError("now must be timezone-aware")
     stamp = current.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    return f"{stamp}_phase1_{condition.value}_vlm_{repetition:03d}"
+    condition_label = condition.value
+    if adapter_isolation == VLM_PROCESS_ISOLATION:
+        condition_label = condition_label.replace("vlm_", "vlm_process_", 1)
+    return f"{stamp}_phase1_{condition_label}_vlm_{repetition:03d}"
 
 
 def make_vlm_session_id(now: datetime | None = None) -> str:
@@ -153,7 +165,7 @@ def run_once(
     repo_root: Path | str | None = None,
     preflight_builder: Callable[..., dict[str, object]] | None = None,
     sampler_factory: Callable[..., TegrastatsSampler] | None = None,
-    adapter_factory: Callable[[], FixedInputVLMAdapter] | None = None,
+    adapter_factory: Callable[[], object] | None = None,
 ) -> Path:
     """Execute one preflighted VLM request and independently validate it."""
 
@@ -163,6 +175,16 @@ def run_once(
         else Path(__file__).resolve().parents[2]
     )
     condition = VLMSliceCondition(args.condition)
+    adapter_isolation = args.adapter_isolation
+    if adapter_isolation not in {THREAD_ISOLATION, VLM_PROCESS_ISOLATION}:
+        raise VLMRunError("unsupported VLM adapter isolation")
+    if (
+        adapter_isolation == VLM_PROCESS_ISOLATION
+        and args.process_execution_timeout_s >= args.completion_timeout_s
+    ):
+        raise VLMRunError(
+            "process execution timeout must be below the slice completion timeout"
+        )
     session_id = _validate_session_id(args.session_id or make_vlm_session_id())
     injected_components = [
         name
@@ -175,7 +197,6 @@ def run_once(
     ]
     resolved_preflight_builder = preflight_builder or build_vlm_preflight
     resolved_sampler_factory = sampler_factory or TegrastatsSampler
-    resolved_adapter_factory = adapter_factory or FixedInputVLMAdapter
     safety = require_motion_disabled()
     payload = fixed_c100_payload(args.input)
     preflight = resolved_preflight_builder(
@@ -188,8 +209,17 @@ def run_once(
         raise VLMRunError("VLM preflight failed: " + "; ".join(failed_checks))
 
     output_root = _resolve_output_root(Path(args.output_root), root)
-    run_id = make_vlm_run_id(condition, args.repetition)
-    run_dir = output_root / session_id / condition.value / run_id
+    run_id = make_vlm_run_id(
+        condition,
+        args.repetition,
+        adapter_isolation=adapter_isolation,
+    )
+    condition_label = (
+        condition.value
+        if adapter_isolation == THREAD_ISOLATION
+        else condition.value.replace("vlm_", "vlm_process_", 1)
+    )
+    run_dir = output_root / session_id / condition_label / run_id
     if run_dir.exists():
         raise FileExistsError(f"refusing to overwrite VLM run: {run_dir}")
     run_dir.mkdir(parents=True)
@@ -208,14 +238,21 @@ def run_once(
         probe_period_ns=int(args.probe_period_ms * 1_000_000),
         probe_deadline_ns=int(args.probe_deadline_ms * 1_000_000),
     )
+    spec_record = spec.to_dict()
+    spec_record["adapter_isolation"] = adapter_isolation
     environment = collect_environment(root)
     manifest: dict[str, object] = {
         "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
         "event_schema_version": SCHEMA_VERSION,
-        "artifact_kind": "phase1_fixed_input_vlm_run",
+        "artifact_kind": (
+            "phase1_fixed_input_vlm_run"
+            if adapter_isolation == THREAD_ISOLATION
+            else "phase1_fixed_input_vlm_process_run"
+        ),
         "run_id": run_id,
         "session_id": session_id,
         "condition": condition.value,
+        "adapter_isolation": adapter_isolation,
         "trace_profile": "runtime_threaded_probe",
         "status": "running",
         "created_at": utc_now_iso(),
@@ -252,7 +289,7 @@ def run_once(
             "unload_confirmation": "not_available",
             "raw_output_recorded": False,
         },
-        "spec": spec.to_dict(),
+        "spec": spec_record,
         "resource_interval_ms": args.resource_interval_ms,
         "resource_sampler_report": None,
         "artifacts": {},
@@ -267,11 +304,22 @@ def run_once(
         sampler = resolved_sampler_factory(run_dir, args.resource_interval_ms)
         sampler.start(first_sample_timeout_s=args.resource_first_sample_timeout_s)
         recorder = EventRecorder(run_dir, run_id)
+        if adapter_factory is not None:
+            adapter = adapter_factory()
+        elif adapter_isolation == VLM_PROCESS_ISOLATION:
+            adapter = ProcessIsolatedVLMAdapter(
+                execution_timeout_s=args.process_execution_timeout_s,
+                poll_interval_s=args.process_poll_interval_s,
+                join_timeout_s=args.process_join_timeout_s,
+                terminate_join_timeout_s=args.process_terminate_timeout_s,
+            )
+        else:
+            adapter = FixedInputVLMAdapter()
         report = run_vlm_slice(
             spec,
             payload,
             recorder,
-            adapter=resolved_adapter_factory(),
+            adapter=adapter,
         )
         recorder.close()
         recorder = None
@@ -280,14 +328,32 @@ def run_once(
         if not sampler_report.successful:
             raise VLMRunError("tegrastats did not produce a valid closed trace")
 
-        scenario = {"spec": spec.to_dict(), "report": report.to_dict()}
+        scenario: dict[str, object] = {
+            "spec": spec_record,
+            "report": report.to_dict(),
+        }
+        process_summary: dict[str, object] | None = None
+        if adapter_isolation == VLM_PROCESS_ISOLATION:
+            process_report = getattr(adapter, "last_process_report", None)
+            if process_report is None or not callable(
+                getattr(process_report, "to_dict", None)
+            ):
+                raise VLMRunError("process adapter did not publish supervisor facts")
+            process_record = process_report.to_dict()
+            scenario["process"] = process_record
+            process_summary = build_vlm_process_summary(
+                process_record,
+                condition=condition,
+            )
+            if process_summary.get("valid") is not True:
+                raise VLMRunError("one or more VLM process Gates failed")
         scenario_path = run_dir / "scenario.json"
         write_json_atomic(scenario_path, scenario)
         samples = load_resource_samples(run_dir / "resources.jsonl")
         summary = build_vlm_summary(
             run_dir / "events.jsonl",
             condition=condition,
-            spec=spec.to_dict(),
+            spec=spec_record,
             report=report.to_dict(),
             resource_samples=samples,
             sampler_report=sampler_report.to_dict(),
@@ -298,15 +364,20 @@ def run_once(
         if summary.get("valid") is not True:
             raise VLMRunError("one or more VLM slice Gates failed")
 
+        if process_summary is not None:
+            write_json_atomic(run_dir / "process.json", process_summary)
+
+        artifact_names = [
+            "preflight.json",
+            "events.jsonl",
+            "resources.jsonl",
+            "scenario.json",
+            "summary.json",
+        ]
+        if process_summary is not None:
+            artifact_names.append("process.json")
         manifest["artifacts"] = {
-            name: _artifact_identity(run_dir / name)
-            for name in (
-                "preflight.json",
-                "events.jsonl",
-                "resources.jsonl",
-                "scenario.json",
-                "summary.json",
-            )
+            name: _artifact_identity(run_dir / name) for name in artifact_names
         }
         manifest["status"] = "completed"
         manifest["completed_at"] = utc_now_iso()
@@ -358,6 +429,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--probe-deadline-ms", type=float, default=100.0)
     parser.add_argument("--resource-interval-ms", type=int, default=200)
     parser.add_argument("--resource-first-sample-timeout-s", type=float, default=5.0)
+    parser.add_argument(
+        "--adapter-isolation",
+        choices=(THREAD_ISOLATION, VLM_PROCESS_ISOLATION),
+        default=THREAD_ISOLATION,
+    )
+    parser.add_argument("--process-execution-timeout-s", type=float, default=600.0)
+    parser.add_argument("--process-poll-interval-s", type=float, default=0.02)
+    parser.add_argument("--process-join-timeout-s", type=float, default=5.0)
+    parser.add_argument("--process-terminate-timeout-s", type=float, default=5.0)
     return parser
 
 
