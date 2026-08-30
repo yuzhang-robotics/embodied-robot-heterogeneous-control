@@ -4,13 +4,13 @@ This directory contains the host tests, simulated-condition runner, trace
 recorder, event schema, independent lifecycle replay, run validation, Jetson
 pilot orchestration, deterministic analysis, fixed-input VLM integration and
 descriptive summaries for the Phase 1 asynchronous runtime study. The first
-Jetson simulation pilot is complete. The VLM slice is implemented and
-host-tested, but its Jetson runs and all formal Phase 1 data remain uncollected.
+Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
+Formal synchronous/asynchronous data remain uncollected.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
-> pilot 证据链，并完成首次 Jetson simulation pilot 及确定性分析；固定输入 VLM
-> 适配器和证据链已通过主机测试，Jetson 实机运行与 Phase 1 正式数据尚未采集。
+> pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
+> 当前已验证真实模型接入和陈旧结果拒绝，正式对比数据尚未采集。
 
 ## Current status
 
@@ -25,8 +25,9 @@ host-tested, but its Jetson runs and all formal Phase 1 data remain uncollected.
 - Jetson preflight, continuous resource telemetry and pilot runner: implemented
 - Jetson simulation pilot: completed and independently validated
 - Deterministic pilot analysis and public descriptive report: implemented
-- Fixed-input VLM adapter, single-request runner and validator: host-tested;
-  Jetson execution pending
+- Fixed-input VLM adapter, single-request runner and validator: completed one
+  independently validated Jetson correctness pilot
+- Deterministic VLM pilot analysis and listener-binding preflight: implemented
 - Real ASR/LLM slices: not started
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
@@ -200,6 +201,14 @@ does not authorize an asynchronous-performance or hard-real-time claim.
 Condition-level power summaries use instantaneous rail samples; the
 `tegrastats`-reported average is retained only as a session-window diagnostic.
 
+The second public derived result is the
+[`20260830T073825Z` fixed-input VLM pilot](results/20260830T073825Z_phase1_vlm_pilot/).
+Both real-model conditions passed their correctness Gates, but the periodic
+probe recorded 85 and 63 skipped releases respectively. All skipped releases
+were scheduled during lazy module import. The result therefore validates
+nominal consumption and stale-result rejection while explicitly withholding a
+thread-level timing-isolation claim.
+
 ## Fixed-input VLM slice
 
 The first real-workload integration reuses the exact Phase 0 C100 JPEG, the
@@ -222,8 +231,7 @@ reject the completed result. Public artifacts retain only input identity,
 output hash and length, translation route, stage durations and lifecycle
 facts. Model text, prompts and the private input path are not serialized.
 
-After this implementation is merged, run each condition from a clean,
-synchronized Jetson `main` branch:
+Reproduce each condition from a clean, synchronized Jetson `main` branch:
 
 ```bash
 export ROBOT_ENABLE_MOTION=0
@@ -239,13 +247,32 @@ python3 -m experiments.phase1.run_vlm_slice \
 ```
 
 The runner refuses to create a directory unless platform, Git, motion, module,
-fixed-input, dependency, Ollama CLI, Moondream and Qwen checks all pass. Each
-run contains `preflight.json`, the event and resource JSONL traces, `scenario.json`,
+fixed-input, dependency, Ollama CLI, Moondream and Qwen checks all pass. VLM
+preflight schema `0.2.0` also records the TCP listener addresses and rejects a
+service bound to a wildcard or non-loopback address. Each run contains
+`preflight.json`, the event and resource JSONL traces, `scenario.json`,
 `summary.json` and an atomic manifest. Validate either directory again with:
 
 ```bash
 python3 -m experiments.phase1.validate_vlm_slice /path/to/run_dir
 ```
+
+Build deterministic derivatives from a two-condition ignored session with:
+
+```bash
+python3 -m experiments.phase1.analyze_vlm_pilot \
+  /path/to/session_dir \
+  --source-archive-sha256 <archive_sha256> \
+  --json-output /path/to/analysis.json \
+  --markdown-output /path/to/README.md
+```
+
+The first VLM pilot was collected under preflight schema `0.1.0`. Its request
+URLs were loopback addresses, and the operator checked the llama.cpp listener
+before execution, but actual listener bindings were not stored in the archive.
+The public analysis retains that evidence gap rather than converting the
+manual observation into a reproducible claim. The validator remains able to
+read the original schema while new runs fail closed under `0.2.0`.
 
 These two runs establish integration and stale-result correctness only. They
 do not form a balanced synchronous/asynchronous comparison, prove backend
@@ -265,11 +292,14 @@ claim.
    pilot session validation — complete;
 6. run and independently analyze the safe Jetson simulation pilot with
    `ROBOT_ENABLE_MOTION=0` — complete;
-7. implement and host-test the fixed-input VLM slice — complete; Jetson
-   execution pending;
-8. extend the same adapter/runtime boundary to ASR and LLM;
-9. freeze formal thresholds and collect balanced synchronous/asynchronous data;
-10. add an opt-in motion-disabled application slice after the research Gates
+7. implement, run and independently analyze the fixed-input VLM correctness
+   slice — complete;
+8. record actual model-service listener bindings and qualify the simulated
+   thread-isolation result with real-workload evidence — complete;
+9. evaluate process-level isolation, then extend the adapter/runtime boundary
+   to ASR and LLM;
+10. freeze formal thresholds and collect balanced synchronous/asynchronous data;
+11. add an opt-in motion-disabled application slice after the research Gates
    pass.
 
 Contract changes are reviewed before implementation, and the formal protocol
@@ -298,6 +328,7 @@ The reusable, hardware-independent kernel lives under
 
 ```text
 experiments/phase1/
+├── analyze_vlm_pilot.py
 ├── jetson_preflight.py
 ├── jetson_telemetry.py
 ├── manifest.py

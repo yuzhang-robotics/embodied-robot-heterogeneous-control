@@ -2,9 +2,9 @@
 
 The Jetson package contains the high-level runtime from the bachelor's thesis: offline speech interaction, local language and vision inference, color-target motion planning, and UART communication with the STM32. It also contains the host-testable Phase 1 task-runtime kernel. The experiment layer now connects that kernel to the fixed Phase 0 VLM input without changing the robot application.
 
-The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-safe task identity, bounded ownership, a single-worker observable executor and a software periodic probe. The portable simulated-condition runner and Jetson pilot harness under `experiments/phase1/` have completed one motion-disabled, independently validated simulation pilot. The fixed-input VLM runner is implemented and host-tested; its Jetson execution and application integration remain research work.
+The thesis application was validated on a Jetson Orin Nano Super 8GB running Ubuntu 22.04 and Python 3.10.12. It remains the synchronous reference implementation. The Phase 1 package currently covers host-safe task identity, bounded ownership, a single-worker observable executor and a software periodic probe. The experiment harness under `experiments/phase1/` has completed one motion-disabled simulation pilot and one fixed-input VLM correctness pilot on the Jetson. The real-model pilot validated nominal consumption and stale-result rejection, but also recorded skipped probe releases during lazy Python module import; formal comparison and application integration remain research work.
 
-> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前整机应用仍使用已验证的同步路径；Phase 1 已完成固定输入 VLM 接入的主机测试，但尚未进行 Jetson 实机采集，也未接入运动控制。
+> 中文简介：本目录包含“章鱼号”的 Jetson 端运行程序，负责离线语音交互、本地大模型与视觉模型调用、颜色目标接近和 STM32 串口通信。当前整机应用仍使用已验证的同步路径；Phase 1 已完成固定输入 VLM 的 Jetson correctness pilot，但正式对比实验与运动控制接入尚未开始。
 
 ## Modules
 
@@ -63,9 +63,12 @@ The application expects two services to be started separately:
 | llama.cpp | `http://127.0.0.1:8080/v1/chat/completions` | Qwen dialogue and Chinese scene-description rewriting |
 | Ollama | `http://127.0.0.1:11434/api/chat` | Moondream image description |
 
-The exact llama.cpp launch flags depend on the local model and build. Confirm both services before starting the robot application:
+The exact llama.cpp launch flags depend on the local model and build. Bind both
+services to loopback rather than a wildcard interface. Confirm the listeners
+and model identities before starting the robot application:
 
 ```bash
+ss -ltnp | grep -E ':(8080|11434)'
 curl --max-time 5 http://127.0.0.1:8080/v1/models
 curl --max-time 5 http://127.0.0.1:11434/api/tags
 ```

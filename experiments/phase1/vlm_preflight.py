@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import ipaddress
 import json
 import shutil
 import urllib.parse
@@ -14,6 +15,7 @@ from experiments.phase1.jetson_preflight import (
     build_jetson_preflight,
     preflight_errors,
 )
+from experiments.phase1.manifest import command_snapshot
 from experiments.phase1.vlm_adapter import (
     C100_INPUT_MEDIA_TYPE,
     C100_INPUT_SHA256,
@@ -22,9 +24,9 @@ from experiments.phase1.vlm_adapter import (
 from jetson.phase1_runtime import PayloadRef
 
 
-VLM_PREFLIGHT_SCHEMA_VERSION = "0.1.0"
+VLM_PREFLIGHT_SCHEMA_VERSION = "0.2.0"
 _LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
-_REQUIRED_CHECKS = {
+_REQUIRED_CHECKS_V0_1 = {
     "fixed_input_identity",
     "python_dependencies_available",
     "ollama_endpoint_local",
@@ -34,6 +36,14 @@ _REQUIRED_CHECKS = {
     "qwen_endpoint_local",
     "qwen_service_reachable",
     "qwen_model_present",
+}
+_REQUIRED_CHECKS_BY_VERSION = {
+    "0.1.0": _REQUIRED_CHECKS_V0_1,
+    "0.2.0": _REQUIRED_CHECKS_V0_1
+    | {
+        "ollama_listener_loopback_only",
+        "qwen_listener_loopback_only",
+    },
 }
 
 
@@ -59,9 +69,92 @@ def _llama_models_url(api_url: str) -> str:
     )
 
 
+def _endpoint_port(url: str) -> int:
+    parts = urllib.parse.urlsplit(url)
+    if parts.port is not None:
+        return parts.port
+    return 443 if parts.scheme == "https" else 80
+
+
+def _listener_host(local_address: str, port: int) -> str | None:
+    token = local_address.strip()
+    if token.startswith("["):
+        closing = token.rfind("]")
+        if closing < 0 or token[closing + 1 :] != f":{port}":
+            return None
+        return token[1:closing].split("%", 1)[0]
+    try:
+        host, service = token.rsplit(":", 1)
+    except ValueError:
+        return None
+    if service != str(port):
+        return None
+    return host.split("%", 1)[0]
+
+
+def _is_loopback_address(address: str) -> bool:
+    try:
+        parsed = ipaddress.ip_address(address)
+    except ValueError:
+        return False
+    if parsed.is_loopback:
+        return True
+    mapped = getattr(parsed, "ipv4_mapped", None)
+    return mapped is not None and mapped.is_loopback
+
+
+def probe_tcp_listener(
+    port: int,
+    *,
+    snapshotter: Callable[[list[str]], Mapping[str, object]] = command_snapshot,
+) -> dict[str, object]:
+    """Record the bound addresses for one TCP port without process details."""
+
+    if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+        raise ValueError("port must be an integer from 1 to 65535")
+    snapshot = snapshotter(["ss", "-H", "-ltn"])
+    returncode = snapshot.get("returncode")
+    error_code = snapshot.get("error_code")
+    output = snapshot.get("output")
+    if returncode != 0 or error_code is not None or not isinstance(output, str):
+        return {
+            "addresses": [],
+            "loopback_only": False,
+            "error_code": str(error_code or "listener_probe_failed"),
+        }
+
+    addresses: set[str] = set()
+    unparsed_match = False
+    for line in output.splitlines():
+        fields = line.split()
+        if len(fields) < 4:
+            continue
+        local_address = fields[3]
+        if not local_address.endswith(f":{port}"):
+            continue
+        host = _listener_host(local_address, port)
+        if host is None:
+            unparsed_match = True
+        else:
+            addresses.add(host)
+    ordered = sorted(addresses)
+    listener_found = bool(ordered) or unparsed_match
+    loopback_only = (
+        bool(ordered)
+        and not unparsed_match
+        and all(_is_loopback_address(address) for address in ordered)
+    )
+    return {
+        "addresses": ordered,
+        "loopback_only": loopback_only,
+        "error_code": None if listener_found else "listener_not_found",
+    }
+
+
 def probe_vlm_services(
     *,
     query: Callable[[str], dict[str, object]] = _read_json,
+    listener_probe: Callable[[int], Mapping[str, object]] = probe_tcp_listener,
 ) -> dict[str, object]:
     """Probe local model services without importing the VLM implementation."""
 
@@ -73,11 +166,18 @@ def probe_vlm_services(
         "model": VLM_MODEL,
         "model_present": False,
         "model_digest": None,
+        "listener_addresses": [],
+        "listener_loopback_only": False,
+        "listener_error_code": "not_probed",
         "error_code": None,
     }
     if ollama["endpoint_local"] is not True:
         ollama["error_code"] = "nonlocal_endpoint"
     else:
+        listener = listener_probe(_endpoint_port(OLLAMA_CHAT_URL))
+        ollama["listener_addresses"] = list(listener.get("addresses", []))
+        ollama["listener_loopback_only"] = listener.get("loopback_only") is True
+        ollama["listener_error_code"] = listener.get("error_code")
         try:
             models = query(OLLAMA_CHAT_URL.rsplit("/", 1)[0] + "/tags").get(
                 "models", []
@@ -108,11 +208,18 @@ def probe_vlm_services(
         "model": "qwen",
         "model_present": False,
         "served_model_ids": [],
+        "listener_addresses": [],
+        "listener_loopback_only": False,
+        "listener_error_code": "not_probed",
         "error_code": None,
     }
     if qwen["endpoint_local"] is not True:
         qwen["error_code"] = "nonlocal_endpoint"
     else:
+        listener = listener_probe(_endpoint_port(LLAMA_API_URL))
+        qwen["listener_addresses"] = list(listener.get("addresses", []))
+        qwen["listener_loopback_only"] = listener.get("loopback_only") is True
+        qwen["listener_error_code"] = listener.get("error_code")
         try:
             models = query(_llama_models_url(LLAMA_API_URL)).get("data", [])
             if not isinstance(models, list):
@@ -216,6 +323,15 @@ def build_vlm_preflight(
             requirement="the Ollama endpoint is loopback-only",
         ),
         _check(
+            "ollama_listener_loopback_only",
+            ollama_record.get("listener_loopback_only") is True,
+            observed={
+                "addresses": ollama_record.get("listener_addresses"),
+                "error_code": ollama_record.get("listener_error_code"),
+            },
+            requirement="the Ollama TCP listener binds only loopback addresses",
+        ),
+        _check(
             "ollama_cli_available",
             ollama_cli_available is True,
             observed=ollama_cli_available,
@@ -245,6 +361,15 @@ def build_vlm_preflight(
             qwen_record.get("endpoint_local") is True,
             observed=qwen_record.get("endpoint_local"),
             requirement="the Qwen rewrite endpoint is loopback-only",
+        ),
+        _check(
+            "qwen_listener_loopback_only",
+            qwen_record.get("listener_loopback_only") is True,
+            observed={
+                "addresses": qwen_record.get("listener_addresses"),
+                "error_code": qwen_record.get("listener_error_code"),
+            },
+            requirement="the Qwen TCP listener binds only loopback addresses",
         ),
         _check(
             "qwen_service_reachable",
@@ -281,7 +406,9 @@ def build_vlm_preflight(
 
 def vlm_preflight_errors(preflight: Mapping[str, object]) -> list[str]:
     errors: list[str] = []
-    if preflight.get("vlm_preflight_schema_version") != VLM_PREFLIGHT_SCHEMA_VERSION:
+    schema_version = preflight.get("vlm_preflight_schema_version")
+    required_checks = _REQUIRED_CHECKS_BY_VERSION.get(str(schema_version))
+    if required_checks is None:
         errors.append("unsupported VLM preflight schema version")
     base = preflight.get("base")
     if not isinstance(base, Mapping):
@@ -304,7 +431,7 @@ def vlm_preflight_errors(preflight: Mapping[str, object]) -> list[str]:
             check_by_name[name] = item
             if item.get("required") is not True or item.get("passed") is not True:
                 errors.append(f"VLM preflight check failed: {name}")
-    if set(check_by_name) != _REQUIRED_CHECKS:
+    if required_checks is not None and set(check_by_name) != required_checks:
         errors.append("VLM preflight check set is incomplete or unsupported")
 
     input_identity = preflight.get("input")

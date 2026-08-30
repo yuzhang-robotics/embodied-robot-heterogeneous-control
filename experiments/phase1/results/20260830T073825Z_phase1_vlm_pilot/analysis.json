@@ -1,0 +1,453 @@
+{
+  "analysis_schema_version": "0.1.0",
+  "analysis_kind": "phase1_fixed_input_vlm_pilot",
+  "session_id": "20260830T073825Z_phase1_vlm_pilot",
+  "source": {
+    "git_commit": "aebd1a22f8d9a9bfce1cd8dfd2f089e1cc48a204",
+    "git_branch": "main",
+    "source_archive_sha256": "01869a420203929bc895c589082ec1d60244b2ba2ec8865fc6249bfaf07cae23",
+    "run_artifacts": {
+      "vlm_async": {
+        "preflight.json": {
+          "size_bytes": 7291,
+          "sha256": "e01a7fdf6fb0ae2159babe8202d39f32ef3cbbd692bc34b3a7f96409dd209dcb"
+        },
+        "events.jsonl": {
+          "size_bytes": 429013,
+          "sha256": "ee6fff9a27069c09b699f04ed30212d6b6c11421a01d90d025ce80fb1899a2c7"
+        },
+        "resources.jsonl": {
+          "size_bytes": 523446,
+          "sha256": "15272b532b80b04ff9631839cd63f53ad35ac11f6a48a35e6ff126d3ce2c7847"
+        },
+        "scenario.json": {
+          "size_bytes": 2996,
+          "sha256": "3c15292ddd44ce7a14c6d7d2428b17d084eee2ef3c576ebe272d5aa8aa6fddba"
+        },
+        "summary.json": {
+          "size_bytes": 13850,
+          "sha256": "b706ed47d3b8fbe6f412948e46f41837b1eee81853c39158077c428333f7fc41"
+        }
+      },
+      "vlm_stale": {
+        "preflight.json": {
+          "size_bytes": 7291,
+          "sha256": "9bb70b515fc7f865034ff49aeab15697b071f384e6eae6a873fba3f9632b81f5"
+        },
+        "events.jsonl": {
+          "size_bytes": 337944,
+          "sha256": "8de5f22cad87d73f4047ccc877a4975000afe07689ad93eb1c33a5cc5c2e23ae"
+        },
+        "resources.jsonl": {
+          "size_bytes": 408804,
+          "sha256": "182371e7a4095fd66e058b599a372b64a730f7f172ebcf3f91b22f2fe0b7c3c9"
+        },
+        "scenario.json": {
+          "size_bytes": 3015,
+          "sha256": "b995065f996f85574640041378a8d9eedf827fdedff7a8dcccfdaab47ee76c2b"
+        },
+        "summary.json": {
+          "size_bytes": 13915,
+          "sha256": "35a5b66c928491993eef1a2a515b54ae1f7fd8d11ea90f8e4163b9b5a03a6ba2"
+        }
+      }
+    }
+  },
+  "identity": {
+    "input": {
+      "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+      "size_bytes": 9009,
+      "media_type": "image/jpeg",
+      "path_recorded": false
+    },
+    "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+    "qwen_model_ids": [
+      "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    ]
+  },
+  "claim_boundary": {
+    "design_role": "correctness_pilot",
+    "descriptive_only": true,
+    "real_workload_integration_observed": true,
+    "stale_result_rejection_observed": true,
+    "timing_domain_isolation_claim_permitted": false,
+    "asynchronous_performance_superiority_claim_permitted": false,
+    "hard_real_time_claim_permitted": false,
+    "heterogeneous_inference_claim_permitted": false,
+    "condition_resource_attribution_permitted": false
+  },
+  "validation": {
+    "run_count": 2,
+    "all_runs_valid": true,
+    "correctness_observed": true,
+    "listener_binding_evidence_complete": false
+  },
+  "runs": [
+    {
+      "condition": "vlm_async",
+      "run_id": "20260830T073825Z_phase1_vlm_async_vlm_001",
+      "session_id": "20260830T073825Z_phase1_vlm_pilot",
+      "source": {
+        "git_commit": "aebd1a22f8d9a9bfce1cd8dfd2f089e1cc48a204",
+        "git_branch": "main",
+        "artifacts": {
+          "preflight.json": {
+            "size_bytes": 7291,
+            "sha256": "e01a7fdf6fb0ae2159babe8202d39f32ef3cbbd692bc34b3a7f96409dd209dcb"
+          },
+          "events.jsonl": {
+            "size_bytes": 429013,
+            "sha256": "ee6fff9a27069c09b699f04ed30212d6b6c11421a01d90d025ce80fb1899a2c7"
+          },
+          "resources.jsonl": {
+            "size_bytes": 523446,
+            "sha256": "15272b532b80b04ff9631839cd63f53ad35ac11f6a48a35e6ff126d3ce2c7847"
+          },
+          "scenario.json": {
+            "size_bytes": 2996,
+            "sha256": "3c15292ddd44ce7a14c6d7d2428b17d084eee2ef3c576ebe272d5aa8aa6fddba"
+          },
+          "summary.json": {
+            "size_bytes": 13850,
+            "sha256": "b706ed47d3b8fbe6f412948e46f41837b1eee81853c39158077c428333f7fc41"
+          }
+        }
+      },
+      "input": {
+        "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+        "size_bytes": 9009,
+        "media_type": "image/jpeg",
+        "path_recorded": false
+      },
+      "services": {
+        "moondream_model": "moondream",
+        "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+        "qwen_model_ids": [
+          "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        ],
+        "listener_evidence": {
+          "preflight_schema_version": "0.1.0",
+          "complete": false,
+          "services": {
+            "ollama": {
+              "recorded": false,
+              "addresses": [],
+              "loopback_only": null
+            },
+            "qwen": {
+              "recorded": false,
+              "addresses": [],
+              "loopback_only": null
+            }
+          }
+        }
+      },
+      "validation": {
+        "manifest_status": "completed",
+        "summary_valid": true,
+        "all_gates_passed": true,
+        "real_vlm_path_executed": true
+      },
+      "result": {
+        "execution_outcome": "ok",
+        "translation_route": "qwen",
+        "disposition_counts": {
+          "consumed": 1
+        },
+        "accepted_result_count": 1,
+        "stale_consumed_count": 0,
+        "raw_text_recorded": false,
+        "model_unload": {
+          "unload_requested": true,
+          "unload_confirmed": null
+        },
+        "cancellation": {
+          "requested": false,
+          "worker_observed": false,
+          "client_wait_stopped": false,
+          "backend_stop_confirmed": null
+        }
+      },
+      "timing": {
+        "adapter_total_ms": 79757.102262,
+        "stages": [
+          {
+            "stage": "input_verify_before",
+            "status": "ok",
+            "duration_ms": 0.578042
+          },
+          {
+            "stage": "module_import",
+            "status": "ok",
+            "duration_ms": 18886.883332
+          },
+          {
+            "stage": "moondream_inference",
+            "status": "ok",
+            "duration_ms": 39249.050942
+          },
+          {
+            "stage": "qwen_rewrite",
+            "status": "ok",
+            "duration_ms": 21057.203005
+          },
+          {
+            "stage": "output_normalization",
+            "status": "ok",
+            "duration_ms": 1.483271
+          },
+          {
+            "stage": "model_unload",
+            "status": "ok",
+            "duration_ms": 559.293335
+          },
+          {
+            "stage": "input_verify_after",
+            "status": "ok",
+            "duration_ms": 1.920188
+          }
+        ],
+        "probe": {
+          "period_ms": 100.0,
+          "deadline_ms": 100.0,
+          "tick_count": 733,
+          "skipped_releases": 85,
+          "scheduled_release_count": 818,
+          "skipped_release_rate": 0.10391198,
+          "deadline_miss_count": 0,
+          "max_lateness_ms": 88.396307,
+          "maximum_observed_gap_ms": 4262.87556,
+          "joined": true,
+          "error_code": null,
+          "skipped_releases_by_adapter_stage": {
+            "module_import": 85
+          }
+        }
+      },
+      "resources": {
+        "sample_count": 398,
+        "inference_interval_sample_count": 388,
+        "parse_error_count": 0,
+        "parse_warning_counts": {
+          "emc_missing": 398
+        },
+        "sample_interval_ms": {
+          "mean": 205.982982,
+          "p95": 209.259719,
+          "p99": 777.851783,
+          "max": 4247.173457
+        },
+        "ram_used_mb": {
+          "mean": 5344.665829,
+          "p95": 6357.0,
+          "max": 6366.0
+        },
+        "gr3d_usage_pct": {
+          "mean": 4.130653,
+          "p95": 17.0,
+          "max": 99.0
+        },
+        "junction_temperature_c": {
+          "mean": 52.05656,
+          "p95": 52.531,
+          "max": 54.343
+        },
+        "vdd_in_instant_mw": {
+          "mean": 5778.158291,
+          "p95": 8213.0,
+          "max": 16242.0
+        }
+      }
+    },
+    {
+      "condition": "vlm_stale",
+      "run_id": "20260830T074339Z_phase1_vlm_stale_vlm_001",
+      "session_id": "20260830T073825Z_phase1_vlm_pilot",
+      "source": {
+        "git_commit": "aebd1a22f8d9a9bfce1cd8dfd2f089e1cc48a204",
+        "git_branch": "main",
+        "artifacts": {
+          "preflight.json": {
+            "size_bytes": 7291,
+            "sha256": "9bb70b515fc7f865034ff49aeab15697b071f384e6eae6a873fba3f9632b81f5"
+          },
+          "events.jsonl": {
+            "size_bytes": 337944,
+            "sha256": "8de5f22cad87d73f4047ccc877a4975000afe07689ad93eb1c33a5cc5c2e23ae"
+          },
+          "resources.jsonl": {
+            "size_bytes": 408804,
+            "sha256": "182371e7a4095fd66e058b599a372b64a730f7f172ebcf3f91b22f2fe0b7c3c9"
+          },
+          "scenario.json": {
+            "size_bytes": 3015,
+            "sha256": "b995065f996f85574640041378a8d9eedf827fdedff7a8dcccfdaab47ee76c2b"
+          },
+          "summary.json": {
+            "size_bytes": 13915,
+            "sha256": "35a5b66c928491993eef1a2a515b54ae1f7fd8d11ea90f8e4163b9b5a03a6ba2"
+          }
+        }
+      },
+      "input": {
+        "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+        "size_bytes": 9009,
+        "media_type": "image/jpeg",
+        "path_recorded": false
+      },
+      "services": {
+        "moondream_model": "moondream",
+        "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+        "qwen_model_ids": [
+          "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        ],
+        "listener_evidence": {
+          "preflight_schema_version": "0.1.0",
+          "complete": false,
+          "services": {
+            "ollama": {
+              "recorded": false,
+              "addresses": [],
+              "loopback_only": null
+            },
+            "qwen": {
+              "recorded": false,
+              "addresses": [],
+              "loopback_only": null
+            }
+          }
+        }
+      },
+      "validation": {
+        "manifest_status": "completed",
+        "summary_valid": true,
+        "all_gates_passed": true,
+        "real_vlm_path_executed": true
+      },
+      "result": {
+        "execution_outcome": "cancel_observed",
+        "translation_route": "qwen",
+        "disposition_counts": {
+          "rejected_state": 1
+        },
+        "accepted_result_count": 0,
+        "stale_consumed_count": 0,
+        "raw_text_recorded": false,
+        "model_unload": {
+          "unload_requested": true,
+          "unload_confirmed": null
+        },
+        "cancellation": {
+          "requested": true,
+          "worker_observed": true,
+          "client_wait_stopped": false,
+          "backend_stop_confirmed": null
+        }
+      },
+      "timing": {
+        "adapter_total_ms": 61776.669919,
+        "stages": [
+          {
+            "stage": "input_verify_before",
+            "status": "ok",
+            "duration_ms": 0.579519
+          },
+          {
+            "stage": "module_import",
+            "status": "ok",
+            "duration_ms": 15130.22681
+          },
+          {
+            "stage": "moondream_inference",
+            "status": "ok",
+            "duration_ms": 27933.337664
+          },
+          {
+            "stage": "qwen_rewrite",
+            "status": "ok",
+            "duration_ms": 18367.114679
+          },
+          {
+            "stage": "output_normalization",
+            "status": "ok",
+            "duration_ms": 0.043714
+          },
+          {
+            "stage": "model_unload",
+            "status": "ok",
+            "duration_ms": 342.30135
+          },
+          {
+            "stage": "input_verify_after",
+            "status": "ok",
+            "duration_ms": 2.002445
+          }
+        ],
+        "probe": {
+          "period_ms": 100.0,
+          "deadline_ms": 100.0,
+          "tick_count": 575,
+          "skipped_releases": 63,
+          "scheduled_release_count": 638,
+          "skipped_release_rate": 0.098746082,
+          "deadline_miss_count": 0,
+          "max_lateness_ms": 93.880989,
+          "maximum_observed_gap_ms": 2700.37549,
+          "joined": true,
+          "error_code": null,
+          "skipped_releases_by_adapter_stage": {
+            "module_import": 63
+          }
+        }
+      },
+      "resources": {
+        "sample_count": 310,
+        "inference_interval_sample_count": 300,
+        "parse_error_count": 0,
+        "parse_warning_counts": {
+          "emc_missing": 310
+        },
+        "sample_interval_ms": {
+          "mean": 205.874002,
+          "p95": 207.500801,
+          "p99": 545.871255,
+          "max": 2698.625859
+        },
+        "ram_used_mb": {
+          "mean": 4978.86129,
+          "p95": 5928.0,
+          "max": 5990.0
+        },
+        "gr3d_usage_pct": {
+          "mean": 6.129032,
+          "p95": 62.0,
+          "max": 99.0
+        },
+        "junction_temperature_c": {
+          "mean": 52.134081,
+          "p95": 52.625,
+          "max": 54.343
+        },
+        "vdd_in_instant_mw": {
+          "mean": 5962.63871,
+          "p95": 8451.0,
+          "max": 16803.0
+        }
+      }
+    }
+  ],
+  "data_quality": {
+    "total_probe_skipped_releases": 148,
+    "limitations": [
+      "single_run_per_condition",
+      "fixed_condition_order",
+      "no_real_workload_synchronous_condition",
+      "formal_thresholds_not_frozen",
+      "model_unload_not_independently_confirmed",
+      "resource_activity_not_attributed_to_a_model_or_processor",
+      "listener_binding_evidence_not_recorded",
+      "probe_skipped_releases_observed",
+      "emc_unavailable"
+    ]
+  }
+}

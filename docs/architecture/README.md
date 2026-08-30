@@ -106,9 +106,12 @@ pilot-session validator have also completed one motion-disabled simulation
 pilot on the Jetson. The independently reconstructed
 [descriptive result](../../experiments/phase1/results/20260828T121142Z_phase1_jetson_pilot/)
 validates the evidence chain and runtime semantics, but it is not a real-model
-or formal performance result. The fixed-input VLM adapter and its nominal/stale
-single-request evidence path are host-tested; Jetson execution is the next
-Gate.
+or formal performance result. The fixed-input VLM adapter has since completed
+one nominal/stale correctness pilot on the Jetson. Its independently derived
+[report](../../experiments/phase1/results/20260830T073825Z_phase1_vlm_pilot/)
+confirms stale-result rejection while also recording module-import-scale gaps
+in the threaded periodic probe. Process-level isolation or an equivalent
+mitigation must therefore be evaluated before timing isolation is claimed.
 
 ## Evaluation plan
 

@@ -16,10 +16,16 @@ from experiments.phase1.run_vlm_slice import build_parser, run_once
 from experiments.phase1.tests.test_jetson_pilot import clean_environment
 from experiments.phase1.tests.test_jetson_telemetry import sampler_command
 from experiments.phase1.validate_vlm_slice import validate_vlm_slice_dir
-from experiments.phase1.vlm_adapter import FixedInputVLMAdapter, VLMPipeline
+from experiments.phase1.vlm_adapter import (
+    FixedInputVLMAdapter,
+    VLMPipeline,
+    fixed_c100_payload,
+)
 from experiments.phase1.vlm_preflight import (
     build_vlm_preflight,
+    probe_tcp_listener,
     probe_vlm_services,
+    vlm_preflight_errors,
 )
 from experiments.phase1.vlm_slice import VLMSliceCondition
 
@@ -36,6 +42,9 @@ def service_status() -> dict[str, object]:
             "model": "moondream",
             "model_present": True,
             "model_digest": "a" * 64,
+            "listener_addresses": ["127.0.0.1"],
+            "listener_loopback_only": True,
+            "listener_error_code": None,
             "error_code": None,
         },
         "qwen": {
@@ -44,6 +53,9 @@ def service_status() -> dict[str, object]:
             "model": "qwen",
             "model_present": True,
             "served_model_ids": ["qwen2.5-1.5b-instruct-q4_k_m.gguf"],
+            "listener_addresses": ["127.0.0.1"],
+            "listener_loopback_only": True,
+            "listener_error_code": None,
             "error_code": None,
         },
         "python_dependencies": {"argostranslate": True, "cv2": True},
@@ -155,10 +167,20 @@ class VLMRunnerTests(unittest.TestCase):
         )
 
     def test_local_service_probe_records_identity_without_endpoint_text(self) -> None:
+        listener_ports: list[int] = []
+
         def query(url: str) -> dict[str, object]:
             if url.endswith("/tags"):
                 return {"models": [{"name": "moondream:latest", "digest": "b" * 64}]}
             return {"data": [{"id": "qwen"}]}
+
+        def listener_probe(port: int) -> dict[str, object]:
+            listener_ports.append(port)
+            return {
+                "addresses": ["127.0.0.1"],
+                "loopback_only": True,
+                "error_code": None,
+            }
 
         with patch.dict(
             os.environ,
@@ -167,19 +189,65 @@ class VLMRunnerTests(unittest.TestCase):
                 "ROBOT_LLAMA_API_URL": ("http://127.0.0.1:8080/v1/chat/completions"),
             },
         ):
-            status = probe_vlm_services(query=query)
+            status = probe_vlm_services(query=query, listener_probe=listener_probe)
+        self.assertEqual(listener_ports, [11434, 8080])
         self.assertTrue(status["ollama"]["endpoint_local"])
+        self.assertTrue(status["ollama"]["listener_loopback_only"])
         self.assertTrue(status["ollama"]["model_present"])
         self.assertEqual(status["ollama"]["model_digest"], "b" * 64)
         self.assertTrue(status["qwen"]["model_present"])
+        self.assertTrue(status["qwen"]["listener_loopback_only"])
         self.assertEqual(status["qwen"]["served_model_ids"], ["qwen"])
         self.assertNotIn("endpoint", status["ollama"])
 
+    def test_listener_probe_distinguishes_loopback_and_wildcard_bindings(self) -> None:
+        loopback = probe_tcp_listener(
+            8080,
+            snapshotter=lambda _command: {
+                "returncode": 0,
+                "output": "LISTEN 0 512 127.0.0.1:8080 0.0.0.0:*",
+                "error_code": None,
+            },
+        )
+        wildcard = probe_tcp_listener(
+            8080,
+            snapshotter=lambda _command: {
+                "returncode": 0,
+                "output": "LISTEN 0 512 0.0.0.0:8080 0.0.0.0:*",
+                "error_code": None,
+            },
+        )
+        dual_stack = probe_tcp_listener(
+            8080,
+            snapshotter=lambda _command: {
+                "returncode": 0,
+                "output": "\n".join(
+                    (
+                        "LISTEN 0 512 127.0.0.1:8080 0.0.0.0:*",
+                        "LISTEN 0 512 [::1]:8080 [::]:*",
+                    )
+                ),
+                "error_code": None,
+            },
+        )
+
+        self.assertEqual(loopback["addresses"], ["127.0.0.1"])
+        self.assertTrue(loopback["loopback_only"])
+        self.assertEqual(wildcard["addresses"], ["0.0.0.0"])
+        self.assertFalse(wildcard["loopback_only"])
+        self.assertEqual(dual_stack["addresses"], ["127.0.0.1", "::1"])
+        self.assertTrue(dual_stack["loopback_only"])
+
     def test_nonlocal_service_configuration_is_not_contacted(self) -> None:
         requested_urls: list[str] = []
+        requested_listener_ports: list[int] = []
 
         def query(url: str) -> dict[str, object]:
             requested_urls.append(url)
+            return {}
+
+        def listener_probe(port: int) -> dict[str, object]:
+            requested_listener_ports.append(port)
             return {}
 
         with (
@@ -201,10 +269,49 @@ class VLMRunnerTests(unittest.TestCase):
                 "http://192.0.2.2:8080/v1/chat/completions",
             ),
         ):
-            status = probe_vlm_services(query=query)
+            status = probe_vlm_services(query=query, listener_probe=listener_probe)
         self.assertEqual(requested_urls, [])
+        self.assertEqual(requested_listener_ports, [])
         self.assertEqual(status["ollama"]["error_code"], "nonlocal_endpoint")
         self.assertEqual(status["qwen"]["error_code"], "nonlocal_endpoint")
+
+    def test_preflight_rejects_wildcard_listener_and_accepts_legacy_record(
+        self,
+    ) -> None:
+        services = service_status()
+        services["qwen"]["listener_addresses"] = ["0.0.0.0"]
+        services["qwen"]["listener_loopback_only"] = False
+        current = build_vlm_preflight(
+            REPO_ROOT,
+            input_payload=fixed_c100_payload(self.input_path),
+            base_preflight=base_preflight(),
+            services=services,
+        )
+        self.assertFalse(current["eligible"])
+        self.assertTrue(
+            any(
+                "qwen_listener_loopback_only" in error
+                for error in vlm_preflight_errors(current)
+            )
+        )
+
+        legacy = self.preflight_builder(
+            REPO_ROOT,
+            input_payload=fixed_c100_payload(self.input_path),
+            expected_branch="main",
+        )
+        legacy["vlm_preflight_schema_version"] = "0.1.0"
+        legacy["checks"] = [
+            check
+            for check in legacy["checks"]
+            if check["name"]
+            not in {
+                "ollama_listener_loopback_only",
+                "qwen_listener_loopback_only",
+            }
+        ]
+        legacy["eligible"] = True
+        self.assertEqual(vlm_preflight_errors(legacy), [])
 
     def test_failed_preflight_creates_no_run_directory(self) -> None:
         def failed_builder(_root, *, input_payload, expected_branch):
