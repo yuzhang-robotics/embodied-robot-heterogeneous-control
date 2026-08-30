@@ -299,6 +299,12 @@ cancellation forwarding, exit code zero and a normally reaped child. A forced
 child termination is recorded separately and never becomes a claim that the
 Ollama backend stopped inference.
 
+The child closes its bounded protocol and exits from inside the process after
+adapter cleanup, preventing imported inference runtimes from delaying process
+reaping during interpreter shutdown. If a final Gate still fails, the run is
+marked failed after its completed scenario, process and slice diagnostics are
+written and hashed.
+
 After this implementation is merged and the Jetson is synchronized to that
 `main` commit, the two motion-disabled pilot conditions can be run with:
 

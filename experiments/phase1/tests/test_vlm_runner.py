@@ -7,6 +7,7 @@ import os
 import tempfile
 import threading
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -478,6 +479,82 @@ class VLMRunnerTests(unittest.TestCase):
 
         remaining_children = {child.pid for child in multiprocessing.active_children()}
         self.assertEqual(remaining_children, baseline_children)
+
+    def test_failed_process_gate_persists_hashed_diagnostics(self) -> None:
+        class ReapingFailureAdapter:
+            def __init__(self) -> None:
+                self.delegate = ProcessIsolatedVLMAdapter(
+                    factory_ref=PROCESS_FIXTURE_FACTORY,
+                    execution_timeout_s=2.0,
+                )
+                self.inference_started_event = self.delegate.inference_started_event
+                self.last_record = None
+                self.last_process_report = None
+
+            def __call__(self, claimed):
+                result = self.delegate(claimed)
+                self.last_record = self.delegate.last_record
+                report = self.delegate.last_process_report
+                assert report is not None
+                self.last_process_report = replace(
+                    report,
+                    exit_code=-15,
+                    terminate_requested=True,
+                    terminate_confirmed=True,
+                )
+                return result
+
+        with (
+            patch.dict(os.environ, {"ROBOT_ENABLE_MOTION": "0"}),
+            patch(
+                "experiments.phase1.run_vlm_slice.collect_environment",
+                return_value=clean_environment(),
+            ),
+            self.assertRaisesRegex(RuntimeError, "process Gates failed"),
+        ):
+            run_once(
+                self.process_args(VLMSliceCondition.ASYNC),
+                repo_root=REPO_ROOT,
+                preflight_builder=self.preflight_builder,
+                sampler_factory=self.sampler_factory,
+                adapter_factory=ReapingFailureAdapter,
+            )
+
+        session_dir = self.root / "runs" / SESSION_ID
+        manifest_path = next(session_dir.rglob("manifest.json"))
+        run_dir = manifest_path.parent
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        process = json.loads((run_dir / "process.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(manifest["status"], "failed")
+        self.assertEqual(manifest["failure_code"], "vlmrunerror")
+        self.assertEqual(
+            set(manifest["artifacts"]),
+            {
+                "preflight.json",
+                "events.jsonl",
+                "resources.jsonl",
+                "scenario.json",
+                "summary.json",
+                "process.json",
+            },
+        )
+        self.assertFalse(process["valid"])
+        reaping_gate = next(
+            gate for gate in process["gates"] if gate["name"] == "process_reaped"
+        )
+        self.assertFalse(reaping_gate["passed"])
+        for name, identity in manifest["artifacts"].items():
+            path = run_dir / name
+            self.assertEqual(identity["size_bytes"], path.stat().st_size)
+            self.assertEqual(identity["sha256"], sha256_file(path))
+        combined = "\n".join(
+            (run_dir / name).read_text(encoding="utf-8")
+            for name in manifest["artifacts"]
+        )
+        self.assertNotIn(str(self.input_path), combined)
+        self.assertNotIn("bounded fixture output", combined)
+        self.assertEqual(list(run_dir.glob("*.tmp")), [])
 
     def test_process_timeout_budget_is_rejected_before_output_creation(self) -> None:
         args = self.process_args(VLMSliceCondition.ASYNC)

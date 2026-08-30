@@ -129,6 +129,25 @@ def _artifact_identity(path: Path) -> dict[str, object]:
     }
 
 
+def _completed_artifact_identities(
+    run_dir: Path,
+    completed_names: set[str],
+) -> dict[str, object]:
+    names = (
+        "preflight.json",
+        "events.jsonl",
+        "resources.jsonl",
+        "scenario.json",
+        "summary.json",
+        "process.json",
+    )
+    return {
+        name: _artifact_identity(run_dir / name)
+        for name in names
+        if name in completed_names
+    }
+
+
 def _reproducibility(
     environment: dict[str, object],
     *,
@@ -226,6 +245,7 @@ def run_once(
     preflight_path = run_dir / "preflight.json"
     manifest_path = run_dir / "manifest.json"
     write_json_atomic(preflight_path, preflight)
+    completed_artifact_names = {"preflight.json"}
 
     spec = VLMSliceSpec(
         condition=condition,
@@ -323,7 +343,9 @@ def run_once(
         )
         recorder.close()
         recorder = None
+        completed_artifact_names.add("events.jsonl")
         sampler_report = sampler.stop()
+        completed_artifact_names.add("resources.jsonl")
         manifest["resource_sampler_report"] = sampler_report.to_dict()
         if not sampler_report.successful:
             raise VLMRunError("tegrastats did not produce a valid closed trace")
@@ -345,10 +367,12 @@ def run_once(
                 process_record,
                 condition=condition,
             )
-            if process_summary.get("valid") is not True:
-                raise VLMRunError("one or more VLM process Gates failed")
         scenario_path = run_dir / "scenario.json"
         write_json_atomic(scenario_path, scenario)
+        completed_artifact_names.add("scenario.json")
+        if process_summary is not None:
+            write_json_atomic(run_dir / "process.json", process_summary)
+            completed_artifact_names.add("process.json")
         samples = load_resource_samples(run_dir / "resources.jsonl")
         summary = build_vlm_summary(
             run_dir / "events.jsonl",
@@ -361,11 +385,11 @@ def run_once(
         )
         summary_path = run_dir / "summary.json"
         write_json_atomic(summary_path, summary)
+        completed_artifact_names.add("summary.json")
+        if process_summary is not None and process_summary.get("valid") is not True:
+            raise VLMRunError("one or more VLM process Gates failed")
         if summary.get("valid") is not True:
             raise VLMRunError("one or more VLM slice Gates failed")
-
-        if process_summary is not None:
-            write_json_atomic(run_dir / "process.json", process_summary)
 
         artifact_names = [
             "preflight.json",
@@ -393,6 +417,7 @@ def run_once(
     except Exception as exc:
         if recorder is not None:
             recorder.close()
+            completed_artifact_names.add("events.jsonl")
         if sampler is not None and sampler.is_running:
             try:
                 sampler.stop()
@@ -400,6 +425,11 @@ def run_once(
                 manifest["cleanup_error_code"] = type(cleanup_exc).__name__.lower()
         if sampler is not None and sampler.stop_report is not None:
             manifest["resource_sampler_report"] = sampler.stop_report.to_dict()
+            completed_artifact_names.add("resources.jsonl")
+        manifest["artifacts"] = _completed_artifact_identities(
+            run_dir,
+            completed_artifact_names,
+        )
         manifest["status"] = "failed"
         manifest["completed_at"] = utc_now_iso()
         manifest["failure_code"] = type(exc).__name__.lower()

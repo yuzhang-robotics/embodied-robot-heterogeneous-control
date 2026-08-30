@@ -483,6 +483,13 @@ with code zero and be reaped without `terminate`. An EOF, malformed message,
 unexpected child exit or execution timeout becomes a bounded adapter error;
 the parent still reaps or terminates the child within finite budgets.
 
+After the final protocol message is sent, the child stops its signal monitor,
+closes the private pipe and exits from inside the process with the appropriate
+status code. This explicit process boundary prevents imported inference
+runtimes from holding the interpreter open after their bounded result has been
+delivered. It does not bypass adapter cleanup: model unload and output
+normalization finish before the completion message is constructed.
+
 Cancellation is forwarded through a process-safe event. For `vlm_stale`, the
 parent advances the generation only after receiving the child inference-start
 signal. The child may later report that it observed cancellation, but the
@@ -495,6 +502,10 @@ The process runner adds `adapter_isolation=spawned_process`, a distinct run ID
 and `process.json`. The latter is rebuilt from the supervisor facts in
 `scenario.json` and fails closed unless spawn ownership, protocol completion,
 boundary order, cancellation forwarding and normal child reaping all pass.
+The runner writes the scenario, process summary and any available slice summary
+before applying those final Gates. A failed manifest remains ineligible but
+hashes each completed diagnostic artifact, so a cleanup failure does not erase
+the evidence needed to identify it.
 The original thread mode remains the default and the first VLM pilot remains
 valid under its earlier artifact contract.
 

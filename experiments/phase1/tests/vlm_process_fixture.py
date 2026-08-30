@@ -100,6 +100,17 @@ class AbruptExitVLMAdapter:
         os._exit(17)
 
 
+class LingeringThreadVLMAdapter(FixtureVLMAdapter):
+    def __call__(self, claimed: ClaimedTask) -> ResultEnvelope:
+        blocker = threading.Event()
+        threading.Thread(
+            target=blocker.wait,
+            args=(60.0,),
+            name="phase1-vlm-lingering-runtime",
+        ).start()
+        return super().__call__(claimed)
+
+
 class ErrorVLMAdapter(FixtureVLMAdapter):
     def __call__(self, claimed: ClaimedTask) -> ResultEnvelope:
         self.inference_started_event.set()

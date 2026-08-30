@@ -6,6 +6,7 @@ import importlib
 import json
 import math
 import multiprocessing
+import os
 import re
 import threading
 import time
@@ -467,6 +468,7 @@ def _process_worker_main(
     send_lock = threading.Lock()
     monitor_stop = threading.Event()
     monitor: threading.Thread | None = None
+    exit_code = 1
     try:
         _send_message(
             connection,
@@ -530,6 +532,7 @@ def _process_worker_main(
             },
             lock=send_lock,
         )
+        exit_code = 0
     except BaseException as exc:
         try:
             _send_message(
@@ -550,6 +553,7 @@ def _process_worker_main(
         if monitor is not None:
             monitor.join(0.2)
         connection.close()
+        os._exit(exit_code)
 
 
 @dataclass(frozen=True, slots=True)
