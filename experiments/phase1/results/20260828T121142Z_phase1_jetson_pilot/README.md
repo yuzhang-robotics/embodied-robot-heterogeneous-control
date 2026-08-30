@@ -124,6 +124,6 @@ The screen sums per-core usage percentages and marks sustained intervals at or a
 
 ## Interpretation
 
-The pilot shows that an inline slow call creates a control-proxy gap on the same scale as the configured service time. A separate thread is sufficient for timing-domain isolation, while the bounded runtime adds explicit queue, cancellation and freshness behavior.
+The pilot shows that an inline slow call creates a control-proxy gap on the same scale as the configured service time. For this simulated delay, a separate thread preserved the probe schedule, while the bounded runtime added explicit queue, cancellation and freshness behavior. This result does not establish isolation for real adapters that hold the Python GIL.
 
 Resource differences between conditions are not attributed to the runtime because the matrix has one fixed-order repetition and the CPU screen crosses condition boundaries. The simulated adapter also does not exercise a heterogeneous inference workload. A fixed-input VLM slice and a balanced repeated protocol are required before those questions can be tested.

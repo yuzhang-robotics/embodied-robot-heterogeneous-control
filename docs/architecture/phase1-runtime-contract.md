@@ -4,20 +4,23 @@ This document defines the correctness and safety contract for the first
 asynchronous runtime used by the Octopus robot research platform. The
 host-only model, broker, observable executor, periodic probes, trace replay and
 portable simulation protocol have been implemented. One motion-disabled Jetson
-simulation pilot has validated the protocol and runtime semantics. The first
-fixed-input VLM adapter and runner are host-tested; real-model Jetson execution
-and formal performance behavior remain unvalidated.
+simulation pilot has validated the protocol and runtime semantics. A
+fixed-input VLM correctness pilot has also completed nominal consumption and
+old-generation rejection on the Jetson. Formal performance behavior remains
+unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
-> Jetson simulation pilot 已完成并通过独立验证；固定输入 VLM 接入已通过主机测试，
-> 真实模型实机运行和正式实验仍需按 Gate 逐步完成。
+> Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
+> 正式同步/异步对比实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1C fixed-input VLM implementation; Jetson execution pending
-- Contract status: frozen through one independently validated Jetson simulation
-  pilot
+- Phase: Phase 1C fixed-input VLM pilot analysis and evidence hardening
+- Contract status: frozen through independently validated Jetson simulation
+  and fixed-input VLM correctness pilots
+- VLM-pilot result: `main@aebd1a2`, session
+  `20260830T073825Z_phase1_vlm_pilot`
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -44,12 +47,16 @@ The current implementation includes:
 - fail-closed Jetson preflight, a continuous non-daemon `tegrastats` sampler,
   an immutable pilot matrix and independent session reconstruction;
 - a lazy fixed-input VLM adapter, nominal/stale single-request orchestration,
-  model-service preflight, resource trace and independent run validation.
+  model-service preflight, resource trace and independent run validation;
+- deterministic VLM-pilot reconstruction and fail-closed recording of actual
+  model-service listener bindings for subsequent runs.
 
-The VLM implementation has not yet run on the Jetson and it does not include
-formal performance data. The completed simulation pilot remains descriptive
-protocol evidence and does not authorize an asynchronous-performance,
-hard-real-time or heterogeneous-inference claim.
+The VLM pilot includes no formal performance data. It validates the real-model
+integration and result-freshness path, while its skipped probe releases show
+that the simulated sleep result cannot be generalized to every Python worker
+thread workload. Neither completed pilot authorizes an
+asynchronous-performance, hard-real-time, timing-isolation or
+heterogeneous-inference claim.
 
 ## Research objective
 
@@ -439,7 +446,11 @@ The probe is a software scheduling proxy, not a motor controller.
 Both probe paths and their pure release/tick calculations are implemented. The
 inline path advances on the caller thread and therefore records releases
 skipped while a direct synchronous adapter call owns that thread. The threaded
-path advances independently. Both invoke the same scenario adapter contract.
+path has independent ownership, but it still shares the Python process and GIL.
+The fixed-input VLM pilot consequently recorded skipped releases during lazy
+module import even though inference ran in the worker thread. Thread ownership
+alone is not accepted as evidence of timing isolation. Both paths invoke the
+same scenario adapter contract.
 
 ## Event and replay requirements
 
@@ -657,6 +668,10 @@ direct and bounded-runtime conditions recorded no skipped releases. R4 rejected
 one old-state result, bounded pending and result depth at one, and consumed zero
 stale results.
 
+That result is specific to the simulated adapter, whose service delay releases
+the interpreter. It demonstrates the intended ownership and evidence path but
+does not prove that a Python thread isolates real adapters that hold the GIL.
+
 The public
 [derived report](../../experiments/phase1/results/20260828T121142Z_phase1_jetson_pilot/)
 also records the limits discovered by the pilot. It contains one fixed-order
@@ -700,16 +715,44 @@ stdout/stderr.
 Before creating a run directory, preflight requires the existing Jetson safety
 and synchronized-`main` checks plus the fixed input, local-only Ollama and
 llama.cpp endpoints, installed Moondream and Qwen model identities, and the
-Ollama CLI plus OpenCV/Argos dependencies. A completed manifest additionally
-requires resource coverage during the adapter interval, valid replay, exactly one terminal
-disposition, zero stale consumption, a returned model-unload request,
-worker/probe/sampler joins,
-artifact hashes and an independently rebuilt summary.
+Ollama CLI plus OpenCV/Argos dependencies. Preflight schema `0.2.0` queries the
+numeric TCP listeners with `ss`, records only their bound addresses and fails
+if either service has no listener or any wildcard/non-loopback binding. The
+validator retains read support for the first pilot's `0.1.0` record without
+inventing listener evidence that was not archived. A completed manifest
+additionally requires resource coverage during the adapter interval, valid
+replay, exactly one terminal disposition, zero stale consumption, a returned
+model-unload request, worker/probe/sampler joins, artifact hashes and an
+independently rebuilt summary.
 
 The host implementation and fault-injection tests do not count as a real-model
 result. The first Jetson runs remain descriptive correctness evidence. They do
 not measure visual accuracy, compare synchronous and asynchronous performance,
 prove GPU preemption or authorize a heterogeneous-compute performance claim.
+
+### First fixed-input VLM pilot outcome
+
+Session `20260830T073825Z_phase1_vlm_pilot` ran one `vlm_async` request and one
+`vlm_stale` request on `main@aebd1a2`. Both independently validate. The nominal
+result was consumed exactly once; the old-generation result completed as
+`cancel_observed`, was recorded once as `rejected_state`, and was never
+consumed. Both used the Qwen rewrite route, kept raw model text out of the
+artifacts and returned a Moondream unload request without claiming confirmed
+eviction.
+
+The 100 ms probe recorded 85 skipped releases and a 4262.876 ms maximum gap in
+`vlm_async`, then 63 skipped releases and a 2700.375 ms maximum gap in
+`vlm_stale`. Reconstruction assigns every skipped release to the lazy
+`module_import` interval. The real-model pilot therefore passes its lifecycle
+correctness Gates but does not pass a timing-isolation interpretation. A
+process-level worker or an equivalent mitigation must be evaluated before the
+formal protocol is frozen.
+
+The source runs used VLM preflight schema `0.1.0`. The operator bound
+llama.cpp to `127.0.0.1` and checked it before execution, but the archived
+preflight records only the configured loopback request URL. The derived report
+marks actual listener evidence incomplete. New runs use schema `0.2.0` and fail
+closed on the observed bindings.
 
 ## Gates
 
@@ -730,6 +773,7 @@ The fixed-input VLM slice adds these zero-tolerance Gates:
 - Moondream, one translation route, normalization and the unload call close;
 - the artifact records an unload request without claiming confirmed eviction;
 - raw model text and the private input path are absent from public artifacts;
+- model-service TCP listeners are present and bound only to loopback addresses;
 - `vlm_async` consumes exactly one result;
 - `vlm_stale` records exactly one `rejected_state` and zero accepted results;
 - cancellation evidence does not claim backend stop without confirmation;

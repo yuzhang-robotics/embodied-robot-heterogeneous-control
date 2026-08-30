@@ -240,6 +240,7 @@ class JetsonPilotAnalysisTests(unittest.TestCase):
         report = render_markdown(analysis)
         self.assertIn("not a formal performance comparison", report)
         self.assertIn("does not exercise a heterogeneous inference workload", report)
+        self.assertIn("does not establish isolation for real adapters", report)
         self.assertNotIn("statistically significant", report)
 
 

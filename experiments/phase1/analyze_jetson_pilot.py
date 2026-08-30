@@ -852,9 +852,11 @@ def render_markdown(analysis: Mapping[str, object]) -> str:
             "",
             (
                 "The pilot shows that an inline slow call creates a control-proxy "
-                "gap on the same scale as the configured service time. A separate "
-                "thread is sufficient for timing-domain isolation, while the bounded "
-                "runtime adds explicit queue, cancellation and freshness behavior."
+                "gap on the same scale as the configured service time. For this "
+                "simulated delay, a separate thread preserved the probe schedule, "
+                "while the bounded runtime added explicit queue, cancellation and "
+                "freshness behavior. This result does not establish isolation for "
+                "real adapters that hold the Python GIL."
             ),
             "",
             (
