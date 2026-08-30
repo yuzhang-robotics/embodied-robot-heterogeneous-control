@@ -7,22 +7,24 @@ portable simulation protocol have been implemented. One motion-disabled Jetson
 simulation pilot has validated the protocol and runtime semantics. A
 fixed-input VLM correctness pilot has also completed nominal consumption and
 old-generation rejection on the Jetson. A spawned-process VLM adapter and its
-evidence Gates are host-tested, but no process-isolated Jetson result has been
-collected. Formal performance behavior remains unvalidated.
+evidence Gates have since completed one process-isolated Jetson correctness
+pilot. Formal performance behavior remains unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
-> VLM 进程隔离路径已完成 host-only 测试，尚待 Jetson pilot；正式同步/异步对比实验仍需按 Gate 逐步完成。
+> VLM 进程隔离路径已完成 Jetson correctness pilot；正式同步/异步对比实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1C process-isolated VLM pilot preparation
-- Contract status: frozen through independently validated Jetson simulation
-  and fixed-input VLM correctness pilots
+- Phase: Phase 1C process-isolated VLM pilot analysis
+- Contract status: frozen through independently validated Jetson simulation,
+  thread-mode VLM and process-isolated VLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
   `20260830T073825Z_phase1_vlm_pilot`
 - VLM-pilot public analysis: `main@95a839d`
+- Process-isolated VLM result: `main@1818c83`, session
+  `20260830T122541Z_phase1_vlm_process_reaping`
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -53,12 +55,15 @@ The current implementation includes:
 - deterministic VLM-pilot reconstruction and fail-closed recording of actual
   model-service listener bindings for subsequent runs;
 - a per-request spawned-process VLM supervisor, bounded IPC, explicit process
-  cleanup facts and independently rebuilt process Gates.
+  cleanup facts and independently rebuilt process Gates;
+- deterministic process-pilot reconstruction with a hash-fixed descriptive
+  thread reference.
 
-The VLM pilot includes no formal performance data. It validates the real-model
-integration and result-freshness path, while its skipped probe releases show
-that the simulated sleep result cannot be generalized to every Python worker
-thread workload. Neither completed pilot authorizes an
+The VLM pilots include no formal performance data. They validate the real-model
+integration, result-freshness and process-boundary paths. The thread pilot's
+skipped releases show that the simulated sleep result cannot be generalized to
+every Python worker workload; the later process pilot removes those observed
+gaps in two single-run conditions. No completed pilot authorizes an
 asynchronous-performance, hard-real-time, timing-isolation or
 heterogeneous-inference claim.
 
@@ -511,9 +516,10 @@ valid under its earlier artifact contract.
 
 Host fault-injection covers nominal completion, state invalidation, child-side
 execution errors, abrupt exit and timeout termination. These tests validate
-the boundary implementation, not Jetson scheduling behavior. A motion-disabled
-real-model pilot is required before deciding whether this mitigation removes
-the module-import-scale probe gaps.
+the boundary implementation, not Jetson scheduling behavior. The subsequent
+motion-disabled real-model pilot recorded no module-import-scale probe gaps in
+its two process-isolated runs. This single fixed-order session is descriptive
+evidence and does not establish a general timing-isolation claim.
 
 ## Event and replay requirements
 
@@ -816,6 +822,24 @@ llama.cpp to `127.0.0.1` and checked it before execution, but the archived
 preflight records only the configured loopback request URL. The derived report
 marks actual listener evidence incomplete. New runs use schema `0.2.0` and fail
 closed on the observed bindings.
+
+### Process-isolated VLM pilot outcome
+
+Session `20260830T122541Z_phase1_vlm_process_reaping` ran the same nominal and
+stale conditions on `main@1818c83`. Both source runs and their derived process
+summaries validate independently. Each child completed the bounded protocol,
+exited with code zero and was reaped without forced termination. Cancellation
+was forwarded only for `vlm_stale`; its result was still rejected by the
+parent's state-generation authority, with zero stale results consumed.
+
+The process-isolated 100 ms probes recorded 0 skipped releases, 0 deadline
+misses and maximum observed gaps of 100.647 ms and 100.272 ms. The published
+thread reference recorded 148 skipped releases across its two runs. This is a
+descriptive mitigation signal: the sessions each contain one fixed-order run
+per condition and come from different commits. It therefore does not authorize
+causal attribution, performance superiority or a general timing-isolation
+claim. Process exit also remains distinct from confirmed model-backend
+preemption.
 
 ## Gates
 
