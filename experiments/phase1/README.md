@@ -2,18 +2,20 @@
 
 This directory contains the host tests, simulated-condition runner, trace
 recorder, event schema, independent lifecycle replay, run validation, Jetson
-pilot orchestration, deterministic analysis, fixed-input VLM integration and
-descriptive summaries for the Phase 1 asynchronous runtime study. The first
+pilot orchestration, deterministic analysis, fixed-input VLM/ASR integration
+and descriptive summaries for the Phase 1 asynchronous runtime study. The first
 Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
 A spawned-process VLM adapter has also completed one independently validated
-Jetson correctness pilot. Formal synchronous/asynchronous data remain
-uncollected.
+Jetson correctness pilot. The fixed-input ASR subprocess slice is implemented
+and host-tested; its Jetson correctness pilot has not run. Formal
+synchronous/asynchronous data remain uncollected.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
 > pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
-> 当前已验证真实模型接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
-> Jetson correctness pilot；正式对比数据尚未采集。
+> 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
+> Jetson correctness pilot；固定输入 ASR 子进程切片已通过 host 测试，但尚未运行 Jetson
+> correctness pilot；正式对比数据尚未采集。
 
 ## Current status
 
@@ -35,7 +37,9 @@ uncollected.
   independently validated Jetson correctness pilot
 - Deterministic process-pilot reconstruction and descriptive thread reference:
   implemented
-- Real ASR/LLM slices: not started
+- Fixed-input ASR adapter, Whisper process supervision, runner and validator:
+  implemented and host-tested; Jetson correctness pilot not run
+- Real LLM slice: not started
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
 
@@ -358,6 +362,63 @@ both conditions on `main@1818c83`; the Jetson and Windows independent validators
 and every slice and process Gate passed. The result is published as descriptive
 evidence and does not freeze a formal timing threshold.
 
+## Fixed-input ASR slice
+
+The first Phase 1D workload extension reuses the exact formal Phase 0 WAV
+identity (`114136` bytes, SHA-256
+`3fffeee1e04250faa483174a423878bf220b95f6706684f6e109ed8f9b731440`),
+the `ggml-small.bin` model identity, whisper.cpp source version and command
+arguments. The nominal transcript was identical across all 30 measured Phase 0
+runs, so the correctness slice verifies its SHA-256 and character count while
+never serializing the transcript itself.
+
+Whisper already executes as a native subprocess. The Phase 1 worker therefore
+does not add another Python process layer: it starts `whisper-cli`, waits with a
+bounded poll interval, and owns timeout/cancellation termination and process
+reaping. The broker, state generation, accepted-result mailbox, event recorder
+and periodic probe remain in the parent process. Unlike an HTTP cancellation
+request, a terminated and reaped Whisper child permits
+`backend_stop_confirmed=true` for that specific process invocation.
+
+The two host-tested correctness conditions are:
+
+| Condition | State action | Required disposition and process fact |
+| --- | --- | --- |
+| `asr_async` | none | one transcript identity consumed; Whisper exits 0 and is reaped |
+| `asr_stale` | advance generation after Whisper starts | one `rejected_state`, zero consumed; Whisper is stopped and reaped |
+
+Run them only from a clean, synchronized Jetson `main` branch after the fixed
+WAV has been restored beneath the ignored Phase 0 input root:
+
+```bash
+export ROBOT_ENABLE_MOTION=0
+python3 -m experiments.phase1.run_asr_slice \
+  --condition asr_async \
+  --session-id 20260831T000000Z_phase1_asr_pilot \
+  --repetition 1
+
+python3 -m experiments.phase1.run_asr_slice \
+  --condition asr_stale \
+  --session-id 20260831T000000Z_phase1_asr_pilot \
+  --repetition 1
+```
+
+The ASR preflight independently verifies the fixed input, model identity,
+whisper.cpp source version, frozen inference arguments and absence of a
+pre-existing `whisper-cli` process. Each successful run has the same atomic
+manifest, event/resource traces, scenario, deterministic summary and
+independent validation boundary as the VLM slice. Revalidate one run with:
+
+```bash
+python3 -m experiments.phase1.validate_asr_slice /path/to/run_dir
+```
+
+The ASR slice is currently host-tested only. Until both real Jetson conditions
+pass and a derived pilot report is reviewed, it does not satisfy the ASR part
+of G5. G6 formal preregistration remains downstream of successful ASR and LLM
+correctness pilots; no numerical threshold or formal sample size is frozen by
+this implementation.
+
 ## Planned implementation order
 
 1. freeze the task, result, lifecycle, queue, cancellation, and freshness
@@ -377,7 +438,8 @@ evidence and does not freeze a formal timing threshold.
    thread-isolation result with real-workload evidence — complete;
 9. implement process-level VLM isolation and independently analyze its Jetson
    correctness pilot — complete;
-10. extend the adapter/runtime boundary to ASR and LLM;
+10. extend the adapter/runtime boundary to ASR and LLM — ASR implementation
+    host-tested, ASR Jetson pilot and LLM slice pending;
 11. freeze formal thresholds and collect balanced synchronous/asynchronous data;
 12. add an opt-in motion-disabled application slice after the research Gates
    pass.
@@ -409,22 +471,28 @@ The reusable, hardware-independent kernel lives under
 ```text
 experiments/phase1/
 ├── analyze_vlm_pilot.py
+├── asr_adapter.py
+├── asr_preflight.py
+├── asr_slice.py
 ├── jetson_preflight.py
 ├── jetson_telemetry.py
 ├── manifest.py
 ├── pilot.py
 ├── run_jetson_pilot.py
+├── run_asr_slice.py
 ├── run_simulation.py
 ├── run_vlm_slice.py
 ├── schemas/
 │   ├── event.schema.json
 │   └── resource.schema.json
 ├── simulation.py
+├── summarize_asr_slice.py
 ├── summarize_run.py
 ├── summarize_vlm_process_slice.py
 ├── summarize_vlm_slice.py
 ├── tests/
 ├── telemetry.py
+├── validate_asr_slice.py
 ├── validate_jetson_pilot.py
 ├── validate_run.py
 ├── validate_vlm_slice.py

@@ -8,18 +8,21 @@ simulation pilot has validated the protocol and runtime semantics. A
 fixed-input VLM correctness pilot has also completed nominal consumption and
 old-generation rejection on the Jetson. A spawned-process VLM adapter and its
 evidence Gates have since completed one process-isolated Jetson correctness
-pilot. Formal performance behavior remains unvalidated.
+pilot. A fixed-input ASR subprocess adapter, correctness runner and independent
+validator are host-tested; the ASR Jetson pilot and formal performance behavior
+remain unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
-> VLM 进程隔离路径已完成 Jetson correctness pilot；正式同步/异步对比实验仍需按 Gate 逐步完成。
+> VLM 进程隔离路径已完成 Jetson correctness pilot；固定输入 ASR 子进程切片已完成 host
+> 测试、尚未运行 Jetson pilot；正式同步/异步对比实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1C process-isolated VLM pilot analysis
+- Phase: Phase 1D fixed-input ASR slice host verification
 - Contract status: frozen through independently validated Jetson simulation,
-  thread-mode VLM and process-isolated VLM correctness pilots
+  thread/process VLM pilots and the host-tested fixed-input ASR boundary
 - VLM-pilot result: `main@aebd1a2`, session
   `20260830T073825Z_phase1_vlm_pilot`
 - VLM-pilot public analysis: `main@95a839d`
@@ -58,9 +61,15 @@ The current implementation includes:
   cleanup facts and independently rebuilt process Gates;
 - deterministic process-pilot reconstruction with a hash-fixed descriptive
   thread reference.
+- a fixed-input ASR adapter that supervises the native `whisper-cli` process,
+  publishes transcript identity only, and distinguishes normal exit, timeout,
+  cancellation termination and process reaping;
+- ASR-specific preflight, nominal/stale orchestration, atomic run artifacts,
+  deterministic Gates and an independent validator, all host-tested.
 
-The VLM pilots include no formal performance data. They validate the real-model
-integration, result-freshness and process-boundary paths. The thread pilot's
+The VLM pilots include no formal performance data. The host-tested ASR path is
+also not Jetson evidence. The pilots validate the real-model integration,
+result-freshness and process-boundary paths. The thread pilot's
 skipped releases show that the simulated sleep result cannot be generalized to
 every Python worker workload; the later process pilot removes those observed
 gaps in two single-run conditions. No completed pilot authorizes an
@@ -841,6 +850,40 @@ causal attribution, performance superiority or a general timing-isolation
 claim. Process exit also remains distinct from confirmed model-backend
 preemption.
 
+### Fixed-input ASR correctness contract
+
+The first Phase 1D ASR slice reuses the formal Phase 0 WAV identity (114136
+bytes, SHA-256
+`3fffeee1e04250faa483174a423878bf220b95f6706684f6e109ed8f9b731440`),
+the `ggml-small.bin` identity (487601967 bytes, SHA-256
+`1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b`),
+whisper.cpp source version `v1.8.4-326-gafa2ea54` and the Phase 0 inference
+arguments. The 30 measured Phase 0 ASR runs produced one stable transcript
+identity and length. Phase 1 verifies those values but never serializes the
+transcript, input path, model path or command line.
+
+ASR uses its workload-specific FIFO lane with pending and result capacities of
+two. The first correctness slice admits one request so nominal completion and
+state invalidation remain isolated from later arrival-rate experiments. Its
+conditions are `asr_async` and `asr_stale`. The nominal condition consumes one
+matching transcript identity. The stale condition advances the state generation
+after Whisper starts, requests cancellation, stops and reaps the native
+`whisper-cli` process, and consumes no result.
+
+The cancellation claim differs from the VLM HTTP-service path. Whisper is the
+backend process for this invocation; successful termination and reaping can set
+`backend_stop_confirmed=true`. That fact does not imply GPU-wide preemption,
+driver-level cancellation, or anything about a different process or service.
+Timeout and cancellation termination, escalation to kill, exit code and reaping
+remain separate recorded facts.
+
+The ASR preflight fails closed unless the fixed input, model, source version and
+arguments match, no pre-existing `whisper-cli` process is running, the Git tree
+is synchronized, and motion/device-module checks pass. The implementation,
+summary reconstruction and validator are host-tested. No ASR Jetson pilot has
+yet run, so G5 remains open and these controls do not freeze formal numerical
+thresholds.
+
 ## Gates
 
 The following correctness thresholds are fixed before the pilot:
@@ -876,6 +919,22 @@ The process-isolated variant additionally requires:
   forwards none;
 - the child exits with code zero and is reaped without forced termination;
 - process cleanup is not represented as confirmed model-backend cancellation.
+
+The fixed-input ASR slice additionally requires:
+
+- the Phase 0 WAV, model, source version and command arguments match;
+- no pre-existing `whisper-cli` process is present at preflight;
+- `asr_async` consumes exactly one matching transcript identity;
+- `asr_stale` records exactly one `rejected_state` and zero accepted results;
+- nominal Whisper exits with code zero and is reaped without termination;
+- stale cancellation is observed, stops the local wait, terminates and reaps
+  Whisper, and records backend-stop confirmation only for that child;
+- raw transcript text and private filesystem paths are absent from artifacts;
+- at least one valid resource sample falls inside the adapter interval.
+
+G5 requires independently validated Jetson correctness pilots for VLM, ASR and
+LLM. Only after G5 passes may G6 freeze numerical thresholds, balanced order,
+sample size, exclusions and statistical analysis for formal data collection.
 
 Numerical jitter and non-inferiority thresholds will be frozen during the next
 protocol review and before formal data. The current 300 ms unchanged-command

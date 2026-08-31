@@ -117,7 +117,11 @@ periodic probe remain in the parent. Its independently derived
 records normally reaped children and no skipped probe releases in either
 condition. The earlier thread session recorded 148 skipped releases, but the
 cross-session single-run contrast remains descriptive, so timing isolation is
-still not claimed.
+still not claimed. Phase 1D now has a host-tested fixed-input ASR path that
+supervises the native `whisper-cli` subprocess, retains FIFO utterance
+semantics, stops and reaps the child after state invalidation, and records only
+transcript identity. Its Jetson correctness pilot and the LLM slice remain
+pending; formal preregistration follows those multi-workload pilots.
 
 ## Evaluation plan
 
