@@ -73,6 +73,7 @@ class ASRSliceSpec:
     probe_join_timeout_s: float = 5.0
     prelude_s: float = 1.0
     postlude_s: float = 1.0
+    stale_observation_s: float = 0.5
     probe_period_ns: int = 100_000_000
     probe_deadline_ns: int = 100_000_000
 
@@ -88,6 +89,11 @@ class ASRSliceSpec:
             _finite_seconds(getattr(self, field_name), field_name, positive=True)
         for field_name in ("prelude_s", "postlude_s"):
             _finite_seconds(getattr(self, field_name), field_name)
+        _finite_seconds(
+            self.stale_observation_s,
+            "stale_observation_s",
+            positive=True,
+        )
         for field_name in ("probe_period_ns", "probe_deadline_ns"):
             value = getattr(self, field_name)
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
@@ -110,6 +116,7 @@ class ASRSliceSpec:
             "probe_join_timeout_s": self.probe_join_timeout_s,
             "prelude_s": self.prelude_s,
             "postlude_s": self.postlude_s,
+            "stale_observation_s": self.stale_observation_s,
             "probe_period_ns": self.probe_period_ns,
             "probe_deadline_ns": self.probe_deadline_ns,
             "state_advance_after_inference_start": (
@@ -306,6 +313,7 @@ def run_asr_slice(
                 spec.completion_timeout_s
             ):
                 raise TimeoutError("ASR inference did not reach its start boundary")
+            _sleep(spec.stale_observation_s)
             executor.advance_state(
                 "asr-slice",
                 reason="fixed_input_state_change",
