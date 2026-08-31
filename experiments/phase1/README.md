@@ -385,7 +385,16 @@ The two host-tested correctness conditions are:
 | Condition | State action | Required disposition and process fact |
 | --- | --- | --- |
 | `asr_async` | none | one transcript identity consumed; Whisper exits 0 and is reaped |
-| `asr_stale` | advance generation after Whisper starts | one `rejected_state`, zero consumed; Whisper is stopped and reaped |
+| `asr_stale` | observe active Whisper for 0.5 s, then advance generation | one `rejected_state`, zero consumed; Whisper is stopped and reaped |
+
+The stale observation window is a correctness-pilot control, not a cancellation
+latency or performance threshold. It is longer than the default 200 ms resource
+sampling interval so at least one sample can fall inside the active adapter
+interval. The runner rejects a stale window that does not exceed the configured
+resource interval or that reaches either the adapter or slice completion
+timeout. A first Jetson attempt without this control cancelled Whisper in about
+6.5 ms: every lifecycle and process Gate passed, but the resource-coverage Gate
+correctly failed because no 200 ms sample could fall inside that interval.
 
 Run them only from a clean, synchronized Jetson `main` branch after the fixed
 WAV has been restored beneath the ignored Phase 0 input root:
@@ -399,6 +408,7 @@ python3 -m experiments.phase1.run_asr_slice \
 
 python3 -m experiments.phase1.run_asr_slice \
   --condition asr_stale \
+  --stale-observation-s 0.5 \
   --session-id 20260831T000000Z_phase1_asr_pilot \
   --repetition 1
 ```

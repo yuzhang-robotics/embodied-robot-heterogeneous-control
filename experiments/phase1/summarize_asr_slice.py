@@ -17,7 +17,7 @@ from experiments.phase1.jetson_telemetry import summarize_resource_samples
 from experiments.phase1.replay_lifecycle import TraceProfile, replay_file
 
 
-ASR_SUMMARY_SCHEMA_VERSION = "0.1.0"
+ASR_SUMMARY_SCHEMA_VERSION = "0.2.0"
 
 
 def _gate(
@@ -121,6 +121,20 @@ def build_asr_summary(
         and started_ns <= value <= finished_ns
         for value in resource_times
     )
+    stale_observation_s = spec.get("stale_observation_s")
+    stale_observation_ns = (
+        int(stale_observation_s * 1_000_000_000)
+        if isinstance(stale_observation_s, (int, float))
+        and not isinstance(stale_observation_s, bool)
+        else None
+    )
+    adapter_duration_ns = adapter.get("duration_ns")
+    stale_observation_holds = condition is ASRSliceCondition.ASYNC or (
+        isinstance(stale_observation_ns, int)
+        and stale_observation_ns > 0
+        and isinstance(adapter_duration_ns, int)
+        and adapter_duration_ns >= stale_observation_ns
+    )
 
     gates = [
         _gate(
@@ -215,6 +229,20 @@ def build_asr_summary(
                 "nominal execution has no cancellation request"
                 if condition is ASRSliceCondition.ASYNC
                 else "state invalidation is confirmed at the Whisper process boundary"
+            ),
+        ),
+        _gate(
+            "stale_observation_window",
+            stale_observation_holds,
+            observed={
+                "condition": condition.value,
+                "required_observation_ns": stale_observation_ns,
+                "adapter_duration_ns": adapter_duration_ns,
+            },
+            requirement=(
+                "the stale condition observes active Whisper long enough for telemetry"
+                if condition is ASRSliceCondition.STALE
+                else "the stale-only observation control is not applied"
             ),
         ),
         _gate(

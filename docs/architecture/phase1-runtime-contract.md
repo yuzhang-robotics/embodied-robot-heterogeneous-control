@@ -866,9 +866,20 @@ ASR uses its workload-specific FIFO lane with pending and result capacities of
 two. The first correctness slice admits one request so nominal completion and
 state invalidation remain isolated from later arrival-rate experiments. Its
 conditions are `asr_async` and `asr_stale`. The nominal condition consumes one
-matching transcript identity. The stale condition advances the state generation
-after Whisper starts, requests cancellation, stops and reaps the native
-`whisper-cli` process, and consumes no result.
+matching transcript identity. The stale condition observes active Whisper for
+0.5 s after its process starts, advances the state generation, requests
+cancellation, stops and reaps the native `whisper-cli` process, and consumes no
+result.
+
+The 0.5 s observation window is an experimental correctness control, not a
+formal performance threshold or a measurement of cancellation latency. It is
+greater than the default 200 ms resource-sampling period so the stale execution
+can contain at least one resource sample. The runner fails before creating a
+run directory if the stale window does not exceed the configured resource
+interval or if it reaches the adapter or slice completion timeout. This rule was
+added after an invalid Jetson attempt cancelled Whisper in about 6.5 ms and
+passed every lifecycle/process Gate while correctly failing resource coverage
+with zero in-interval samples. That failed attempt is diagnostic only.
 
 The cancellation claim differs from the VLM HTTP-service path. Whisper is the
 backend process for this invocation; successful termination and reaping can set
@@ -929,6 +940,8 @@ The fixed-input ASR slice additionally requires:
 - nominal Whisper exits with code zero and is reaped without termination;
 - stale cancellation is observed, stops the local wait, terminates and reaps
   Whisper, and records backend-stop confirmation only for that child;
+- the stale adapter remains active for the recorded observation window, which
+  must exceed the configured resource-sampling interval;
 - raw transcript text and private filesystem paths are absent from artifacts;
 - at least one valid resource sample falls inside the adapter interval.
 

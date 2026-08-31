@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -263,6 +264,30 @@ def validate_asr_slice_dir(run_dir: Path | str) -> list[str]:
         or spec.get("queue_semantics") != "utterance_fifo"
     ):
         errors.append("manifest ASR specification is inconsistent")
+    else:
+        stale_observation_s = spec.get("stale_observation_s")
+        if (
+            isinstance(stale_observation_s, bool)
+            or not isinstance(stale_observation_s, (int, float))
+            or not math.isfinite(stale_observation_s)
+            or stale_observation_s <= 0
+        ):
+            errors.append("manifest stale observation window is invalid")
+        resource_interval_ms = manifest.get("resource_interval_ms")
+        if (
+            isinstance(resource_interval_ms, bool)
+            or not isinstance(resource_interval_ms, int)
+            or resource_interval_ms < 50
+            or resource_interval_ms > 10_000
+        ):
+            errors.append("manifest resource interval is invalid")
+        elif (
+            condition is ASRSliceCondition.STALE
+            and isinstance(stale_observation_s, (int, float))
+            and not isinstance(stale_observation_s, bool)
+            and stale_observation_s <= resource_interval_ms / 1000.0
+        ):
+            errors.append("stale observation window does not exceed resource interval")
 
     if not isinstance(report, Mapping):
         errors.append("scenario ASR report is missing")

@@ -121,6 +121,8 @@ class ASRRunnerTests(unittest.TestCase):
                 "0.02",
                 "--postlude-s",
                 "0.02",
+                "--stale-observation-s",
+                "0.06",
                 "--probe-period-ms",
                 "5",
                 "--probe-deadline-ms",
@@ -180,7 +182,7 @@ class ASRRunnerTests(unittest.TestCase):
         output_base = Path(command[command.index("-of") + 1])
         output_txt = output_base.with_suffix(".txt")
         script = (
-            "import time; from pathlib import Path; time.sleep(0.04); "
+            "import time; from pathlib import Path; time.sleep(0.12); "
             f"Path({str(output_txt)!r}).write_text({self.transcript!r}, "
             "encoding='utf-8')"
         )
@@ -260,6 +262,18 @@ class ASRRunnerTests(unittest.TestCase):
         )
         self.assertTrue(stale["adapter"]["process"]["reaped"])
         self.assertTrue(stale["adapter"]["cancellation"]["backend_stop_confirmed"])
+        self.assertEqual(stale["spec"]["stale_observation_s"], 0.06)
+        self.assertGreater(
+            stale["resources"]["inference_interval_sample_count"],
+            0,
+        )
+        self.assertTrue(
+            next(
+                gate
+                for gate in stale["gates"]
+                if gate["name"] == "stale_observation_window"
+            )["passed"]
+        )
         self.assertEqual(
             {thread.name for thread in threading.enumerate()}, baseline_threads
         )
@@ -291,6 +305,20 @@ class ASRRunnerTests(unittest.TestCase):
         args.adapter_execution_timeout_s = args.completion_timeout_s
         with patch.dict(os.environ, {"ROBOT_ENABLE_MOTION": "0"}):
             with self.assertRaisesRegex(RuntimeError, "execution timeout"):
+                run_once(
+                    args,
+                    repo_root=REPO_ROOT,
+                    preflight_builder=self.preflight_builder,
+                    sampler_factory=self.sampler_factory,
+                    adapter_factory=self.adapter_factory,
+                )
+        self.assertFalse((self.root / "runs" / SESSION_ID).exists())
+
+    def test_stale_observation_budget_is_rejected_before_output_creation(self) -> None:
+        args = self.args(ASRSliceCondition.STALE)
+        args.stale_observation_s = args.resource_interval_ms / 1000.0
+        with patch.dict(os.environ, {"ROBOT_ENABLE_MOTION": "0"}):
+            with self.assertRaisesRegex(RuntimeError, "resource interval"):
                 run_once(
                     args,
                     repo_root=REPO_ROOT,

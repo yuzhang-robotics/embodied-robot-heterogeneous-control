@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import re
 import sys
 from datetime import datetime, timezone
@@ -194,6 +195,22 @@ def run_once(
         raise ASRRunError(
             "adapter execution timeout must be below the slice completion timeout"
         )
+    if not math.isfinite(args.stale_observation_s) or args.stale_observation_s <= 0:
+        raise ASRRunError("stale observation window must be positive and finite")
+    if condition is ASRSliceCondition.STALE:
+        resource_interval_s = args.resource_interval_ms / 1000.0
+        if args.stale_observation_s <= resource_interval_s:
+            raise ASRRunError(
+                "stale observation window must exceed the resource interval"
+            )
+        if args.stale_observation_s >= args.adapter_execution_timeout_s:
+            raise ASRRunError(
+                "stale observation window must be below the adapter timeout"
+            )
+        if args.stale_observation_s >= args.completion_timeout_s:
+            raise ASRRunError(
+                "stale observation window must be below the completion timeout"
+            )
     session_id = _validate_session_id(args.session_id or make_asr_session_id())
     injected_components = [
         name
@@ -236,6 +253,7 @@ def run_once(
         probe_join_timeout_s=args.probe_join_timeout_s,
         prelude_s=args.prelude_s,
         postlude_s=args.postlude_s,
+        stale_observation_s=args.stale_observation_s,
         probe_period_ns=int(args.probe_period_ms * 1_000_000),
         probe_deadline_ns=int(args.probe_deadline_ms * 1_000_000),
     )
@@ -404,6 +422,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--probe-join-timeout-s", type=float, default=5.0)
     parser.add_argument("--prelude-s", type=float, default=1.0)
     parser.add_argument("--postlude-s", type=float, default=1.0)
+    parser.add_argument("--stale-observation-s", type=float, default=0.5)
     parser.add_argument("--probe-period-ms", type=float, default=100.0)
     parser.add_argument("--probe-deadline-ms", type=float, default=100.0)
     parser.add_argument("--resource-interval-ms", type=int, default=200)

@@ -87,6 +87,7 @@ class ASRSliceTests(unittest.TestCase):
             probe_join_timeout_s=1.0,
             prelude_s=0.005,
             postlude_s=0.005,
+            stale_observation_s=0.01,
             probe_period_ns=1_000_000,
             probe_deadline_ns=2_000_000,
         )
@@ -125,6 +126,10 @@ class ASRSliceTests(unittest.TestCase):
         self.assertTrue(report.adapter.terminate_requested)
         self.assertTrue(report.adapter.process_reaped)
         self.assertTrue(report.adapter.backend_stop_confirmed)
+        self.assertGreaterEqual(
+            report.adapter.finished_monotonic_ns - report.adapter.started_monotonic_ns,
+            10_000_000,
+        )
         self.assertTrue(all(process.poll() is not None for process in self.processes))
 
     def test_artifacts_do_not_contain_transcript_or_input_path(self) -> None:
@@ -139,6 +144,13 @@ class ASRSliceTests(unittest.TestCase):
                 condition=ASRSliceCondition.ASYNC,
                 result_validity_s=1.0,
                 completion_timeout_s=1.0,
+            )
+
+    def test_spec_requires_positive_stale_observation_window(self) -> None:
+        with self.assertRaisesRegex(ValueError, "stale_observation_s"):
+            ASRSliceSpec(
+                condition=ASRSliceCondition.STALE,
+                stale_observation_s=0.0,
             )
 
 
