@@ -5,17 +5,17 @@ recorder, event schema, independent lifecycle replay, run validation, Jetson
 pilot orchestration, deterministic analysis, fixed-input VLM/ASR integration
 and descriptive summaries for the Phase 1 asynchronous runtime study. The first
 Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
-A spawned-process VLM adapter has also completed one independently validated
-Jetson correctness pilot. The fixed-input ASR subprocess slice is implemented
-and host-tested; its Jetson correctness pilot has not run. Formal
-synchronous/asynchronous data remain uncollected.
+A spawned-process VLM adapter and the fixed-input ASR subprocess slice have also
+completed independently validated Jetson correctness pilots. The real LLM
+slice remains pending, and formal synchronous/asynchronous data remain
+uncollected.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
 > pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
 > 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
-> Jetson correctness pilot；固定输入 ASR 子进程切片已通过 host 测试，但尚未运行 Jetson
-> correctness pilot；正式对比数据尚未采集。
+> Jetson correctness pilot；固定输入 ASR 子进程切片也已完成 Jetson correctness pilot；
+> LLM 切片与正式对比数据尚未完成。
 
 ## Current status
 
@@ -38,7 +38,9 @@ synchronous/asynchronous data remain uncollected.
 - Deterministic process-pilot reconstruction and descriptive thread reference:
   implemented
 - Fixed-input ASR adapter, Whisper process supervision, runner and validator:
-  implemented and host-tested; Jetson correctness pilot not run
+  completed one independently validated Jetson correctness pilot
+- Deterministic ASR-pilot reconstruction and public descriptive report:
+  implemented; ASR component of G5 satisfied
 - Real LLM slice: not started
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
@@ -423,11 +425,16 @@ independent validation boundary as the VLM slice. Revalidate one run with:
 python3 -m experiments.phase1.validate_asr_slice /path/to/run_dir
 ```
 
-The ASR slice is currently host-tested only. Until both real Jetson conditions
-pass and a derived pilot report is reviewed, it does not satisfy the ASR part
-of G5. G6 formal preregistration remains downstream of successful ASR and LLM
-correctness pilots; no numerical threshold or formal sample size is frozen by
-this implementation.
+Session `20260831T140705Z_phase1_asr_pilot_v2` completed both real Jetson
+conditions on synchronized `main@bc1ca35`. The Jetson and Windows validators and
+all eleven per-run Gates passed. Its independently derived
+[descriptive report](results/20260831T140705Z_phase1_asr_pilot_v2/) records the
+archive identity, process facts, privacy boundary, observation control, probe
+continuity and resource coverage. This satisfies the ASR component of G5. G5
+overall remains open because the real LLM correctness slice is pending, and G6
+formal preregistration remains downstream. No numerical threshold, formal
+sample size, performance result or cancellation-latency result is frozen by
+this pilot.
 
 ## Planned implementation order
 
@@ -448,8 +455,8 @@ this implementation.
    thread-isolation result with real-workload evidence — complete;
 9. implement process-level VLM isolation and independently analyze its Jetson
    correctness pilot — complete;
-10. extend the adapter/runtime boundary to ASR and LLM — ASR implementation
-    host-tested, ASR Jetson pilot and LLM slice pending;
+10. extend the adapter/runtime boundary to ASR and LLM — ASR correctness pilot
+    complete and independently analyzed; LLM slice pending;
 11. freeze formal thresholds and collect balanced synchronous/asynchronous data;
 12. add an opt-in motion-disabled application slice after the research Gates
    pass.
@@ -480,6 +487,7 @@ The reusable, hardware-independent kernel lives under
 
 ```text
 experiments/phase1/
+├── analyze_asr_pilot.py
 ├── analyze_vlm_pilot.py
 ├── asr_adapter.py
 ├── asr_preflight.py
