@@ -8,26 +8,28 @@ simulation pilot has validated the protocol and runtime semantics. A
 fixed-input VLM correctness pilot has also completed nominal consumption and
 old-generation rejection on the Jetson. A spawned-process VLM adapter and its
 evidence Gates have since completed one process-isolated Jetson correctness
-pilot. A fixed-input ASR subprocess adapter, correctness runner and independent
-validator are host-tested; the ASR Jetson pilot and formal performance behavior
-remain unvalidated.
+pilot. A fixed-input ASR subprocess adapter has since completed one
+independently validated and analyzed Jetson correctness pilot. The real LLM
+slice and formal performance behavior remain unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
-> VLM 进程隔离路径已完成 Jetson correctness pilot；固定输入 ASR 子进程切片已完成 host
-> 测试、尚未运行 Jetson pilot；正式同步/异步对比实验仍需按 Gate 逐步完成。
+> VLM 进程隔离路径与固定输入 ASR 子进程路径均已完成 Jetson correctness pilot；
+> LLM 切片与正式同步/异步对比实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1D fixed-input ASR slice host verification
+- Phase: Phase 1D fixed-input ASR pilot analyzed; real LLM slice next
 - Contract status: frozen through independently validated Jetson simulation,
-  thread/process VLM pilots and the host-tested fixed-input ASR boundary
+  thread/process VLM pilots and the fixed-input ASR correctness pilot
 - VLM-pilot result: `main@aebd1a2`, session
   `20260830T073825Z_phase1_vlm_pilot`
 - VLM-pilot public analysis: `main@95a839d`
 - Process-isolated VLM result: `main@1818c83`, session
   `20260830T122541Z_phase1_vlm_process_reaping`
+- ASR-pilot result: `main@bc1ca35`, session
+  `20260831T140705Z_phase1_asr_pilot_v2`
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -65,11 +67,12 @@ The current implementation includes:
   publishes transcript identity only, and distinguishes normal exit, timeout,
   cancellation termination and process reaping;
 - ASR-specific preflight, nominal/stale orchestration, atomic run artifacts,
-  deterministic Gates and an independent validator, all host-tested.
+  deterministic Gates and an independent validator;
+- deterministic ASR-pilot reconstruction and a hash-fixed public descriptive
+  report.
 
-The VLM pilots include no formal performance data. The host-tested ASR path is
-also not Jetson evidence. The pilots validate the real-model integration,
-result-freshness and process-boundary paths. The thread pilot's
+The VLM and ASR pilots include no formal performance data. They validate
+real-model integration, result freshness and process-boundary paths. The thread pilot's
 skipped releases show that the simulated sleep result cannot be generalized to
 every Python worker workload; the later process pilot removes those observed
 gaps in two single-run conditions. No completed pilot authorizes an
@@ -891,9 +894,13 @@ remain separate recorded facts.
 The ASR preflight fails closed unless the fixed input, model, source version and
 arguments match, no pre-existing `whisper-cli` process is running, the Git tree
 is synchronized, and motion/device-module checks pass. The implementation,
-summary reconstruction and validator are host-tested. No ASR Jetson pilot has
-yet run, so G5 remains open and these controls do not freeze formal numerical
-thresholds.
+summary reconstruction and validator completed session
+`20260831T140705Z_phase1_asr_pilot_v2` on synchronized `main@bc1ca35`. Both
+conditions passed independent validation and every ASR Gate; the derived report
+therefore satisfies the ASR component of G5. Overall G5 remains open because the
+real LLM correctness slice is pending. These controls and single-run descriptive
+observations do not freeze formal numerical thresholds or measure cancellation
+latency.
 
 ## Gates
 
