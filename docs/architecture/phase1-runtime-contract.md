@@ -914,7 +914,7 @@ cancellation latency.
 The first LLM slice reuses the tracked Phase 0 prompt identity (124 bytes,
 SHA-256
 `15ee277f4140cb3c2bca3d4762e6462e098787e5b5843245760d9f40da2ea7f2`)
-and the Qwen GGUF identity (1111370240 bytes, SHA-256
+and the Qwen GGUF identity (1117320736 bytes, SHA-256
 `6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e`).
 It also freezes the served model identity
 `qwen2.5-1.5b-instruct-q4_k_m.gguf`, an empty conversation-history snapshot,

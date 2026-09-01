@@ -14,6 +14,8 @@ from unittest.mock import patch
 
 from experiments.phase1.llm_adapter import (
     LLM_EMPTY_HISTORY_SHA256,
+    LLM_MODEL_SHA256,
+    LLM_MODEL_SIZE_BYTES,
     FixedInputLLMAdapter,
     fixed_llm_payload,
 )
@@ -28,6 +30,13 @@ from jetson.phase1_runtime import (
 
 
 class FixedInputLLMAdapterTests(unittest.TestCase):
+    def test_frozen_model_identity_matches_jetson_file_measurement(self) -> None:
+        self.assertEqual(LLM_MODEL_SIZE_BYTES, 1_117_320_736)
+        self.assertEqual(
+            LLM_MODEL_SHA256,
+            "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+        )
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
