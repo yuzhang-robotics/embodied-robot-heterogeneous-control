@@ -42,12 +42,18 @@ _RESIDENCY_POLICIES = {
     "vlm": "ollama_moondream_stopped_after_each_request",
 }
 
+LLM_REQUEST_MODEL = "qwen"
+LLM_REQUEST_TEMPERATURE = 0.4
+LLM_REQUEST_MAX_TOKENS = 80
+LLM_REQUEST_STREAM = False
+
 _SYSTEM_PROMPT = (
     "你是章鱼号，一个由 yuzhang-robotics 开发、运行在 Jetson Orin Nano 上的离线中文语音助手。"
     "请用自然、简短、适合语音播报的中文回答。"
     "不要使用 Markdown 表格。"
     "除非用户要求详细解释，否则回答控制在三到六句话。"
 )
+LLM_SYSTEM_PROMPT = _SYSTEM_PROMPT
 
 
 class WorkloadError(RuntimeError):
@@ -134,10 +140,10 @@ def collect_workload_metadata(workload: str) -> dict[str, Any]:
                 "cache_ram": 0,
             },
             "request": {
-                "model": "qwen",
-                "temperature": 0.4,
-                "max_tokens": 80,
-                "stream": False,
+                "model": LLM_REQUEST_MODEL,
+                "temperature": LLM_REQUEST_TEMPERATURE,
+                "max_tokens": LLM_REQUEST_MAX_TOKENS,
+                "stream": LLM_REQUEST_STREAM,
             },
         }
 
@@ -274,14 +280,14 @@ def _run_llm(
 
     prompt = input_path.read_text(encoding="utf-8").strip()
     payload = {
-        "model": "qwen",
+        "model": LLM_REQUEST_MODEL,
         "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": LLM_SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.4,
-        "max_tokens": 80,
-        "stream": False,
+        "temperature": LLM_REQUEST_TEMPERATURE,
+        "max_tokens": LLM_REQUEST_MAX_TOKENS,
+        "stream": LLM_REQUEST_STREAM,
     }
     request = urllib.request.Request(
         LLAMA_API_URL,

@@ -10,19 +10,21 @@ old-generation rejection on the Jetson. A spawned-process VLM adapter and its
 evidence Gates have since completed one process-isolated Jetson correctness
 pilot. A fixed-input ASR subprocess adapter has since completed one
 independently validated and analyzed Jetson correctness pilot. The real LLM
-slice and formal performance behavior remain unvalidated.
+HTTP slice is implemented and host-tested; its Jetson correctness pilot and
+formal performance behavior remain unvalidated.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
 > VLM 进程隔离路径与固定输入 ASR 子进程路径均已完成 Jetson correctness pilot；
-> LLM 切片与正式同步/异步对比实验仍需按 Gate 逐步完成。
+> 固定输入 LLM HTTP 切片已完成 host 验证；Jetson correctness pilot 与正式同步/异步对比实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1D fixed-input ASR pilot analyzed; real LLM slice next
+- Phase: Phase 1D fixed-input LLM slice host verification
 - Contract status: frozen through independently validated Jetson simulation,
-  thread/process VLM pilots and the fixed-input ASR correctness pilot
+  thread/process VLM pilots, the fixed-input ASR correctness pilot and the
+  host-tested LLM HTTP boundary
 - VLM-pilot result: `main@aebd1a2`, session
   `20260830T073825Z_phase1_vlm_pilot`
 - VLM-pilot public analysis: `main@95a839d`
@@ -70,6 +72,11 @@ The current implementation includes:
   deterministic Gates and an independent validator;
 - deterministic ASR-pilot reconstruction and a hash-fixed public descriptive
   report.
+- a fixed-input LLM adapter that preserves the Phase 0 prompt, empty-history
+  snapshot and llama.cpp request contract while serializing only output identity
+  and token usage;
+- LLM-specific model/server preflight, nominal/stale orchestration, resource
+  coverage Gates, atomic artifacts and an independent validator, all host-tested.
 
 The VLM and ASR pilots include no formal performance data. They validate
 real-model integration, result freshness and process-boundary paths. The thread pilot's
@@ -898,9 +905,46 @@ summary reconstruction and validator completed session
 `20260831T140705Z_phase1_asr_pilot_v2` on synchronized `main@bc1ca35`. Both
 conditions passed independent validation and every ASR Gate; the derived report
 therefore satisfies the ASR component of G5. Overall G5 remains open because the
-real LLM correctness slice is pending. These controls and single-run descriptive
-observations do not freeze formal numerical thresholds or measure cancellation
-latency.
+real LLM Jetson correctness pilot is pending. These controls and single-run
+descriptive observations do not freeze formal numerical thresholds or measure
+cancellation latency.
+
+### Fixed-input LLM correctness contract
+
+The first LLM slice reuses the tracked Phase 0 prompt identity (124 bytes,
+SHA-256
+`15ee277f4140cb3c2bca3d4762e6462e098787e5b5843245760d9f40da2ea7f2`)
+and the Qwen GGUF identity (1111370240 bytes, SHA-256
+`6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e`).
+It also freezes the served model identity
+`qwen2.5-1.5b-instruct-q4_k_m.gguf`, an empty conversation-history snapshot,
+the Phase 0 system-prompt identity, model alias `qwen`, temperature `0.4`,
+`max_tokens=80` and non-streaming response mode. Prompt text, response text,
+private paths and the raw HTTP response are never serialized.
+
+LLM retains the contract of one active request and at most one pending request,
+with reject-new overflow behavior. The correctness slice admits only one empty-
+history request in each of `llm_async` and `llm_stale`. The nominal condition
+consumes one response identity. The stale condition observes an active HTTP
+request for 0.5 s, advances the conversation state generation and requires one
+`rejected_state` disposition with zero consumption.
+
+The Python worker performs a blocking HTTP request to a pre-existing local
+llama-server. State invalidation can request cancellation and prevent result
+consumption, but it does not interrupt that HTTP wait or prove that server-side
+inference stopped. The adapter therefore records `client_wait_stopped=false`
+and `backend_stop_confirmed=null` even in the stale condition. The resident
+server is managed outside the run; the adapter neither unloads the model nor
+stops the service. The 0.5 s observation window is a telemetry-coverage control,
+not a cancellation-latency or performance threshold.
+
+The fail-closed preflight verifies the prompt and model hashes, records a clean
+llama.cpp source identity, requires exactly one server process with the frozen
+Phase 0 launch arguments and model path, checks a loopback-only listener, and
+confirms the expected served model identity. The implementation, summary
+reconstruction and validator are host-tested only. Until both Jetson conditions
+pass independent validation and a derived report is reviewed, the LLM component
+of G5 and therefore G5 overall remain open.
 
 ## Gates
 
@@ -951,6 +995,22 @@ The fixed-input ASR slice additionally requires:
   must exceed the configured resource-sampling interval;
 - raw transcript text and private filesystem paths are absent from artifacts;
 - at least one valid resource sample falls inside the adapter interval.
+
+The fixed-input LLM slice additionally requires:
+
+- the fixed prompt, empty history, Qwen model, served model identity, system
+  prompt identity, request fields and llama-server launch arguments match;
+- exactly one pre-existing llama-server is present and bound only to loopback;
+- `llm_async` consumes exactly one non-empty response identity;
+- `llm_stale` records exactly one `rejected_state` and zero accepted results;
+- prompt, response, history and private path text are absent from artifacts;
+- llama.cpp reports valid prompt, completion and total token counts;
+- state invalidation is observed without claiming that the HTTP wait or backend
+  inference was stopped;
+- the externally managed server remains resident and receives no unload or stop
+  request from the slice;
+- the stale adapter covers its observation control and at least one valid
+  resource sample falls inside each adapter interval.
 
 G5 requires independently validated Jetson correctness pilots for VLM, ASR and
 LLM. Only after G5 passes may G6 freeze numerical thresholds, balanced order,

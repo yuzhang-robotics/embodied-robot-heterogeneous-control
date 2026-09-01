@@ -2,20 +2,20 @@
 
 This directory contains the host tests, simulated-condition runner, trace
 recorder, event schema, independent lifecycle replay, run validation, Jetson
-pilot orchestration, deterministic analysis, fixed-input VLM/ASR integration
+pilot orchestration, deterministic analysis, fixed-input VLM/ASR/LLM integration
 and descriptive summaries for the Phase 1 asynchronous runtime study. The first
 Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
 A spawned-process VLM adapter and the fixed-input ASR subprocess slice have also
-completed independently validated Jetson correctness pilots. The real LLM
-slice remains pending, and formal synchronous/asynchronous data remain
-uncollected.
+completed independently validated Jetson correctness pilots. The fixed-input
+LLM HTTP slice is implemented and host-tested; its Jetson pilot remains pending,
+and formal synchronous/asynchronous data remain uncollected.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
 > pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
 > 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
 > Jetson correctness pilot；固定输入 ASR 子进程切片也已完成 Jetson correctness pilot；
-> LLM 切片与正式对比数据尚未完成。
+> 固定输入 LLM HTTP 切片已完成 host 验证，Jetson pilot 与正式对比数据尚未完成。
 
 ## Current status
 
@@ -41,7 +41,8 @@ uncollected.
   completed one independently validated Jetson correctness pilot
 - Deterministic ASR-pilot reconstruction and public descriptive report:
   implemented; ASR component of G5 satisfied
-- Real LLM slice: not started
+- Fixed-input LLM adapter, local-server preflight, runner and validator:
+  implemented and host-tested; Jetson correctness pilot not run
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
 
@@ -436,6 +437,66 @@ formal preregistration remains downstream. No numerical threshold, formal
 sample size, performance result or cancellation-latency result is frozen by
 this pilot.
 
+## Fixed-input LLM slice
+
+The LLM slice reuses the tracked Phase 0 prompt, Qwen GGUF identity, empty
+conversation history, system-prompt identity and chat request fields. It sends
+one request to the pre-existing loopback llama.cpp server and records only the
+response hash, character count, served response model and token usage. Prompt,
+history and response text, raw HTTP data and private filesystem paths are not
+serialized.
+
+| Condition | State action | Required disposition and boundary fact |
+| --- | --- | --- |
+| `llm_async` | none | one response identity consumed; no cancellation requested |
+| `llm_stale` | observe the active request for 0.5 s, then advance generation | one `rejected_state`, zero consumed; cancellation observed without a backend-stop claim |
+
+The llama-server is resident before the run and remains externally managed.
+State invalidation prevents an old response from entering conversation history,
+but the Python worker continues its blocking HTTP wait until the server responds
+or the request timeout expires. Consequently the stale condition requires
+`client_wait_stopped=false` and `backend_stop_confirmed=null`; the adapter sends
+no stop or unload request. The 0.5 s window is only a correctness and telemetry-
+coverage control, not a cancellation-latency or performance threshold.
+
+The preflight hashes the Phase 0 prompt and Qwen model, records a clean
+llama.cpp source identity, requires exactly one llama-server with the frozen
+launch arguments and model path, verifies a loopback-only listener and confirms
+the expected served model ID. Optional private path overrides are
+`PHASE0_QWEN_MODEL` and `PHASE0_LLAMA_DIR`; their values never enter the public
+adapter artifacts.
+
+After this implementation is reviewed and merged, run both conditions only
+from a clean, synchronized Jetson `main` branch:
+
+```bash
+export ROBOT_ENABLE_MOTION=0
+export SESSION_ID="$(date -u +%Y%m%dT%H%M%SZ)_phase1_llm_pilot"
+
+python3 -m experiments.phase1.run_llm_slice \
+  --condition llm_async \
+  --session-id "$SESSION_ID" \
+  --repetition 1
+
+python3 -m experiments.phase1.run_llm_slice \
+  --condition llm_stale \
+  --stale-observation-s 0.5 \
+  --session-id "$SESSION_ID" \
+  --repetition 1
+```
+
+Revalidate either completed run independently with:
+
+```bash
+python3 -m experiments.phase1.validate_llm_slice /path/to/run_dir
+```
+
+Each run must pass its lifecycle, fixed-identity, request-contract, token-usage,
+privacy, residency, cancellation-boundary, thread-closure and resource-coverage
+Gates. The host tests do not satisfy the LLM component of G5. G5 remains open
+until both real Jetson conditions pass independent validation and their derived
+pilot report is reviewed.
+
 ## Planned implementation order
 
 1. freeze the task, result, lifecycle, queue, cancellation, and freshness
@@ -456,7 +517,8 @@ this pilot.
 9. implement process-level VLM isolation and independently analyze its Jetson
    correctness pilot — complete;
 10. extend the adapter/runtime boundary to ASR and LLM — ASR correctness pilot
-    complete and independently analyzed; LLM slice pending;
+    complete and independently analyzed; LLM slice implemented and host-tested,
+    Jetson correctness pilot pending;
 11. freeze formal thresholds and collect balanced synchronous/asynchronous data;
 12. add an opt-in motion-disabled application slice after the research Gates
    pass.
@@ -494,10 +556,14 @@ experiments/phase1/
 ├── asr_slice.py
 ├── jetson_preflight.py
 ├── jetson_telemetry.py
+├── llm_adapter.py
+├── llm_preflight.py
+├── llm_slice.py
 ├── manifest.py
 ├── pilot.py
 ├── run_jetson_pilot.py
 ├── run_asr_slice.py
+├── run_llm_slice.py
 ├── run_simulation.py
 ├── run_vlm_slice.py
 ├── schemas/
@@ -505,6 +571,7 @@ experiments/phase1/
 │   └── resource.schema.json
 ├── simulation.py
 ├── summarize_asr_slice.py
+├── summarize_llm_slice.py
 ├── summarize_run.py
 ├── summarize_vlm_process_slice.py
 ├── summarize_vlm_slice.py
@@ -512,6 +579,7 @@ experiments/phase1/
 ├── telemetry.py
 ├── validate_asr_slice.py
 ├── validate_jetson_pilot.py
+├── validate_llm_slice.py
 ├── validate_run.py
 ├── validate_vlm_slice.py
 ├── vlm_adapter.py
