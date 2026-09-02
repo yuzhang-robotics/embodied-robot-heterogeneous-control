@@ -7,15 +7,17 @@ and descriptive summaries for the Phase 1 asynchronous runtime study. The first
 Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
 A spawned-process VLM adapter and the fixed-input ASR subprocess slice have also
 completed independently validated Jetson correctness pilots. The fixed-input
-LLM HTTP slice is implemented and host-tested; its Jetson pilot remains pending,
-and formal synchronous/asynchronous data remain uncollected.
+LLM HTTP slice has now completed its independently validated Jetson correctness
+pilot, closing G5. G6 preregistration and formal synchronous/asynchronous data
+collection remain incomplete.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
 > pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
 > 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
 > Jetson correctness pilot；固定输入 ASR 子进程切片也已完成 Jetson correctness pilot；
-> 固定输入 LLM HTTP 切片已完成 host 验证，Jetson pilot 与正式对比数据尚未完成。
+> 固定输入 LLM HTTP 切片也已完成 Jetson correctness pilot，G5 已关闭；G6 正式协议
+> 预注册与同步/异步对比数据收集尚未完成。
 
 ## Current status
 
@@ -42,7 +44,9 @@ and formal synchronous/asynchronous data remain uncollected.
 - Deterministic ASR-pilot reconstruction and public descriptive report:
   implemented; ASR component of G5 satisfied
 - Fixed-input LLM adapter, local-server preflight, runner and validator:
-  implemented and host-tested; Jetson correctness pilot not run
+  completed one independently validated Jetson correctness pilot
+- Deterministic LLM-pilot reconstruction and public descriptive report:
+  implemented; LLM component and G5 overall satisfied
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
 
@@ -432,10 +436,9 @@ all eleven per-run Gates passed. Its independently derived
 [descriptive report](results/20260831T140705Z_phase1_asr_pilot_v2/) records the
 archive identity, process facts, privacy boundary, observation control, probe
 continuity and resource coverage. This satisfies the ASR component of G5. G5
-overall remains open because the real LLM correctness slice is pending, and G6
-formal preregistration remains downstream. No numerical threshold, formal
-sample size, performance result or cancellation-latency result is frozen by
-this pilot.
+was subsequently closed by the real LLM correctness slice; G6 formal
+preregistration remains downstream. No numerical threshold, formal sample size,
+performance result or cancellation-latency result is frozen by this pilot.
 
 ## Fixed-input LLM slice
 
@@ -466,8 +469,7 @@ the expected served model ID. Optional private path overrides are
 `PHASE0_QWEN_MODEL` and `PHASE0_LLAMA_DIR`; their values never enter the public
 adapter artifacts.
 
-After this implementation is reviewed and merged, run both conditions only
-from a clean, synchronized Jetson `main` branch:
+Run both conditions only from a clean, synchronized Jetson `main` branch:
 
 ```bash
 export ROBOT_ENABLE_MOTION=0
@@ -493,9 +495,26 @@ python3 -m experiments.phase1.validate_llm_slice /path/to/run_dir
 
 Each run must pass its lifecycle, fixed-identity, request-contract, token-usage,
 privacy, residency, cancellation-boundary, thread-closure and resource-coverage
-Gates. The host tests do not satisfy the LLM component of G5. G5 remains open
-until both real Jetson conditions pass independent validation and their derived
-pilot report is reviewed.
+Gates. Session `20260901T143315Z_phase1_llm_pilot` completed both conditions on
+synchronized `main@6e83ede`. The Jetson and Windows validators and all fourteen
+per-run Gates passed. Reconstruct a two-condition session with:
+
+```bash
+python3 -m experiments.phase1.analyze_llm_pilot /path/to/session_dir \
+  --source-archive-sha256 889debda235c475ad70362980c6a85e90b9a4c782937f2bb5b0c128cecb0797e \
+  --json-output /path/to/analysis.json \
+  --markdown-output /path/to/README.md
+```
+
+Its independently derived
+[descriptive report](results/20260901T143315Z_phase1_llm_pilot/) records the
+archive and frozen identities, nominal consumption, stale rejection, token
+usage, server-residency boundary, observation control, probe continuity and
+resource coverage. The LLM component and G5 overall are satisfied. G6 remains
+open until numerical thresholds, balanced order, sample size, exclusions and
+statistical methods are preregistered. The two single-run durations and resource
+summaries remain descriptive; they do not establish performance superiority,
+cancellation latency, backend cancellation or heterogeneous inference.
 
 ## Planned implementation order
 
@@ -516,12 +535,13 @@ pilot report is reviewed.
    thread-isolation result with real-workload evidence — complete;
 9. implement process-level VLM isolation and independently analyze its Jetson
    correctness pilot — complete;
-10. extend the adapter/runtime boundary to ASR and LLM — ASR correctness pilot
-    complete and independently analyzed; LLM slice implemented and host-tested,
-    Jetson correctness pilot pending;
-11. freeze formal thresholds and collect balanced synchronous/asynchronous data;
-12. add an opt-in motion-disabled application slice after the research Gates
-   pass.
+10. extend the adapter/runtime boundary to ASR and LLM, then independently
+    analyze both Jetson correctness pilots — complete; G5 closed;
+11. preregister formal thresholds, balanced order, sample size, exclusions and
+    statistical methods;
+12. collect and publish the formal synchronous/asynchronous comparison;
+13. add an opt-in motion-disabled application slice after the research Gates
+    pass.
 
 Contract changes are reviewed before implementation, and the formal protocol
 is frozen before data collection.
@@ -550,6 +570,7 @@ The reusable, hardware-independent kernel lives under
 ```text
 experiments/phase1/
 ├── analyze_asr_pilot.py
+├── analyze_llm_pilot.py
 ├── analyze_vlm_pilot.py
 ├── asr_adapter.py
 ├── asr_preflight.py
@@ -590,9 +611,8 @@ experiments/phase1/
 └── README.md
 ```
 
-`analyze_jetson_pilot.py` validates an ignored raw session and produces the
-tracked, deterministic derivatives under `results/`. The raw session remains
-outside Git.
+The pilot analyzers validate ignored raw sessions and produce tracked,
+deterministic derivatives under `results/`. Raw sessions remain outside Git.
 
 The experiment layer owns condition scheduling, run directories, manifests,
 validation and summaries. The executor continues to own all traced broker

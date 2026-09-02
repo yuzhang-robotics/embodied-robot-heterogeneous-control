@@ -122,12 +122,15 @@ native `whisper-cli` subprocess, retains FIFO utterance semantics, stops and
 reaps the child after state invalidation, and records only transcript identity.
 Its independently derived
 [Jetson correctness report](../../experiments/phase1/results/20260831T140705Z_phase1_asr_pilot_v2/)
-closes the ASR component of G5. The LLM Jetson pilot remains pending, so overall
-G5 and downstream formal preregistration remain open. The fixed-input LLM HTTP
-slice is now implemented and host-tested: it preserves the one-active/one-pending
-conversation boundary, records response identity and token counts only, and
-does not claim that state invalidation stops the blocking client wait or the
-externally managed llama-server. Its Jetson correctness pilot remains pending.
+closes the ASR component of G5. The fixed-input LLM HTTP slice preserves the
+one-active/one-pending conversation boundary, records response identity and
+token counts only, and does not claim that state invalidation stops the blocking
+client wait or the externally managed llama-server. Its independently derived
+[Jetson correctness report](../../experiments/phase1/results/20260901T143315Z_phase1_llm_pilot/)
+records valid nominal consumption and stale rejection. The VLM, ASR and LLM
+components are therefore complete and G5 is closed. G6 remains open pending
+formal threshold, order, sample-size, exclusion and statistical-method
+preregistration.
 
 ## Evaluation plan
 

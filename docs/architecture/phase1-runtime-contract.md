@@ -8,23 +8,22 @@ simulation pilot has validated the protocol and runtime semantics. A
 fixed-input VLM correctness pilot has also completed nominal consumption and
 old-generation rejection on the Jetson. A spawned-process VLM adapter and its
 evidence Gates have since completed one process-isolated Jetson correctness
-pilot. A fixed-input ASR subprocess adapter has since completed one
-independently validated and analyzed Jetson correctness pilot. The real LLM
-HTTP slice is implemented and host-tested; its Jetson correctness pilot and
-formal performance behavior remain unvalidated.
+pilot. Fixed-input ASR and LLM adapters have since completed independently
+validated and analyzed Jetson correctness pilots. All three real-workload
+correctness components are complete, closing G5. G6 formal protocol
+preregistration and synchronous/asynchronous data collection remain incomplete.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
-> VLM 进程隔离路径与固定输入 ASR 子进程路径均已完成 Jetson correctness pilot；
-> 固定输入 LLM HTTP 切片已完成 host 验证；Jetson correctness pilot 与正式同步/异步对比实验仍需按 Gate 逐步完成。
+> VLM 进程隔离路径以及固定输入 ASR、LLM 路径均已完成 Jetson correctness pilot，G5 已关闭；
+> G6 正式协议预注册与同步/异步对比实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1D fixed-input LLM slice host verification
+- Phase: Phase 1D correctness pilots complete; G6 preregistration next
 - Contract status: frozen through independently validated Jetson simulation,
-  thread/process VLM pilots, the fixed-input ASR correctness pilot and the
-  host-tested LLM HTTP boundary
+  thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
   `20260830T073825Z_phase1_vlm_pilot`
 - VLM-pilot public analysis: `main@95a839d`
@@ -32,6 +31,8 @@ formal performance behavior remain unvalidated.
   `20260830T122541Z_phase1_vlm_process_reaping`
 - ASR-pilot result: `main@bc1ca35`, session
   `20260831T140705Z_phase1_asr_pilot_v2`
+- LLM-pilot result: `main@6e83ede`, session
+  `20260901T143315Z_phase1_llm_pilot`
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -71,18 +72,20 @@ The current implementation includes:
 - ASR-specific preflight, nominal/stale orchestration, atomic run artifacts,
   deterministic Gates and an independent validator;
 - deterministic ASR-pilot reconstruction and a hash-fixed public descriptive
-  report.
+  report;
 - a fixed-input LLM adapter that preserves the Phase 0 prompt, empty-history
   snapshot and llama.cpp request contract while serializing only output identity
   and token usage;
 - LLM-specific model/server preflight, nominal/stale orchestration, resource
-  coverage Gates, atomic artifacts and an independent validator, all host-tested.
+  coverage Gates, atomic artifacts and an independent validator;
+- deterministic LLM-pilot reconstruction and a hash-fixed public descriptive
+  report.
 
-The VLM and ASR pilots include no formal performance data. They validate
-real-model integration, result freshness and process-boundary paths. The thread pilot's
-skipped releases show that the simulated sleep result cannot be generalized to
-every Python worker workload; the later process pilot removes those observed
-gaps in two single-run conditions. No completed pilot authorizes an
+The VLM, ASR and LLM pilots include no formal performance data. They validate
+real-model integration, result freshness and workload-specific boundaries. The
+thread pilot's skipped releases show that the simulated sleep result cannot be
+generalized to every Python worker workload; the later process pilot removes
+those observed gaps in two single-run conditions. No completed pilot authorizes an
 asynchronous-performance, hard-real-time, timing-isolation or
 heterogeneous-inference claim.
 
@@ -904,8 +907,8 @@ is synchronized, and motion/device-module checks pass. The implementation,
 summary reconstruction and validator completed session
 `20260831T140705Z_phase1_asr_pilot_v2` on synchronized `main@bc1ca35`. Both
 conditions passed independent validation and every ASR Gate; the derived report
-therefore satisfies the ASR component of G5. Overall G5 remains open because the
-real LLM Jetson correctness pilot is pending. These controls and single-run
+therefore satisfies the ASR component of G5. The later LLM correctness pilot
+closes the remaining component and G5 overall. These controls and single-run
 descriptive observations do not freeze formal numerical thresholds or measure
 cancellation latency.
 
@@ -942,9 +945,15 @@ The fail-closed preflight verifies the prompt and model hashes, records a clean
 llama.cpp source identity, requires exactly one server process with the frozen
 Phase 0 launch arguments and model path, checks a loopback-only listener, and
 confirms the expected served model identity. The implementation, summary
-reconstruction and validator are host-tested only. Until both Jetson conditions
-pass independent validation and a derived report is reviewed, the LLM component
-of G5 and therefore G5 overall remain open.
+reconstruction and validator completed session
+`20260901T143315Z_phase1_llm_pilot` on synchronized `main@6e83ede`. Both
+conditions passed independent validation and all fourteen LLM Gates. The
+nominal response identity was consumed once. The old-generation response in the
+stale condition completed at the blocking HTTP boundary but was rejected before
+consumption; the run records no client-wait or backend-stop confirmation. The
+derived report therefore satisfies the LLM component and closes G5 overall.
+The single fixed-order runs remain descriptive and do not freeze G6 thresholds,
+sample size, order, exclusions or statistical methods.
 
 ## Gates
 
@@ -1013,8 +1022,9 @@ The fixed-input LLM slice additionally requires:
   resource sample falls inside each adapter interval.
 
 G5 requires independently validated Jetson correctness pilots for VLM, ASR and
-LLM. Only after G5 passes may G6 freeze numerical thresholds, balanced order,
-sample size, exclusions and statistical analysis for formal data collection.
+LLM. Those three components are now satisfied. G6 remains open and must freeze
+numerical thresholds, balanced order, sample size, exclusions and statistical
+analysis before formal data collection.
 
 Numerical jitter and non-inferiority thresholds will be frozen during the next
 protocol review and before formal data. The current 300 ms unchanged-command
