@@ -1,0 +1,587 @@
+{
+  "analysis_schema_version": "0.1.0",
+  "analysis_kind": "phase1_fixed_input_llm_pilot",
+  "session_id": "20260901T143315Z_phase1_llm_pilot",
+  "source": {
+    "git_commit": "6e83ede085cdb4b025172e5c41da930c4989eff3",
+    "git_branch": "main",
+    "source_archive_sha256": "889debda235c475ad70362980c6a85e90b9a4c782937f2bb5b0c128cecb0797e",
+    "run_artifacts": {
+      "llm_async": {
+        "preflight.json": {
+          "size_bytes": 8470,
+          "sha256": "337daac9d9fd36db18a615b646344a305bf9c554ea3d40fb4db629d4815edbc5"
+        },
+        "events.jsonl": {
+          "size_bytes": 32604,
+          "sha256": "06a3d2ee97be6ecedd1fed4e84e154d0c5a1d59f666a378034c5abf1559c7879"
+        },
+        "resources.jsonl": {
+          "size_bytes": 30275,
+          "sha256": "a821c2e901d62fb7d357e6e53048a61ff2fec4ff1dcdccebc9bde317aa11975a"
+        },
+        "scenario.json": {
+          "size_bytes": 3761,
+          "sha256": "16cebbfff1346e324d453bebc4130c833314fee95ce57a99c4600a1badc5f4e6"
+        },
+        "summary.json": {
+          "size_bytes": 16019,
+          "sha256": "eb0e2884db93e094a5153783b273cb700d3cae3d7237b8953d1dd9a6efd555ad"
+        }
+      },
+      "llm_stale": {
+        "preflight.json": {
+          "size_bytes": 8470,
+          "sha256": "c8f9974447081b70b66faffcc259ed7ed0e969d1aec8115aba213e2a5e58bdff"
+        },
+        "events.jsonl": {
+          "size_bytes": 27759,
+          "sha256": "62cf6a215f41a85acaf3ab1964f2f2dee1d9bad593d6d32f1e25db82742bc754"
+        },
+        "resources.jsonl": {
+          "size_bytes": 24987,
+          "sha256": "68aef52fa9641b2617433878015779e27c142bba7f805c6454030bee4b720841"
+        },
+        "scenario.json": {
+          "size_bytes": 3783,
+          "sha256": "1fdfbb8609a23313fbbc264e94b9bbf763c0b56549708a59d01e0b4eee24f309"
+        },
+        "summary.json": {
+          "size_bytes": 16129,
+          "sha256": "b550c2e17a20cb1e16a3f64e7d85624aa838317510a3a1f2ed7919c2c8b21f54"
+        }
+      }
+    }
+  },
+  "identity": {
+    "input": {
+      "sha256": "15ee277f4140cb3c2bca3d4762e6462e098787e5b5843245760d9f40da2ea7f2",
+      "size_bytes": 124,
+      "media_type": "text/plain",
+      "path_recorded": false,
+      "raw_text_recorded": false
+    },
+    "model": {
+      "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+      "size_bytes": 1117320736,
+      "served_model_id": "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    },
+    "llama_source_version": "b9246-2-g585080d31",
+    "server_arguments": {
+      "host": "127.0.0.1",
+      "port": 8080,
+      "n_gpu_layers": 10,
+      "ctx_size": 1024,
+      "threads": 4,
+      "parallel": 1,
+      "cache_ram": 0
+    },
+    "request": {
+      "model": "qwen",
+      "temperature": 0.4,
+      "max_tokens": 80,
+      "stream": false,
+      "system_prompt": {
+        "sha256": "5e4cd3892f6603935b7c33f0c77c4b47936cdeab9dfc0db67f86c85e35b10081",
+        "length": 123,
+        "raw_text_recorded": false
+      }
+    },
+    "history": {
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "messages": 0,
+      "raw_history_recorded": false
+    },
+    "listener_addresses": [
+      "127.0.0.1"
+    ]
+  },
+  "claim_boundary": {
+    "design_role": "correctness_pilot",
+    "descriptive_only": true,
+    "real_llm_integration_observed": true,
+    "nominal_response_identity_observed": true,
+    "stale_result_rejection_observed": true,
+    "blocking_http_completion_observed": true,
+    "llm_g5_component_satisfied": true,
+    "prior_reviewed_g5_components": [
+      "vlm",
+      "asr"
+    ],
+    "phase1_g5_complete": true,
+    "remaining_g5_workloads": [],
+    "g6_preregistration_complete": false,
+    "cancellation_latency_claim_permitted": false,
+    "backend_cancellation_claim_permitted": false,
+    "asynchronous_performance_superiority_claim_permitted": false,
+    "hard_real_time_claim_permitted": false,
+    "heterogeneous_inference_claim_permitted": false,
+    "condition_resource_attribution_permitted": false
+  },
+  "validation": {
+    "run_count": 2,
+    "all_runs_valid": true,
+    "correctness_observed": true,
+    "probe_continuity_observed": true,
+    "resource_coverage_observed": true,
+    "llm_g5_component_satisfied": true
+  },
+  "controls": {
+    "stale_observation_control_ms": 500.0,
+    "resource_interval_ms": 200,
+    "prompt_tokens": 103
+  },
+  "runs": [
+    {
+      "condition": "llm_async",
+      "run_id": "20260901T143317Z_phase1_llm_async_llm_001",
+      "session_id": "20260901T143315Z_phase1_llm_pilot",
+      "source": {
+        "git_commit": "6e83ede085cdb4b025172e5c41da930c4989eff3",
+        "git_branch": "main",
+        "artifacts": {
+          "preflight.json": {
+            "size_bytes": 8470,
+            "sha256": "337daac9d9fd36db18a615b646344a305bf9c554ea3d40fb4db629d4815edbc5"
+          },
+          "events.jsonl": {
+            "size_bytes": 32604,
+            "sha256": "06a3d2ee97be6ecedd1fed4e84e154d0c5a1d59f666a378034c5abf1559c7879"
+          },
+          "resources.jsonl": {
+            "size_bytes": 30275,
+            "sha256": "a821c2e901d62fb7d357e6e53048a61ff2fec4ff1dcdccebc9bde317aa11975a"
+          },
+          "scenario.json": {
+            "size_bytes": 3761,
+            "sha256": "16cebbfff1346e324d453bebc4130c833314fee95ce57a99c4600a1badc5f4e6"
+          },
+          "summary.json": {
+            "size_bytes": 16019,
+            "sha256": "eb0e2884db93e094a5153783b273cb700d3cae3d7237b8953d1dd9a6efd555ad"
+          }
+        }
+      },
+      "input": {
+        "sha256": "15ee277f4140cb3c2bca3d4762e6462e098787e5b5843245760d9f40da2ea7f2",
+        "size_bytes": 124,
+        "media_type": "text/plain",
+        "path_recorded": false,
+        "raw_text_recorded": false
+      },
+      "workload_contract": {
+        "source": "llama_cpp_openai_http",
+        "model": {
+          "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "size_bytes": 1117320736,
+          "served_model_id": "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        },
+        "source_version": "b9246-2-g585080d31",
+        "server_arguments": {
+          "host": "127.0.0.1",
+          "port": 8080,
+          "n_gpu_layers": 10,
+          "ctx_size": 1024,
+          "threads": 4,
+          "parallel": 1,
+          "cache_ram": 0
+        },
+        "request": {
+          "model": "qwen",
+          "temperature": 0.4,
+          "max_tokens": 80,
+          "stream": false,
+          "system_prompt": {
+            "sha256": "5e4cd3892f6603935b7c33f0c77c4b47936cdeab9dfc0db67f86c85e35b10081",
+            "length": 123,
+            "raw_text_recorded": false
+          }
+        },
+        "history": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "messages": 0,
+          "raw_history_recorded": false
+        },
+        "residency_policy": "external_llama_server_resident",
+        "raw_prompt_recorded": false,
+        "raw_output_recorded": false
+      },
+      "preflight": {
+        "schema_version": "0.1.0",
+        "runtime": {
+          "model_size_bytes": 1117320736,
+          "model_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "source_version": "b9246-2-g585080d31",
+          "source_clean": true,
+          "server_process_count": 1,
+          "server_arguments": {
+            "host": "127.0.0.1",
+            "port": 8080,
+            "n_gpu_layers": 10,
+            "ctx_size": 1024,
+            "threads": 4,
+            "parallel": 1,
+            "cache_ram": 0
+          },
+          "server_arguments_match": true,
+          "server_model_path_matches": true,
+          "endpoint_local": true,
+          "listener_addresses": [
+            "127.0.0.1"
+          ],
+          "listener_loopback_only": true,
+          "listener_error_code": null,
+          "service_reachable": true,
+          "served_model_ids": [
+            "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+          ],
+          "expected_model_present": true,
+          "request_contract": {
+            "model": "qwen",
+            "temperature": 0.4,
+            "max_tokens": 80,
+            "stream": false,
+            "system_prompt": {
+              "sha256": "5e4cd3892f6603935b7c33f0c77c4b47936cdeab9dfc0db67f86c85e35b10081",
+              "length": 123,
+              "raw_text_recorded": false
+            }
+          },
+          "error_code": null
+        }
+      },
+      "validation": {
+        "manifest_status": "completed",
+        "summary_schema_version": "0.1.0",
+        "summary_valid": true,
+        "all_gates_passed": true,
+        "gate_results": {
+          "single_request": true,
+          "bounded_conversation_lane": true,
+          "expected_disposition": true,
+          "stale_zero_consumed": true,
+          "fixed_prompt_verified": true,
+          "request_contract_verified": true,
+          "llama_request_completed": true,
+          "token_usage_valid": true,
+          "output_private": true,
+          "server_residency_claim_bounded": true,
+          "cancellation_claim_bounded": true,
+          "stale_observation_window": true,
+          "threads_closed": true,
+          "resource_trace_valid": true
+        },
+        "real_llm_path_executed": true
+      },
+      "result": {
+        "execution_outcome": "ok",
+        "error_code": null,
+        "disposition_counts": {
+          "consumed": 1
+        },
+        "accepted_result_count": 1,
+        "stale_consumed_count": 0,
+        "output": {
+          "sha256": "e9185ff84a31cb790619f382fa1c03df9768ecd539081ef0287a352caa49394d",
+          "length": 43,
+          "raw_text_recorded": false
+        },
+        "response": {
+          "model": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+          "usage": {
+            "prompt_tokens": 103,
+            "completion_tokens": 26,
+            "total_tokens": 129
+          },
+          "raw_response_recorded": false
+        }
+      },
+      "residency": {
+        "policy": "external_llama_server_resident",
+        "server_preexisting": true,
+        "unload_requested": false,
+        "backend_stop_confirmed": null
+      },
+      "cancellation": {
+        "requested": false,
+        "worker_observed": false,
+        "client_wait_stopped": false,
+        "backend_stop_confirmed": null
+      },
+      "timing": {
+        "adapter_total_ms": 2555.155623,
+        "stale_observation_control_ms": 500.0,
+        "resource_interval_ms": 200,
+        "probe": {
+          "tick_count": 46,
+          "skipped_releases": 0,
+          "deadline_miss_count": 0,
+          "max_lateness_ms": 0.208803,
+          "maximum_observed_gap_ms": 100.062081,
+          "joined": true,
+          "error_code": null
+        }
+      },
+      "resources": {
+        "sample_count": 23,
+        "inference_interval_sample_count": 13,
+        "parse_error_count": 0,
+        "parse_warning_count": 23,
+        "parse_warning_counts": {
+          "emc_missing": 23
+        },
+        "ram_used_mb": {
+          "mean": 3936.695652,
+          "max": 3941.0
+        },
+        "gr3d_usage_pct": {
+          "mean": 15.608696,
+          "max": 99.0
+        },
+        "junction_temperature_c": {
+          "max": 51.531
+        },
+        "vdd_in_instant_mw": {
+          "mean": 6800.0,
+          "max": 9151.0
+        }
+      }
+    },
+    {
+      "condition": "llm_stale",
+      "run_id": "20260901T143521Z_phase1_llm_stale_llm_001",
+      "session_id": "20260901T143315Z_phase1_llm_pilot",
+      "source": {
+        "git_commit": "6e83ede085cdb4b025172e5c41da930c4989eff3",
+        "git_branch": "main",
+        "artifacts": {
+          "preflight.json": {
+            "size_bytes": 8470,
+            "sha256": "c8f9974447081b70b66faffcc259ed7ed0e969d1aec8115aba213e2a5e58bdff"
+          },
+          "events.jsonl": {
+            "size_bytes": 27759,
+            "sha256": "62cf6a215f41a85acaf3ab1964f2f2dee1d9bad593d6d32f1e25db82742bc754"
+          },
+          "resources.jsonl": {
+            "size_bytes": 24987,
+            "sha256": "68aef52fa9641b2617433878015779e27c142bba7f805c6454030bee4b720841"
+          },
+          "scenario.json": {
+            "size_bytes": 3783,
+            "sha256": "1fdfbb8609a23313fbbc264e94b9bbf763c0b56549708a59d01e0b4eee24f309"
+          },
+          "summary.json": {
+            "size_bytes": 16129,
+            "sha256": "b550c2e17a20cb1e16a3f64e7d85624aa838317510a3a1f2ed7919c2c8b21f54"
+          }
+        }
+      },
+      "input": {
+        "sha256": "15ee277f4140cb3c2bca3d4762e6462e098787e5b5843245760d9f40da2ea7f2",
+        "size_bytes": 124,
+        "media_type": "text/plain",
+        "path_recorded": false,
+        "raw_text_recorded": false
+      },
+      "workload_contract": {
+        "source": "llama_cpp_openai_http",
+        "model": {
+          "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "size_bytes": 1117320736,
+          "served_model_id": "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        },
+        "source_version": "b9246-2-g585080d31",
+        "server_arguments": {
+          "host": "127.0.0.1",
+          "port": 8080,
+          "n_gpu_layers": 10,
+          "ctx_size": 1024,
+          "threads": 4,
+          "parallel": 1,
+          "cache_ram": 0
+        },
+        "request": {
+          "model": "qwen",
+          "temperature": 0.4,
+          "max_tokens": 80,
+          "stream": false,
+          "system_prompt": {
+            "sha256": "5e4cd3892f6603935b7c33f0c77c4b47936cdeab9dfc0db67f86c85e35b10081",
+            "length": 123,
+            "raw_text_recorded": false
+          }
+        },
+        "history": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "messages": 0,
+          "raw_history_recorded": false
+        },
+        "residency_policy": "external_llama_server_resident",
+        "raw_prompt_recorded": false,
+        "raw_output_recorded": false
+      },
+      "preflight": {
+        "schema_version": "0.1.0",
+        "runtime": {
+          "model_size_bytes": 1117320736,
+          "model_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "source_version": "b9246-2-g585080d31",
+          "source_clean": true,
+          "server_process_count": 1,
+          "server_arguments": {
+            "host": "127.0.0.1",
+            "port": 8080,
+            "n_gpu_layers": 10,
+            "ctx_size": 1024,
+            "threads": 4,
+            "parallel": 1,
+            "cache_ram": 0
+          },
+          "server_arguments_match": true,
+          "server_model_path_matches": true,
+          "endpoint_local": true,
+          "listener_addresses": [
+            "127.0.0.1"
+          ],
+          "listener_loopback_only": true,
+          "listener_error_code": null,
+          "service_reachable": true,
+          "served_model_ids": [
+            "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+          ],
+          "expected_model_present": true,
+          "request_contract": {
+            "model": "qwen",
+            "temperature": 0.4,
+            "max_tokens": 80,
+            "stream": false,
+            "system_prompt": {
+              "sha256": "5e4cd3892f6603935b7c33f0c77c4b47936cdeab9dfc0db67f86c85e35b10081",
+              "length": 123,
+              "raw_text_recorded": false
+            }
+          },
+          "error_code": null
+        }
+      },
+      "validation": {
+        "manifest_status": "completed",
+        "summary_schema_version": "0.1.0",
+        "summary_valid": true,
+        "all_gates_passed": true,
+        "gate_results": {
+          "single_request": true,
+          "bounded_conversation_lane": true,
+          "expected_disposition": true,
+          "stale_zero_consumed": true,
+          "fixed_prompt_verified": true,
+          "request_contract_verified": true,
+          "llama_request_completed": true,
+          "token_usage_valid": true,
+          "output_private": true,
+          "server_residency_claim_bounded": true,
+          "cancellation_claim_bounded": true,
+          "stale_observation_window": true,
+          "threads_closed": true,
+          "resource_trace_valid": true
+        },
+        "real_llm_path_executed": true
+      },
+      "result": {
+        "execution_outcome": "cancel_observed",
+        "error_code": null,
+        "disposition_counts": {
+          "rejected_state": 1
+        },
+        "accepted_result_count": 0,
+        "stale_consumed_count": 0,
+        "output": {
+          "sha256": "7104c05ed2883926651c84f85e15aee89277f10162cbbbb1464a9f5d240531da",
+          "length": 40,
+          "raw_text_recorded": false
+        },
+        "response": {
+          "model": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+          "usage": {
+            "prompt_tokens": 103,
+            "completion_tokens": 26,
+            "total_tokens": 129
+          },
+          "raw_response_recorded": false
+        }
+      },
+      "residency": {
+        "policy": "external_llama_server_resident",
+        "server_preexisting": true,
+        "unload_requested": false,
+        "backend_stop_confirmed": null
+      },
+      "cancellation": {
+        "requested": true,
+        "worker_observed": true,
+        "client_wait_stopped": false,
+        "backend_stop_confirmed": null
+      },
+      "timing": {
+        "adapter_total_ms": 1758.723441,
+        "stale_observation_control_ms": 500.0,
+        "resource_interval_ms": 200,
+        "probe": {
+          "tick_count": 38,
+          "skipped_releases": 0,
+          "deadline_miss_count": 0,
+          "max_lateness_ms": 0.393077,
+          "maximum_observed_gap_ms": 100.224126,
+          "joined": true,
+          "error_code": null
+        }
+      },
+      "resources": {
+        "sample_count": 19,
+        "inference_interval_sample_count": 9,
+        "parse_error_count": 0,
+        "parse_warning_count": 19,
+        "parse_warning_counts": {
+          "emc_missing": 19
+        },
+        "ram_used_mb": {
+          "mean": 3958.105263,
+          "max": 3960.0
+        },
+        "gr3d_usage_pct": {
+          "mean": 25.894737,
+          "max": 99.0
+        },
+        "junction_temperature_c": {
+          "max": 51.687
+        },
+        "vdd_in_instant_mw": {
+          "mean": 6988.105263,
+          "max": 9349.0
+        }
+      }
+    }
+  ],
+  "data_quality": {
+    "total_probe_skipped_releases": 0,
+    "total_probe_deadline_misses": 0,
+    "total_resource_samples": 42,
+    "total_inference_interval_samples": 22,
+    "limitations": [
+      "single_run_per_condition",
+      "fixed_condition_order",
+      "no_real_workload_synchronous_condition",
+      "formal_thresholds_not_frozen",
+      "stale_observation_window_is_pilot_control",
+      "cancellation_latency_not_measured",
+      "blocking_http_wait_not_preempted",
+      "backend_stop_not_confirmed",
+      "response_content_not_serialized",
+      "response_identity_not_a_quality_threshold",
+      "server_lifetime_externally_managed",
+      "resource_activity_not_attributed_to_llama_cpp_or_processor",
+      "emc_unavailable"
+    ]
+  }
+}
