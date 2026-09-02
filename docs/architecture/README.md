@@ -128,9 +128,11 @@ token counts only, and does not claim that state invalidation stops the blocking
 client wait or the externally managed llama-server. Its independently derived
 [Jetson correctness report](../../experiments/phase1/results/20260901T143315Z_phase1_llm_pilot/)
 records valid nominal consumption and stale rejection. The VLM, ASR and LLM
-components are therefore complete and G5 is closed. G6 remains open pending
-formal threshold, order, sample-size, exclusion and statistical-method
-preregistration.
+components are therefore complete and G5 is closed. The reviewed
+[G6 formal preregistration](phase1-formal-preregistration.md) fixes the formal
+thresholds, order, sample size, exclusions, statistical method, five-session
+paired-block schedule and activation boundary. Its merge to `main` closes G6.
+Formal runner implementation and Jetson data collection remain pending.
 
 ## Evaluation plan
 

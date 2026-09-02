@@ -8,8 +8,9 @@ Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
 A spawned-process VLM adapter and the fixed-input ASR subprocess slice have also
 completed independently validated Jetson correctness pilots. The fixed-input
 LLM HTTP slice has now completed its independently validated Jetson correctness
-pilot, closing G5. G6 preregistration and formal synchronous/asynchronous data
-collection remain incomplete.
+pilot, closing G5. The G6 protocol now preregisters the formal paired comparison;
+formal runner implementation and synchronous/asynchronous data collection remain
+incomplete.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -17,7 +18,7 @@ collection remain incomplete.
 > 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
 > Jetson correctness pilot；固定输入 ASR 子进程切片也已完成 Jetson correctness pilot；
 > 固定输入 LLM HTTP 切片也已完成 Jetson correctness pilot，G5 已关闭；G6 正式协议
-> 预注册与同步/异步对比数据收集尚未完成。
+> 已冻结，正式 runner 与同步/异步对比数据收集尚未完成。
 
 ## Current status
 
@@ -47,6 +48,8 @@ collection remain incomplete.
   completed one independently validated Jetson correctness pilot
 - Deterministic LLM-pilot reconstruction and public descriptive report:
   implemented; LLM component and G5 overall satisfied
+- Machine-validated G6 formal preregistration: implemented; activates on its
+  reviewed merge to `main`
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
 
@@ -436,9 +439,10 @@ all eleven per-run Gates passed. Its independently derived
 [descriptive report](results/20260831T140705Z_phase1_asr_pilot_v2/) records the
 archive identity, process facts, privacy boundary, observation control, probe
 continuity and resource coverage. This satisfies the ASR component of G5. G5
-was subsequently closed by the real LLM correctness slice; G6 formal
-preregistration remains downstream. No numerical threshold, formal sample size,
-performance result or cancellation-latency result is frozen by this pilot.
+was subsequently closed by the real LLM correctness slice. The separate G6
+preregistration now freezes the formal design; no numerical threshold, sample
+size, performance result or cancellation-latency result is inferred from this
+pilot.
 
 ## Fixed-input LLM slice
 
@@ -510,11 +514,47 @@ Its independently derived
 [descriptive report](results/20260901T143315Z_phase1_llm_pilot/) records the
 archive and frozen identities, nominal consumption, stale rejection, token
 usage, server-residency boundary, observation control, probe continuity and
-resource coverage. The LLM component and G5 overall are satisfied. G6 remains
-open until numerical thresholds, balanced order, sample size, exclusions and
-statistical methods are preregistered. The two single-run durations and resource
-summaries remain descriptive; they do not establish performance superiority,
-cancellation latency, backend cancellation or heterogeneous inference.
+resource coverage. The LLM component and G5 overall are satisfied. The separate
+G6 preregistration freezes the numerical thresholds, balanced order, sample
+size, exclusions and statistical methods. The two single-run durations and
+resource summaries remain descriptive; they do not establish performance
+superiority, cancellation latency, backend cancellation or heterogeneous
+inference.
+
+## G6 formal preregistration
+
+The first confirmatory Phase 1 comparison is fixed in the
+[human-readable preregistration](../../docs/architecture/phase1-formal-preregistration.md)
+and the tracked
+[`phase1-g6-preregistration.json`](formal/phase1-g6-preregistration.json).
+Validate the machine-readable protocol with:
+
+```bash
+python3 -m experiments.phase1.formal_protocol --print-sha256
+```
+
+The expected SHA-256 is
+`022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761`.
+The protocol becomes active only through its reviewed merge to `main`; formal
+data collected earlier are inadmissible.
+
+The design fixes five sessions, six paired blocks per workload and session, 30
+pairs per workload and 180 measured runs overall. Every session uses each of the
+six workload orders once and balances sync-first and async-first order three
+times per workload. The asynchronous p95 per-run maximum-gap bound is 300 ms.
+The upper confidence bound for the geometric mean paired workload-performance
+ratio must not exceed `1.10`. Confidence intervals use 100,000 paired
+hierarchical bootstrap resamples with seed `20260902`.
+
+No post-hoc outlier exclusion, imputation, measured-run replacement or runtime
+reordering is permitted. Warm-ups and idle epochs are excluded only by their
+predeclared roles. Every planned attempt remains in the completion denominator,
+and lifecycle or safety failure prevents the overall formal claim.
+
+The next code increment is a session runner and independent analyzer that load
+this exact protocol and refuse schedule, identity, threshold or analysis-method
+drift. Formal Jetson collection begins only after those tools are reviewed on
+`main`.
 
 ## Planned implementation order
 
@@ -538,9 +578,11 @@ cancellation latency, backend cancellation or heterogeneous inference.
 10. extend the adapter/runtime boundary to ASR and LLM, then independently
     analyze both Jetson correctness pilots — complete; G5 closed;
 11. preregister formal thresholds, balanced order, sample size, exclusions and
-    statistical methods;
-12. collect and publish the formal synchronous/asynchronous comparison;
-13. add an opt-in motion-disabled application slice after the research Gates
+    statistical methods — complete when the reviewed protocol merges to `main`;
+12. implement and review the protocol-bound formal runner and independent
+    analyzer;
+13. collect, validate and publish the formal synchronous/asynchronous comparison;
+14. add an opt-in motion-disabled application slice after the research Gates
     pass.
 
 Contract changes are reviewed before implementation, and the formal protocol
@@ -575,6 +617,9 @@ experiments/phase1/
 ├── asr_adapter.py
 ├── asr_preflight.py
 ├── asr_slice.py
+├── formal/
+│   └── phase1-g6-preregistration.json
+├── formal_protocol.py
 ├── jetson_preflight.py
 ├── jetson_telemetry.py
 ├── llm_adapter.py

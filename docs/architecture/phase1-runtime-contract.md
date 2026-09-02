@@ -11,17 +11,19 @@ evidence Gates have since completed one process-isolated Jetson correctness
 pilot. Fixed-input ASR and LLM adapters have since completed independently
 validated and analyzed Jetson correctness pilots. All three real-workload
 correctness components are complete, closing G5. G6 formal protocol
-preregistration and synchronous/asynchronous data collection remain incomplete.
+preregistration is now fixed; formal runner implementation and synchronous/
+asynchronous data collection remain incomplete.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
 > VLM 进程隔离路径以及固定输入 ASR、LLM 路径均已完成 Jetson correctness pilot，G5 已关闭；
-> G6 正式协议预注册与同步/异步对比实验仍需按 Gate 逐步完成。
+> G6 正式协议已冻结；正式 runner 与同步/异步对比实验仍需按 Gate 逐步完成。
 
 ## Status
 
-- Phase: Phase 1D correctness pilots complete; G6 preregistration next
+- Phase: Phase 1D correctness pilots and G6 preregistration complete; formal
+  runner implementation next
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -79,7 +81,9 @@ The current implementation includes:
 - LLM-specific model/server preflight, nominal/stale orchestration, resource
   coverage Gates, atomic artifacts and an independent validator;
 - deterministic LLM-pilot reconstruction and a hash-fixed public descriptive
-  report.
+  report;
+- a machine-validated G6 preregistration with fixed hypotheses, environment,
+  paired schedule, thresholds, exclusions, stopping rules and analysis method.
 
 The VLM, ASR and LLM pilots include no formal performance data. They validate
 real-model integration, result freshness and workload-specific boundaries. The
@@ -1022,14 +1026,46 @@ The fixed-input LLM slice additionally requires:
   resource sample falls inside each adapter interval.
 
 G5 requires independently validated Jetson correctness pilots for VLM, ASR and
-LLM. Those three components are now satisfied. G6 remains open and must freeze
+LLM. Those three components are now satisfied. The G6 preregistration freezes
 numerical thresholds, balanced order, sample size, exclusions and statistical
 analysis before formal data collection.
 
-Numerical jitter and non-inferiority thresholds will be frozen during the next
-protocol review and before formal data. The current 300 ms unchanged-command
-refresh target is a Phase 2 readiness reference; the STM32 1.2 s watchdog is a
-last defense and must not be used as the Jetson scheduling success target.
+The G6 protocol fixes the asynchronous p95 maximum-gap bound at 300 ms and the
+workload-performance noninferiority ratio at `1.10`. The 300 ms threshold is the
+Phase 2 unchanged-command refresh reference; the STM32 1.2 s watchdog is a last
+defense and must not be used as the Jetson scheduling success target.
+
+## G6 formal preregistration
+
+The first formal comparison is fixed by the
+[G6 preregistration](phase1-formal-preregistration.md) and its machine-readable
+protocol. The protocol becomes active only through its reviewed merge to
+`main`; data collected before that event are not eligible for the confirmatory
+analysis.
+
+The design contains five sessions and six paired sync/async blocks per workload
+and session: 30 pairs per workload, 30 measured runs per condition and workload,
+and 180 measured runs overall. Every session uses each of the six workload
+orders once. Sync-first and async-first pair order each occur three times per
+workload in every session and 15 times overall. Warm-ups and two 30 s idle
+references per session are retained but excluded by their predeclared roles.
+
+The primary responsiveness endpoint requires the asynchronous nearest-rank p95
+of per-run maximum probe gaps to remain at or below 300 ms and the upper 95%
+confidence bound for paired `async - sync` mean difference to remain below
+zero. Workload noninferiority uses an upper `1.10` bound for the geometric mean
+of within-pair async/sync ratios: total adapter time for ASR and VLM, and request
+milliseconds per completion token for LLM. Lifecycle success requires every run
+Gate to pass with zero stale consumption, capacity violations, process leaks or
+unjoined threads.
+
+Paired hierarchical percentile bootstrap intervals resample five sessions and
+then six paired blocks within each selected session, using 100,000 resamples,
+95% confidence and seed `20260902`. The decision is intersection-union across
+all endpoints and workloads. No post-hoc outlier exclusion, imputation,
+failed-run replacement or operator-selected reordering is permitted. The
+tracked protocol SHA-256 is
+`022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761`.
 
 ## Phase 1 completion boundary
 
