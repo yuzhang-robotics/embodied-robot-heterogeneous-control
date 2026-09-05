@@ -32,10 +32,17 @@ from experiments.phase1.llm_adapter import (
 from experiments.phase1.vlm_adapter import C100_INPUT_SHA256, C100_INPUT_SIZE_BYTES
 
 
-FORMAL_PROTOCOL_SCHEMA_VERSION = "0.1.0"
-FORMAL_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v1"
+FORMAL_PROTOCOL_SCHEMA_VERSION = "0.2.0"
+FORMAL_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v2"
 DEFAULT_PROTOCOL_PATH = (
-    Path(__file__).resolve().parent / "formal" / "phase1-g6-preregistration.json"
+    Path(__file__).resolve().parent / "formal" / "phase1-g6-v2-preregistration.json"
+)
+SUPERSEDED_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v1"
+SUPERSEDED_PROTOCOL_SHA256 = (
+    "022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761"
+)
+SUPERSEDED_PROTOCOL_PATH = DEFAULT_PROTOCOL_PATH.with_name(
+    "phase1-g6-preregistration.json"
 )
 WORKLOADS = ("asr", "llm", "vlm")
 CONDITIONS = ("formal_sync", "formal_async")
@@ -94,16 +101,27 @@ _WORKLOAD_ORDERS = (
     ("asr", "vlm", "llm"),
 )
 _CONDITION_ORDERS = (CONDITIONS, tuple(reversed(CONDITIONS)))
+_PAIR_ORDER_MATRIX = (
+    {"asr": "100110", "llm": "100101", "vlm": "011001"},
+    {"asr": "101001", "llm": "011010", "vlm": "010110"},
+    {"asr": "010101", "llm": "101001", "vlm": "101010"},
+    {"asr": "011010", "llm": "010110", "vlm": "100101"},
+    {"asr": "001101", "llm": "100011", "vlm": "011010"},
+)
 
 
 def _measured_schedule(session_index: int) -> list[dict[str, object]]:
+    if not 1 <= session_index <= SESSION_COUNT:
+        raise ValueError("session index is outside the preregistered range")
     runs: list[dict[str, object]] = []
     sequence = 0
     for block in range(1, PAIRS_PER_SESSION + 1):
-        global_block = (session_index - 1) * PAIRS_PER_SESSION + block - 1
-        workload_order = _WORKLOAD_ORDERS[global_block % len(_WORKLOAD_ORDERS)]
-        condition_order = _CONDITION_ORDERS[global_block % 2]
+        workload_order = _WORKLOAD_ORDERS[block - 1]
         for position, workload in enumerate(workload_order, start=1):
+            order_index = int(
+                _PAIR_ORDER_MATRIX[session_index - 1][workload][block - 1]
+            )
+            condition_order = _CONDITION_ORDERS[order_index]
             pair_id = f"s{session_index:02d}-b{block:02d}-{workload}"
             for pair_position, condition in enumerate(condition_order, start=1):
                 sequence += 1
@@ -234,6 +252,28 @@ def build_formal_protocol() -> dict[str, object]:
                 "create a new protocol version and restart formal collection"
             ),
         },
+        "amendment": {
+            "supersedes_protocol_id": SUPERSEDED_PROTOCOL_ID,
+            "supersedes_protocol_sha256": SUPERSEDED_PROTOCOL_SHA256,
+            "superseded_protocol_artifact": SUPERSEDED_PROTOCOL_PATH.name,
+            "reason": (
+                "replace the session-repeating pair-order schedule with a fixed "
+                "cross-balanced schedule identified by an outcome-independent "
+                "design audit before admissible collection"
+            ),
+            "prior_collection_data_eligible": False,
+            "outcome_values_used_to_construct_schedule": False,
+            "unchanged_components": [
+                "research_questions_and_hypotheses",
+                "sample_size",
+                "workloads_and_fixed_inputs",
+                "conditions_and_execution_boundaries",
+                "environment_and_safety_constraints",
+                "confirmatory_endpoints_and_thresholds",
+                "analysis_and_bootstrap_method",
+                "exclusions_missing_data_and_stopping_rules",
+            ],
+        },
         "claim_boundary": {
             "fixed_input_single_device_only": True,
             "physical_motion_permitted": False,
@@ -312,7 +352,7 @@ def build_formal_protocol() -> dict[str, object]:
             "warmups_per_session": {"asr": 3, "llm": 1, "vlm": 1},
             "idle_epochs_per_session": 2,
             "idle_epoch_s": IDLE_EPOCH_S,
-            "condition_order": "alternating_within_session_paired_blocks",
+            "condition_order": "fixed_cross_balanced_by_session_block_and_workload",
             "workload_order": "each_permutation_once_per_session",
             "runtime_order_randomization": False,
             "prelude_s": 1.0,
@@ -462,6 +502,23 @@ def _validate_generated_schedule(protocol: Mapping[str, object]) -> None:
     }
     condition_counts: Counter[tuple[str, str]] = Counter()
     pair_counts: Counter[tuple[str, str]] = Counter()
+    first_conditions_by_block: dict[tuple[str, int], Counter[str]] = {
+        (workload, block): Counter()
+        for workload in WORKLOADS
+        for block in range(1, PAIRS_PER_SESSION + 1)
+    }
+    first_conditions_by_position: dict[tuple[str, int], Counter[str]] = {
+        (workload, position): Counter()
+        for workload in WORKLOADS
+        for position in range(1, len(WORKLOADS) + 1)
+    }
+    first_conditions_by_predecessor: dict[tuple[str, str], Counter[str]] = {
+        (previous, workload): Counter()
+        for previous in WORKLOADS
+        for workload in WORKLOADS
+        if previous != workload
+    }
+    async_first_per_session_block: list[int] = []
     total_runs = 0
     for session in sessions:
         if not isinstance(session, Mapping):
@@ -483,15 +540,29 @@ def _validate_generated_schedule(protocol: Mapping[str, object]) -> None:
             pair_id = str(run["pair_id"])
             condition_counts[(workload, condition)] += 1
             pair_counts[(workload, pair_id)] += 1
-        for block_runs in by_block.values():
+        previous_workload: str | None = None
+        for block in sorted(by_block):
+            block_runs = by_block[block]
             first_by_workload = [run for run in block_runs if run["pair_position"] == 1]
-            ordered = tuple(
-                str(run["workload"])
-                for run in sorted(
-                    first_by_workload, key=lambda item: item["workload_position"]
-                )
+            ordered_first_runs = sorted(
+                first_by_workload, key=lambda item: item["workload_position"]
             )
+            ordered = tuple(str(run["workload"]) for run in ordered_first_runs)
             workload_orders[ordered] += 1
+            async_first_per_session_block.append(
+                sum(run["condition"] == "formal_async" for run in ordered_first_runs)
+            )
+            for run in ordered_first_runs:
+                workload = str(run["workload"])
+                condition = str(run["condition"])
+                position = int(run["workload_position"])
+                first_conditions_by_block[(workload, block)][condition] += 1
+                first_conditions_by_position[(workload, position)][condition] += 1
+                if previous_workload is not None:
+                    first_conditions_by_predecessor[(previous_workload, workload)][
+                        condition
+                    ] += 1
+                previous_workload = workload
             for workload in WORKLOADS:
                 pair = tuple(
                     str(run["condition"])
@@ -542,6 +613,29 @@ def _validate_generated_schedule(protocol: Mapping[str, object]) -> None:
         for counter in pair_orders.values()
     ):
         raise ValueError("generated condition order is not balanced")
+    if any(
+        set(counter) != set(CONDITIONS)
+        or sum(counter.values()) != SESSION_COUNT
+        or set(counter.values()) != {2, 3}
+        for counter in first_conditions_by_block.values()
+    ):
+        raise ValueError("generated condition order is not balanced across sessions")
+    if any(
+        counter != Counter({condition: 5 for condition in CONDITIONS})
+        for counter in first_conditions_by_position.values()
+    ):
+        raise ValueError(
+            "generated condition order is not balanced by workload position"
+        )
+    for counter in first_conditions_by_predecessor.values():
+        total = sum(counter.values())
+        expected_counts = {total // 2, total - total // 2}
+        if set(counter) != set(CONDITIONS) or set(counter.values()) != expected_counts:
+            raise ValueError(
+                "generated condition order is not balanced by preceding workload"
+            )
+    if any(count not in {1, 2} for count in async_first_per_session_block):
+        raise ValueError("generated session block has a uniform condition order")
 
 
 def canonical_protocol_text(protocol: Mapping[str, object]) -> str:

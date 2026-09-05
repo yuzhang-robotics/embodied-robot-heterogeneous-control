@@ -8,21 +8,24 @@ Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
 A spawned-process VLM adapter and the fixed-input ASR subprocess slice have also
 completed independently validated Jetson correctness pilots. The fixed-input
 LLM HTTP slice has now completed its independently validated Jetson correctness
-pilot, closing G5. The G6 protocol preregisters the formal paired comparison.
-Its protocol-bound session runner and independent analyzer are now implemented
-and reviewed. A first pre-measurement commissioning attempt stopped before any
-formal data were collected when it exposed an LLM empty-history identity
-mismatch in the runner; the corrected runner retains the frozen protocol.
+pilot, closing G5. The amended G6 v2 protocol preregisters the formal paired
+comparison. Its protocol-bound session runner and independent analyzer are
+implemented. Commissioning exposed an LLM empty-history identity mismatch
+before measurement and a resource-trace tail race after a complete session. An
+outcome-independent schedule audit also found a repeated cross-session order
+relationship in v1. Neither collection is admissible formal evidence; v2
+changes only the condition-order matrix while retaining the scientific design.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
 > pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
 > 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
 > Jetson correctness pilot；固定输入 ASR 子进程切片也已完成 Jetson correctness pilot；
-> 固定输入 LLM HTTP 切片也已完成 Jetson correctness pilot，G5 已关闭；G6 正式协议
-> 已冻结，协议绑定的正式 runner 与独立分析器已实现并完成评审；首次正式采集前的
-> commissioning attempt 在 measured run 开始前发现 LLM 空历史身份不一致并停止，
-> 修正后的 runner 不改变冻结协议，正式同步/异步数据尚未采集。
+> 固定输入 LLM HTTP 切片也已完成 Jetson correctness pilot，G5 已关闭；修订后的 G6 v2
+> 正式协议冻结交叉平衡顺序，协议绑定的正式 runner 与独立分析器已实现；commissioning
+> 先后发现正式测量前的 LLM 空历史身份不一致、一个完整 session 后的资源轨迹尾部竞态，
+> 随后的结果无关顺序审计发现 v1 的跨 session 顺序关系重复；两次 collection 均不作为
+> 正式证据，v2 仅修改条件顺序矩阵并保留其余科学设计。
 
 ## Current status
 
@@ -52,12 +55,12 @@ mismatch in the runner; the corrected runner retains the frozen protocol.
   completed one independently validated Jetson correctness pilot
 - Deterministic LLM-pilot reconstruction and public descriptive report:
   implemented; LLM component and G5 overall satisfied
-- Machine-validated G6 formal preregistration: implemented and activated by its
-  reviewed merge to `main`
+- Machine-validated G6 formal preregistration: v1 retained as history; amended
+  v2 activates only through its reviewed merge to `main`
 - Protocol-bound formal session runner and independent analyzer: implemented
   and reviewed; LLM history binding corrected against the frozen adapter
-- Formal Phase 1 data: not collected; one pre-measurement commissioning attempt
-  is retained as diagnostic evidence
+- Formal Phase 1 evidence: not yet admissible; two v1 commissioning collections
+  are retained as diagnostic evidence and are excluded from v2
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -530,9 +533,11 @@ inference.
 
 ## G6 formal preregistration
 
-The first confirmatory Phase 1 comparison is fixed in the
+The confirmatory Phase 1 comparison is fixed in the amended
 [human-readable preregistration](../../docs/architecture/phase1-formal-preregistration.md)
 and the tracked
+[`phase1-g6-v2-preregistration.json`](formal/phase1-g6-v2-preregistration.json).
+The superseded v1 JSON remains tracked as
 [`phase1-g6-preregistration.json`](formal/phase1-g6-preregistration.json).
 Validate the machine-readable protocol with:
 
@@ -541,17 +546,20 @@ python3 -m experiments.phase1.formal_protocol --print-sha256
 ```
 
 The expected SHA-256 is
-`022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761`.
+`5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a`.
 The protocol becomes active only through its reviewed merge to `main`; formal
 data collected earlier are inadmissible.
 
 The design fixes five sessions, six paired blocks per workload and session, 30
 pairs per workload and 180 measured runs overall. Every session uses each of the
 six workload orders once and balances sync-first and async-first order three
-times per workload. The asynchronous p95 per-run maximum-gap bound is 300 ms.
-The upper confidence bound for the geometric mean paired workload-performance
-ratio must not exceed `1.10`. Confidence intervals use 100,000 paired
-hierarchical bootstrap resamples with seed `20260902`.
+times per workload. Its fixed v2 matrix also balances each workload/block across
+sessions two/three, each workload/position five/five, and each measured
+preceding-workload context as closely as its even or odd count permits. Every
+session/block contains both pair orders. The asynchronous p95 per-run
+maximum-gap bound is 300 ms. The upper confidence bound for the geometric mean
+paired workload-performance ratio must not exceed `1.10`. Confidence intervals
+use 100,000 paired hierarchical bootstrap resamples with seed `20260902`.
 
 No post-hoc outlier exclusion, imputation, measured-run replacement or runtime
 reordering is permitted. Warm-ups and idle epochs are excluded only by their
@@ -581,6 +589,32 @@ sync/async integration coverage with the real adapter boundary. It changes no
 protocol identity, schedule, threshold or analysis method. Formal collection
 therefore restarts from session 1 under a new collection identifier after the
 correction is reviewed on `main`.
+
+Collection `20260905T065922Z_phase1_formal_g6` then completed session 1's five
+warm-ups, two idle epochs and 36 measured invocations. Before any outcome
+analysis or subsequent session, the independent integrity check rejected the
+session because `resources.jsonl` stopped before the post-measurement idle
+interval ended. The final sample preceded that boundary by 170.607 ms, within
+the frozen 200 ms sampling period. The runner stopped the sampler immediately
+after the idle probe returned, allowing the most recent sample to precede the
+recorded finish boundary while still marking the manifest complete. The
+collection is retained unchanged as diagnostic evidence and is not analyzed or
+continued.
+The resource-tail correction requires a positive resource sample at or after the final
+activity boundary before sampler shutdown and makes absence of that sample an
+infrastructure failure. It changes no protocol identity, hypothesis, schedule,
+threshold or statistical method. Admissible collection again restarts from
+session 1 under a new identifier after review on `main`.
+
+A subsequent audit used only the serialized v1 order, not timing, resource,
+model-output or endpoint values. It found that the workload-order and shared
+condition-order cycles both reset at each session, repeating the same
+condition/predecessor relationship five times. G6 v2 therefore replaces only
+the condition-order matrix with the fixed cross-balanced schedule documented in
+the preregistration. It retains all sample sizes, inputs, conditions,
+environment constraints, thresholds, statistical methods, exclusions and
+stopping rules. Both v1 commissioning collections remain diagnostic and no v1
+run can enter the v2 analysis.
 
 With the corrected implementation on synchronized `main`, prepare the first
 session on the Jetson, assign one collection identifier, restart the model
@@ -649,7 +683,7 @@ path, raw input or model output.
 12. implement and review the protocol-bound formal runner and independent
     analyzer — complete;
 13. collect, validate and publish the formal synchronous/asynchronous comparison
-    — pre-measurement commissioning corrected; measured collection not started;
+    — two commissioning defects identified; admissible collection not started;
 14. add an opt-in motion-disabled application slice after the research Gates
     pass.
 
@@ -687,7 +721,8 @@ experiments/phase1/
 ├── asr_preflight.py
 ├── asr_slice.py
 ├── formal/
-│   └── phase1-g6-preregistration.json
+│   ├── phase1-g6-preregistration.json
+│   └── phase1-g6-v2-preregistration.json
 ├── formal_protocol.py
 ├── formal_preflight.py
 ├── formal_run.py

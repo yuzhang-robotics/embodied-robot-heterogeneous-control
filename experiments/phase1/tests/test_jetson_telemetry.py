@@ -113,6 +113,44 @@ class JetsonTelemetryTests(unittest.TestCase):
         remaining_threads = {thread.name for thread in threading.enumerate()}
         self.assertEqual(remaining_threads, baseline_threads)
 
+    def test_sampler_waits_until_the_trace_covers_a_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            sampler = TegrastatsSampler(
+                Path(temp_dir),
+                50,
+                command=sampler_command(),
+            )
+            sampler.start(first_sample_timeout_s=2)
+            boundary_ns = time.monotonic_ns() + 20_000_000
+            observed_ns = sampler.wait_for_sample_at_or_after(
+                boundary_ns,
+                timeout_s=2,
+            )
+            report = sampler.stop()
+
+        self.assertGreaterEqual(observed_ns, boundary_ns)
+        self.assertGreaterEqual(report.last_sample_monotonic_ns, boundary_ns)
+        self.assertTrue(report.successful)
+
+    def test_sampler_boundary_wait_rejects_an_early_exit(self) -> None:
+        code = f"print({TEGRASTATS_SAMPLE!r}, flush=True)"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            sampler = TegrastatsSampler(
+                Path(temp_dir),
+                50,
+                command=[sys.executable, "-u", "-c", code],
+            )
+            sampler.start(first_sample_timeout_s=2)
+            time.sleep(0.05)
+            with self.assertRaisesRegex(RuntimeError, "exited before covering"):
+                sampler.wait_for_sample_at_or_after(
+                    time.monotonic_ns() + 1,
+                    timeout_s=0.1,
+                )
+            report = sampler.stop()
+
+        self.assertFalse(report.successful)
+
     def test_sampler_rejects_an_unparseable_first_sample(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             sampler = TegrastatsSampler(

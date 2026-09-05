@@ -1,22 +1,46 @@
 # Phase 1 G6 Formal Preregistration
 
-This document preregisters the first fixed-input synchronous/asynchronous
-comparison for the Phase 1 runtime. It becomes active only when the reviewed
-protocol is merged to `main`. Formal data collected before that merge are not
-eligible for the confirmatory analysis.
+This document preregisters the fixed-input synchronous/asynchronous comparison
+for the Phase 1 runtime under the amended G6 v2 protocol. It becomes active only
+when the reviewed v2 protocol is merged to `main`. Data collected before that
+merge are not eligible for the confirmatory analysis.
 
 The machine-readable protocol is
-[`phase1-g6-preregistration.json`](../../experiments/phase1/formal/phase1-g6-preregistration.json).
+[`phase1-g6-v2-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v2-preregistration.json).
 It is generated and validated by
 [`formal_protocol.py`](../../experiments/phase1/formal_protocol.py). The tracked
-protocol uses schema `0.1.0`, protocol ID
-`phase1-g6-fixed-input-sync-async-v1`, and SHA-256
-`022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761`.
+protocol uses schema `0.2.0`, protocol ID
+`phase1-g6-fixed-input-sync-async-v2`, and SHA-256
+`5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a`.
 
-> 中文简介：本文预注册 Phase 1 首次固定输入同步/异步正式对照。协议仅在评审后合并到
-> `main` 时生效；此前采集的数据不得进入验证性分析。正式设计包含五个 session、每种
-> 负载每个 session 六个配对 block，并预先冻结条件顺序、样本量、成功阈值、失败处理和
-> 分层配对 bootstrap 方法。
+> 中文简介：本文预注册 Phase 1 固定输入同步/异步正式对照的 G6 v2 修订协议。v2 仅在
+> 评审后合并到 `main` 时生效；此前采集的数据不得进入验证性分析。正式设计包含五个
+> session、每种负载每个 session 六个配对 block，并预先冻结交叉平衡的条件顺序、样本量、
+> 成功阈值、失败处理和分层配对 bootstrap 方法。v1 及其修订原因被完整保留。
+
+## Protocol amendment history
+
+G6 v1, protocol ID `phase1-g6-fixed-input-sync-async-v1` and SHA-256
+`022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761`,
+was activated before the formal runner was commissioned. Its exact JSON remains
+tracked as
+[`phase1-g6-preregistration.json`](../../experiments/phase1/formal/phase1-g6-preregistration.json).
+No collection under v1 is eligible for confirmatory analysis.
+
+An outcome-independent audit of the serialized v1 schedule found that its
+workload-order cycle and shared condition-order cycle both reset at every
+session. Although every workload had three sync-first and three async-first
+pairs per session, the same workload/condition relationship repeated across all
+five sessions. For example, an LLM pair following ASR was always sync-first,
+while an LLM pair following VLM was always async-first. This unnecessary
+coupling was identified before admissible collection. No timing, resource,
+model-output or endpoint value was used to construct the replacement schedule.
+
+G6 v2 changes only the frozen condition-order matrix and adds explicit amendment
+metadata. It preserves the research questions, hypotheses, sample size,
+workloads, inputs, conditions, environment, safety rules, endpoints, thresholds,
+bootstrap method, exclusions, missing-data rules and stopping rules. All v1
+commissioning artifacts remain diagnostic and are excluded from v2.
 
 ## Research questions and hypotheses
 
@@ -146,15 +170,37 @@ paired blocks per workload, producing:
 
 Each session retains but excludes three ASR, one LLM and one VLM warm-up from
 the confirmatory analysis. A 30 s `formal_idle` epoch occurs before and after
-the measured matrix, giving six descriptive idle epochs overall. Every measured
+the measured matrix, giving ten descriptive idle epochs overall. Every measured
 run has a 1 s prelude and 1 s postlude.
 
 The order is generated before collection and serialized in the tracked JSON:
 
 - every session uses each of the six possible workload orders exactly once;
-- sync-first and async-first pairs alternate, giving each order three times per
-  workload in every session and 15 times overall;
+- each workload uses sync-first and async-first three times per session and 15
+  times overall;
+- within every workload/block combination, the five sessions split pair order
+  two/three or three/two;
+- within every workload/position combination, the two pair orders split five/five;
+- immediate preceding-workload contexts split five/five when they occur ten
+  times and seven/eight when they occur fifteen times;
+- every session/block contains one or two async-first workloads, so no block
+  gives all three workloads the same pair order;
 - no runtime randomization or operator-selected reordering is permitted.
+
+The frozen matrix below uses `0` for sync-first and `1` for async-first. Digits
+correspond to blocks 1 through 6.
+
+| Session | ASR | LLM | VLM |
+| --- | --- | --- | --- |
+| 1 | `100110` | `100101` | `011001` |
+| 2 | `101001` | `011010` | `010110` |
+| 3 | `010101` | `101001` | `101010` |
+| 4 | `011010` | `010110` | `100101` |
+| 5 | `001101` | `100011` | `011010` |
+
+The preceding-workload check follows the measured pair sequence across block
+boundaries and excludes the first pair of each session, which has no measured
+predecessor.
 
 The experimental unit is the sync/async pair identified by session, block and
 workload. The runner must refuse missing, duplicated or reordered entries.
@@ -247,13 +293,13 @@ failure, an unexplained telemetry parse error, identity drift or the thermal
 stop threshold. Performance results cannot override a failed safety or
 correctness Gate.
 
-## Activation and next implementation step
+## Activation and collection boundary
 
-Merging this preregistration to `main` closes G6 and fixes protocol version
-`phase1-g6-fixed-input-sync-async-v1`. Any subsequent change requires a new
+Merging this amendment to `main` supersedes v1 and fixes protocol version
+`phase1-g6-fixed-input-sync-async-v2`. Any subsequent change requires another
 protocol version and restarts formal collection from zero.
 
-After activation, the next implementation is a formal session runner and
-independent analyzer that both load this exact JSON and fail closed on any
-schedule, identity, threshold or analysis-parameter difference. No formal
-Jetson run begins until those tools pass host tests and are reviewed on `main`.
+The formal session runner and independent analyzer both load this exact v2 JSON
+and fail closed on any schedule, identity, threshold or analysis-parameter
+difference. No admissible Jetson run begins until the amended tools pass host
+tests and are reviewed on `main`.

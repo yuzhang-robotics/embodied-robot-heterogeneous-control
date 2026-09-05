@@ -1652,7 +1652,7 @@ def render_markdown(analysis: Mapping[str, object]) -> str:
         f"- Validated measured runs: {dataset['validated_measured_runs']}/"
         f"{dataset['planned_measured_runs']}.",
         f"- Paired units: {dataset['paired_units_per_workload']} per workload.",
-        "- Protocol: `phase1-g6-fixed-input-sync-async-v1`.",
+        f"- Protocol: `{FORMAL_PROTOCOL_ID}`.",
         "- No post-hoc exclusions or imputation.",
         "",
         "## Confirmatory endpoints",

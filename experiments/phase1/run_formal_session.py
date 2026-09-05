@@ -838,7 +838,7 @@ def run_session(
             ledger_path,
             {"event": "idle_started", "at": utc_now_iso(), "label": "post_measurement"},
         )
-        idle_dir, _ = resolved_idle_runner(
+        idle_dir, post_idle_record = resolved_idle_runner(
             session_dir,
             label="post_measurement",
             duration_s=int(post_idle["duration_s"]),
@@ -853,6 +853,14 @@ def run_session(
                 "run": idle_dir.relative_to(session_dir).as_posix(),
             },
         )
+        try:
+            sampler.wait_for_sample_at_or_after(
+                int(post_idle_record["finished_monotonic_ns"]),
+                timeout_s=2.0,
+            )
+        except (RuntimeError, TimeoutError):
+            failure_class = "infrastructure"
+            raise
         sampler_report = sampler.stop()
         manifest["resource_sampler_report"] = sampler_report.to_dict()
         if not sampler_report.successful:

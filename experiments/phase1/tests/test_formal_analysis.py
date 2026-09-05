@@ -761,6 +761,37 @@ class FormalAnalysisTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "idle duration is shorter"):
                 analyze_formal_collection(collection)
 
+    def test_resource_trace_ending_before_activity_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            collection = build_collection(Path(temp_dir))
+            session_dir = collection / "session-01-attempt-01"
+            resource_path = session_dir / "resources.jsonl"
+            samples = [
+                json.loads(line)
+                for line in resource_path.read_text(encoding="utf-8").splitlines()
+            ]
+            samples.pop()
+            resource_path.write_text(
+                "".join(
+                    json.dumps(sample, separators=(",", ":")) + "\n"
+                    for sample in samples
+                ),
+                encoding="utf-8",
+            )
+            manifest_path = session_dir / "manifest.json"
+            manifest = read_json(manifest_path)
+            sampler = manifest["resource_sampler_report"]
+            sampler["sample_count"] = len(samples)
+            sampler["last_sample_monotonic_ns"] = samples[-1]["sample_monotonic_ns"]
+            write_json(manifest_path, manifest)
+            refresh_manifest(session_dir)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "resources stop before session activity",
+            ):
+                analyze_formal_collection(collection)
+
     def test_failed_run_gate_is_rejected_after_hash_refresh(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             collection = build_collection(Path(temp_dir))

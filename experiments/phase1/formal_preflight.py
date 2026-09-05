@@ -43,7 +43,7 @@ from experiments.phase1.vlm_preflight import (
 
 FORMAL_PREFLIGHT_SCHEMA_VERSION = "0.1.0"
 FROZEN_PROTOCOL_SHA256 = (
-    "022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761"
+    "5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a"
 )
 _REQUIRED_CHECKS = {
     "protocol_identity",
@@ -192,7 +192,7 @@ def build_formal_preflight(
     root = Path(repo_root).resolve()
     protocol_file = Path(protocol_path).resolve()
     expected_protocol_file = (
-        root / "experiments" / "phase1" / "formal" / "phase1-g6-preregistration.json"
+        root / "experiments" / "phase1" / "formal" / DEFAULT_PROTOCOL_PATH.name
     ).resolve()
     base = dict(
         base_preflight
