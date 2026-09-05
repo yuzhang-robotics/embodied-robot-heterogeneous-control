@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import threading
 import time
 import unittest
 from dataclasses import dataclass
+from pathlib import Path
 
 from experiments.phase1.asr_adapter import (
     ASR_EXPECTED_OUTPUT_LENGTH,
@@ -16,7 +18,9 @@ from experiments.phase1.formal_run import (
     run_formal_workload,
 )
 from experiments.phase1.llm_adapter import (
+    FixedInputLLMAdapter,
     LLM_EXPECTED_SERVED_MODEL_ID,
+    fixed_llm_payload,
     frozen_llm_request_contract,
 )
 from jetson.phase1_runtime import (
@@ -170,8 +174,8 @@ def payload() -> PayloadRef:
 
 
 class FormalRunTests(unittest.TestCase):
-    def run_condition(self, condition: FormalCondition) -> dict[str, object]:
-        spec = FormalRunSpec(
+    def llm_spec(self, condition: FormalCondition) -> FormalRunSpec:
+        return FormalRunSpec(
             workload="llm",
             condition=condition,
             role="measured",
@@ -182,13 +186,64 @@ class FormalRunTests(unittest.TestCase):
             probe_period_ns=5_000_000,
             probe_deadline_ns=5_000_000,
         )
+
+    def run_condition(self, condition: FormalCondition) -> dict[str, object]:
         return run_formal_workload(
-            spec,
+            self.llm_spec(condition),
             payload(),
             NullEventSink(),
             FakeAdapter(),
             task_id=f"formal-{condition.value}",
         )
+
+    def test_llm_paths_bind_the_frozen_empty_history_identity(self) -> None:
+        input_path = (
+            Path(__file__).resolve().parents[2]
+            / "phase0"
+            / "inputs"
+            / "llm_prompt_zh.txt"
+        )
+        llm_payload = fixed_llm_payload(input_path)
+
+        def requester(_url: str, _payload: bytes, _timeout: float) -> bytes:
+            return json.dumps(
+                {
+                    "model": LLM_EXPECTED_SERVED_MODEL_ID,
+                    "choices": [
+                        {
+                            "message": {
+                                "role": "assistant",
+                                "content": "fixed response",
+                            }
+                        }
+                    ],
+                    "usage": {
+                        "prompt_tokens": 20,
+                        "completion_tokens": 8,
+                        "total_tokens": 28,
+                    },
+                }
+            ).encode("utf-8")
+
+        for condition in (FormalCondition.SYNC, FormalCondition.ASYNC):
+            with self.subTest(condition=condition.value):
+                adapter = FixedInputLLMAdapter(
+                    endpoint_loader=lambda: (
+                        "http://127.0.0.1:8080/v1/chat/completions"
+                    ),
+                    requester=requester,
+                )
+                report = run_formal_workload(
+                    self.llm_spec(condition),
+                    llm_payload,
+                    NullEventSink(),
+                    adapter,
+                    task_id=f"formal-contract-{condition.value}",
+                )
+
+                self.assertTrue(report["valid"])
+                self.assertEqual(report["adapter"]["execution_outcome"], "ok")
+                self.assertIsNone(report["adapter"]["error_code"])
 
     def test_sync_uses_calling_thread_and_inline_probe(self) -> None:
         report = self.run_condition(FormalCondition.SYNC)

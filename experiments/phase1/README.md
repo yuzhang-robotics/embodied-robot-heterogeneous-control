@@ -10,7 +10,9 @@ completed independently validated Jetson correctness pilots. The fixed-input
 LLM HTTP slice has now completed its independently validated Jetson correctness
 pilot, closing G5. The G6 protocol preregisters the formal paired comparison.
 Its protocol-bound session runner and independent analyzer are now implemented
-and host-tested; synchronous/asynchronous formal data have not been collected.
+and reviewed. A first pre-measurement commissioning attempt stopped before any
+formal data were collected when it exposed an LLM empty-history identity
+mismatch in the runner; the corrected runner retains the frozen protocol.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -18,8 +20,9 @@ and host-tested; synchronous/asynchronous formal data have not been collected.
 > 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
 > Jetson correctness pilot；固定输入 ASR 子进程切片也已完成 Jetson correctness pilot；
 > 固定输入 LLM HTTP 切片也已完成 Jetson correctness pilot，G5 已关闭；G6 正式协议
-> 已冻结，协议绑定的正式 runner 与独立分析器已实现并通过 host 测试；正式同步/异步
-> 数据尚未采集，采集必须等待工具经评审合入 `main`。
+> 已冻结，协议绑定的正式 runner 与独立分析器已实现并完成评审；首次正式采集前的
+> commissioning attempt 在 measured run 开始前发现 LLM 空历史身份不一致并停止，
+> 修正后的 runner 不改变冻结协议，正式同步/异步数据尚未采集。
 
 ## Current status
 
@@ -49,11 +52,12 @@ and host-tested; synchronous/asynchronous formal data have not been collected.
   completed one independently validated Jetson correctness pilot
 - Deterministic LLM-pilot reconstruction and public descriptive report:
   implemented; LLM component and G5 overall satisfied
-- Machine-validated G6 formal preregistration: implemented; activates on its
+- Machine-validated G6 formal preregistration: implemented and activated by its
   reviewed merge to `main`
 - Protocol-bound formal session runner and independent analyzer: implemented
-  and host-tested; collection remains gated on reviewed merge to `main`
-- Formal Phase 1 data: not collected
+  and reviewed; LLM history binding corrected against the frozen adapter
+- Formal Phase 1 data: not collected; one pre-measurement commissioning attempt
+  is retained as diagnostic evidence
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -567,9 +571,20 @@ the adapter record to a separate privacy-preserving result envelope. The Gates
 also enforce the expected ASR transcript identity, the frozen LLM request and
 token/residency facts, and VLM child reaping and per-invocation unload request.
 
-After this implementation is reviewed and merged, prepare the first session on
-the Jetson, assign one collection identifier, restart the model services, then
-run:
+Collection `20260905T062312Z_phase1_formal_g6` stopped after its three ASR
+warm-ups and before the first LLM request, pre-measurement idle epoch or measured
+matrix. The formal task builder used the SHA-256 of an empty byte string where
+the frozen LLM contract requires the identity of an empty JSON history. The
+attempt remains diagnostic and is not retried or analyzed as formal evidence.
+The correction reuses the adapter's frozen empty-history constant and adds
+sync/async integration coverage with the real adapter boundary. It changes no
+protocol identity, schedule, threshold or analysis method. Formal collection
+therefore restarts from session 1 under a new collection identifier after the
+correction is reviewed on `main`.
+
+With the corrected implementation on synchronized `main`, prepare the first
+session on the Jetson, assign one collection identifier, restart the model
+services, then run:
 
 ```bash
 export ROBOT_ENABLE_MOTION=0
@@ -606,8 +621,7 @@ The analyzer recomputes every artifact hash, reconstructs all 90 pairs from the
 protocol and ledger, verifies event order, both 30 s idle epochs, thermal and
 resource coverage, result/adapter consistency and lifecycle closure, and uses
 the frozen 100,000-resample paired hierarchical bootstrap. It emits no source
-path, raw input or model output. Formal Jetson collection must not begin until
-these tools are reviewed on `main`.
+path, raw input or model output.
 
 ## Planned implementation order
 
@@ -633,8 +647,9 @@ these tools are reviewed on `main`.
 11. preregister formal thresholds, balanced order, sample size, exclusions and
     statistical methods — complete;
 12. implement and review the protocol-bound formal runner and independent
-    analyzer — implementation and host tests complete; review pending;
-13. collect, validate and publish the formal synchronous/asynchronous comparison;
+    analyzer — complete;
+13. collect, validate and publish the formal synchronous/asynchronous comparison
+    — pre-measurement commissioning corrected; measured collection not started;
 14. add an opt-in motion-disabled application slice after the research Gates
     pass.
 

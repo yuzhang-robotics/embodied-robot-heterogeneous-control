@@ -14,6 +14,7 @@ from experiments.phase1.asr_adapter import (
     ASR_EXPECTED_OUTPUT_SHA256,
 )
 from experiments.phase1.llm_adapter import (
+    LLM_EMPTY_HISTORY_SHA256,
     LLM_EXPECTED_SERVED_MODEL_ID,
     frozen_llm_request_contract,
 )
@@ -139,9 +140,7 @@ def _make_task(
             "protocol": "phase1_g6_formal",
             "fixed_input": True,
             "history_sha256": (
-                "e3b0c44298fc1c149afbf4c8996fb924" "27ae41e4649b934ca495991b7852b855"
-                if spec.workload == "llm"
-                else None
+                LLM_EMPTY_HISTORY_SHA256 if spec.workload == "llm" else None
             ),
             "history_messages": 0 if spec.workload == "llm" else None,
             "raw_output_recorded": False,

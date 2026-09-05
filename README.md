@@ -102,8 +102,11 @@ freezes the numerical thresholds, balanced order, sample size, exclusions and
 statistical methods. Its merge to `main` closes G6 and makes it the sole
 admissible plan. A protocol-bound formal session runner and independent analyzer
 now reject protocol, schedule, environment, artifact or statistical-method
-drift. Formal Jetson collection remains gated on review of those tools on
-`main`.
+drift and have been reviewed on `main`. A first pre-measurement Jetson
+commissioning attempt exposed an LLM empty-history identity mismatch in the
+runner and stopped before any measured run. The corrected runner retains the
+frozen protocol; formal collection restarts under a new collection identifier
+after review.
 
 All pilot timings are descriptive, not formal performance or cancellation-
 latency data. The broader research stage will investigate:
