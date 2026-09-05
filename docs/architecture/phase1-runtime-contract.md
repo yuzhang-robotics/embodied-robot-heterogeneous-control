@@ -12,20 +12,23 @@ pilot. Fixed-input ASR and LLM adapters have since completed independently
 validated and analyzed Jetson correctness pilots. All three real-workload
 correctness components are complete, closing G5. G6 formal protocol
 preregistration is now fixed. The protocol-bound formal session runner and
-independent analyzer are implemented and host-tested; synchronous/asynchronous
-formal data have not been collected.
+independent analyzer are implemented and reviewed. A pre-measurement Jetson
+commissioning attempt exposed an LLM empty-history identity mismatch in the
+runner and stopped before any measured run; the correction retains the frozen
+protocol and formal data have not been collected.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
 > VLM 进程隔离路径以及固定输入 ASR、LLM 路径均已完成 Jetson correctness pilot，G5 已关闭；
-> G6 正式协议已冻结；协议绑定的正式 runner 与独立分析器已实现并通过 host 测试，
-> 正式同步/异步数据尚未采集，采集必须等待工具经评审合入 `main`。
+> G6 正式协议已冻结；协议绑定的正式 runner 与独立分析器已实现并完成评审；首次
+> pre-measurement commissioning attempt 在 measured run 开始前发现 LLM 空历史身份
+> 不一致并停止，修正不改变冻结协议，正式同步/异步数据尚未采集。
 
 ## Status
 
 - Phase: Phase 1D correctness pilots and G6 preregistration complete; formal
-  runner and analyzer implemented; formal collection pending review
+  runner and analyzer reviewed; pre-measurement correction in progress
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -1095,6 +1098,18 @@ request or residency change. Each run binds the adapter record to a separate
 privacy-preserving result envelope and enforces workload-specific output,
 request, process and residency Gates.
 
+The first commissioning collection,
+`20260905T062312Z_phase1_formal_g6`, completed the three ASR warm-ups and then
+stopped before the first LLM request, either idle epoch or any measured run. The
+formal task builder supplied the SHA-256 of an empty byte string rather than the
+frozen empty JSON history identity required by the LLM adapter. This is a runner
+integration defect, not a system-under-test outcome or a preregistered
+infrastructure replacement. The aborted attempt remains diagnostic. The
+correction binds task metadata to the existing adapter constant and adds
+sync/async integration tests; it changes no protocol identity, hypothesis,
+schedule, threshold or analysis method. The measured collection restarts under
+a new collection identifier after the correction is reviewed on `main`.
+
 The independent analyzer does not trust runner summaries. It verifies the
 protocol copy and every artifact hash, reconstructs the session ledger and all
 90 pairs, checks event boundaries, idle duration, thermal/resource coverage,
@@ -1103,8 +1118,8 @@ performance metrics, then applies one shared seeded session/block resampling
 stream for 100,000 percentile-bootstrap draws. Any missing run, reordered entry,
 mixed commit, un-restarted service, incomplete thermal gate, lifecycle failure
 or modified artifact invalidates the collection.
-Formal data collection remains prohibited until this implementation is reviewed
-and merged to `main`.
+Formal data collection remains prohibited until the commissioning correction is
+reviewed and merged to `main`.
 
 ## Phase 1 completion boundary
 
