@@ -23,6 +23,7 @@ from experiments.phase1.formal_preflight import (
 )
 from experiments.phase1.formal_protocol import (
     DEFAULT_PROTOCOL_PATH,
+    FORMAL_COLLECTION_STATUS,
     FORMAL_PROTOCOL_ID,
     canonical_protocol_text,
     formal_protocol_errors,
@@ -585,10 +586,26 @@ def run_session(
     )
     protocol_path = Path(args.protocol).resolve()
     protocol = load_formal_protocol(protocol_path)
+    injected = [
+        name
+        for name, value in (
+            ("preflight_builder", preflight_builder),
+            ("sampler_factory", sampler_factory),
+            ("adapter_factories", adapter_factories),
+            ("payloads_override", payloads_override),
+            ("entry_runner", entry_runner),
+            ("idle_runner", idle_runner),
+        )
+        if value is not None
+    ]
     errors = formal_protocol_errors(protocol)
     if errors or protocol_sha256(protocol) != FROZEN_PROTOCOL_SHA256:
         raise FormalSessionError(
             "formal protocol identity failed: " + "; ".join(errors or ["hash"])
+        )
+    if FORMAL_COLLECTION_STATUS != "active" and not injected:
+        raise FormalSessionError(
+            "formal protocol is closed after a system-under-test failure"
         )
     if not 1 <= args.session_index <= 5:
         raise FormalSessionError("session_index must be from 1 to 5")
@@ -618,18 +635,6 @@ def run_session(
         replacement_for=args.replacement_for,
         infrastructure_failure=args.infrastructure_failure,
     )
-    injected = [
-        name
-        for name, value in (
-            ("preflight_builder", preflight_builder),
-            ("sampler_factory", sampler_factory),
-            ("adapter_factories", adapter_factories),
-            ("payloads_override", payloads_override),
-            ("entry_runner", entry_runner),
-            ("idle_runner", idle_runner),
-        )
-        if value is not None
-    ]
     resolved_preflight_builder = preflight_builder or build_formal_preflight
     preflight = resolved_preflight_builder(
         root,

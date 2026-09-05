@@ -1,9 +1,9 @@
 # Phase 1 G6 Formal Preregistration
 
-This document preregisters the fixed-input synchronous/asynchronous comparison
-for the Phase 1 runtime under the amended G6 v2 protocol. It becomes active only
-when the reviewed v2 protocol is merged to `main`. Data collected before that
-merge are not eligible for the confirmatory analysis.
+This document records the preregistered fixed-input synchronous/asynchronous
+comparison for the Phase 1 runtime under the amended G6 v2 protocol. The
+reviewed merge to `main` activated v2. Its first formal attempt then stopped on
+a system-under-test failure, so v2 is now closed without a confirmatory claim.
 
 The machine-readable protocol is
 [`phase1-g6-v2-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v2-preregistration.json).
@@ -13,10 +13,11 @@ protocol uses schema `0.2.0`, protocol ID
 `phase1-g6-fixed-input-sync-async-v2`, and SHA-256
 `5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a`.
 
-> 中文简介：本文预注册 Phase 1 固定输入同步/异步正式对照的 G6 v2 修订协议。v2 仅在
-> 评审后合并到 `main` 时生效；此前采集的数据不得进入验证性分析。正式设计包含五个
-> session、每种负载每个 session 六个配对 block，并预先冻结交叉平衡的条件顺序、样本量、
-> 成功阈值、失败处理和分层配对 bootstrap 方法。v1 及其修订原因被完整保留。
+> 中文简介：本文记录 Phase 1 固定输入同步/异步正式对照的 G6 v2 修订协议。v2 在评审后
+> 合并到 `main` 时生效，但首次正式尝试随后因系统被测对象失败而停止，因此 v2 已关闭且
+> 不支持验证性结论。正式设计包含五个 session、每种负载每个 session 六个配对 block，
+> 并预先冻结交叉平衡的条件顺序、样本量、成功阈值、失败处理和分层配对 bootstrap 方法。
+> v1、v2 及其修订或关闭原因均被完整保留。
 
 ## Protocol amendment history
 
@@ -41,6 +42,27 @@ metadata. It preserves the research questions, hypotheses, sample size,
 workloads, inputs, conditions, environment, safety rules, endpoints, thresholds,
 bootstrap method, exclusions, missing-data rules and stopping rules. All v1
 commissioning artifacts remain diagnostic and are excluded from v2.
+
+The first v2 collection,
+`20260905T140816Z_phase1_formal_g6_v2`, passed preflight and completed all five
+warm-ups, the pre-measurement idle reference and 12 measured runs. Measured
+ordinal 18 then failed `translation_route_verified`: the VLM Qwen rewrite
+reached its 30 s client timeout and the adapter used Argos. The child process
+exited normally, llama-server returned its slot to idle, resource telemetry
+remained valid and no thermal stop occurred. The deterministic
+[failed-attempt report](../../experiments/phase1/results/20260905T140816Z_phase1_formal_g6_v2/)
+preserves the archive identities and derived evidence without publishing raw
+model text, paths or logs.
+
+The v2 implementation requested Moondream unload after the Qwen attempt, so the
+failure contains a model-residency-order confound but does not establish that
+residency caused the timeout. Under the frozen failure rules, a system-under-
+test failure cannot be replaced. The collection is not continued, the attempt
+is not rerun, and no v2 timing result enters confirmatory analysis. The isolated
+correction moves the unload request before Qwen while keeping the 30 s timeout
+unchanged for a separate descriptive Jetson diagnostic. Any later formal
+collection requires a newly preregistered protocol version and restarts from
+session 1.
 
 ## Research questions and hypotheses
 
@@ -295,11 +317,14 @@ correctness Gate.
 
 ## Activation and collection boundary
 
-Merging this amendment to `main` supersedes v1 and fixes protocol version
-`phase1-g6-fixed-input-sync-async-v2`. Any subsequent change requires another
-protocol version and restarts formal collection from zero.
+Merging this amendment to `main` superseded v1 and fixed protocol version
+`phase1-g6-fixed-input-sync-async-v2`. The recorded system-under-test failure
+closed v2. Its exact JSON remains immutable; any subsequent change requires
+another protocol version and restarts formal collection from zero.
 
 The formal session runner and independent analyzer both load this exact v2 JSON
 and fail closed on any schedule, identity, threshold or analysis-parameter
-difference. No admissible Jetson run begins until the amended tools pass host
-tests and are reviewed on `main`.
+difference. The runner now also refuses a new default v2 session because the
+collection is closed. A future protocol cannot become active until its amended
+tools pass host tests, its diagnostic premise is resolved and the new frozen
+protocol is reviewed on `main`.

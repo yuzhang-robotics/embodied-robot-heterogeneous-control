@@ -6,7 +6,7 @@
 
 This repository began with my bachelor's thesis on speech interaction and visual perception for a wheeled robot. The thesis system runs fully local speech and vision pipelines on a Jetson Orin Nano, while an STM32F407 executes motion commands and enforces a communication watchdog. The same platform will now be used to study how long-running perception and inference can coexist with predictable control timing.
 
-> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，并完成 VLM、ASR 与 LLM 的固定输入 Jetson correctness pilot；G6 v2 正式协议已按交叉平衡顺序修订，协议绑定的正式 runner 与独立分析器已实现并通过 host 测试，正式同步/异步证据尚未采集，整机应用适配尚未开始。
+> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，并完成 VLM、ASR 与 LLM 的固定输入 Jetson correctness pilot；G6 v2 的首次正式采集在第 18 个条目因 VLM 的 Qwen 翻译路径超时而停止，v2 已关闭且不支持正式结论，当前正在用描述性 Jetson 诊断隔离模型驻留顺序因素，整机应用适配尚未开始。
 
 ## Project status
 
@@ -15,7 +15,7 @@ This repository began with my bachelor's thesis on speech interaction and visual
 | Bachelor's thesis software and firmware | Complete and hardware validated |
 | Custom base-driver PCB | Published and tested on the physical robot |
 | Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
-| Asynchronous inference runtime | Bounded executor, probe and replay validated by Jetson simulation; fixed-input VLM, ASR and LLM correctness pilots complete; G6 v2 protocol amended with cross-balanced order; protocol-bound formal runner and independent analyzer implemented; admissible formal evidence not yet collected |
+| Asynchronous inference runtime | Bounded executor, probe and replay validated by Jetson simulation; fixed-input VLM, ASR and LLM correctness pilots complete; G6 v2 formal attempt preserved as a system-under-test failure; v2 closed without a confirmatory claim; VLM residency-order diagnostic pending |
 
 The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
@@ -108,8 +108,20 @@ complete session. An outcome-independent schedule audit then found that v1
 repeated the same condition/predecessor relationship in all five sessions. The
 two collections remain diagnostic; v2 changes only the fixed condition-order
 matrix while retaining the sample size, hypotheses, thresholds and analysis.
-Admissible collection restarts from session 1 after the amended implementation
-is reviewed on `main`.
+
+The first v2 formal attempt stopped at measured ordinal 18 when a VLM Qwen
+rewrite reached its 30 s client timeout and used the disallowed Argos fallback.
+Its independently reconstructed
+[failure report](experiments/phase1/results/20260905T140816Z_phase1_formal_g6_v2/)
+verifies all 42 manifest artifacts, the ledger prefix, 3,558 resource samples,
+17 completed runs and the single failed Gate. The VLM child exited normally,
+the llama-server slot returned to idle and no thermal or telemetry failure was
+observed. The recorded implementation requested Moondream unload only after
+the Qwen attempt, leaving a residency-order confound. G6 v2 is closed: the
+attempt will not be rerun or replaced and cannot support a formal claim. The
+isolated correction moves the unload request before Qwen while retaining the
+30 s timeout for a separate descriptive Jetson diagnostic; any later formal
+collection requires a new preregistered protocol version.
 
 All pilot timings are descriptive, not formal performance or cancellation-
 latency data. The broader research stage will investigate:

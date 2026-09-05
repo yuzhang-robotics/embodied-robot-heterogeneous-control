@@ -12,10 +12,21 @@ from pathlib import Path
 from unittest.mock import patch
 
 from experiments.phase1.jetson_preflight import build_jetson_preflight
-from experiments.phase1.jetson_telemetry import TegrastatsSampler
-from experiments.phase1.manifest import sha256_file
+from experiments.phase1.jetson_telemetry import (
+    TegrastatsSampler,
+    load_resource_samples,
+)
+from experiments.phase1.manifest import sha256_file, write_json_atomic
 from experiments.phase1.run_vlm_slice import build_parser, run_once
-from experiments.phase1.summarize_vlm_process_slice import VLM_PROCESS_ISOLATION
+from experiments.phase1.summarize_vlm_process_slice import (
+    LEGACY_VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
+    VLM_PROCESS_ISOLATION,
+    build_vlm_process_summary,
+)
+from experiments.phase1.summarize_vlm_slice import (
+    LEGACY_VLM_SUMMARY_SCHEMA_VERSION,
+    build_vlm_summary,
+)
 from experiments.phase1.tests.test_jetson_pilot import clean_environment
 from experiments.phase1.tests.test_jetson_telemetry import sampler_command
 from experiments.phase1.validate_vlm_slice import validate_vlm_slice_dir
@@ -605,6 +616,64 @@ class VLMRunnerTests(unittest.TestCase):
 
         errors = validate_vlm_slice_dir(run_dir)
         self.assertTrue(any("independently rebuilt Gates" in error for error in errors))
+
+    def test_validator_reconstructs_legacy_process_schema(self) -> None:
+        with (
+            patch.dict(os.environ, {"ROBOT_ENABLE_MOTION": "0"}),
+            patch(
+                "experiments.phase1.run_vlm_slice.collect_environment",
+                return_value=clean_environment(),
+            ),
+        ):
+            run_dir = run_once(
+                self.process_args(VLMSliceCondition.ASYNC),
+                repo_root=REPO_ROOT,
+                preflight_builder=self.preflight_builder,
+                sampler_factory=self.sampler_factory,
+                adapter_factory=self.process_adapter_factory,
+            )
+
+        manifest_path = run_dir / "manifest.json"
+        scenario_path = run_dir / "scenario.json"
+        summary_path = run_dir / "summary.json"
+        process_path = run_dir / "process.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        contract = manifest["workload_contract"]
+        contract.pop("unload_before_qwen")
+        contract.pop("cleanup_unload_on_failure")
+        contract["unload_after_request"] = True
+        scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
+        scenario["report"]["adapter"].pop("stage_error_codes")
+        scenario["process"]["protocol_version"] = "0.1.0"
+        write_json_atomic(scenario_path, scenario)
+        samples = load_resource_samples(run_dir / "resources.jsonl")
+        summary = build_vlm_summary(
+            run_dir / "events.jsonl",
+            condition=VLMSliceCondition.ASYNC,
+            spec=scenario["spec"],
+            report=scenario["report"],
+            resource_samples=samples,
+            sampler_report=manifest["resource_sampler_report"],
+            development_injection=True,
+            schema_version=LEGACY_VLM_SUMMARY_SCHEMA_VERSION,
+        )
+        write_json_atomic(summary_path, summary)
+        process_summary = build_vlm_process_summary(
+            scenario["process"],
+            condition=VLMSliceCondition.ASYNC,
+            protocol_version="0.1.0",
+            schema_version=LEGACY_VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
+        )
+        write_json_atomic(process_path, process_summary)
+        for name in ("scenario.json", "summary.json", "process.json"):
+            path = run_dir / name
+            manifest["artifacts"][name] = {
+                "size_bytes": path.stat().st_size,
+                "sha256": sha256_file(path),
+            }
+        write_json_atomic(manifest_path, manifest)
+
+        self.assertEqual(validate_vlm_slice_dir(run_dir), [])
 
     def test_validator_rebuilds_summary_after_hash_consistent_tampering(self) -> None:
         with (

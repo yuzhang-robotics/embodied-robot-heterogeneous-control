@@ -414,12 +414,16 @@ def _run_gate_errors(
     run: Mapping[str, object],
     entry: Mapping[str, object],
     workload_contract: Mapping[str, object],
+    *,
+    expected_failed_gates: frozenset[str] = frozenset(),
 ) -> list[str]:
     errors: list[str] = []
+    expected_status = "failed" if expected_failed_gates else "completed"
+    expected_valid = not expected_failed_gates
     if run.get("formal_run_schema_version") != FORMAL_RUN_SCHEMA_VERSION:
         errors.append("unsupported run schema")
-    if run.get("status") != "completed" or run.get("valid") is not True:
-        errors.append("run is not completed and valid")
+    if run.get("status") != expected_status or run.get("valid") is not expected_valid:
+        errors.append("run status does not match its expected Gate outcome")
     if run.get("raw_input_recorded") is not False:
         errors.append("raw input privacy flag is invalid")
     if run.get("raw_output_recorded") is not False:
@@ -561,10 +565,16 @@ def _run_gate_errors(
                 errors.append("run gate name is invalid or duplicated")
             else:
                 names.add(name)
-            if gate.get("passed") is not True:
-                errors.append(f"run gate failed: {name}")
+            expected_passed = name not in expected_failed_gates
+            if gate.get("passed") is not expected_passed:
+                if expected_passed:
+                    errors.append(f"run gate failed: {name}")
+                else:
+                    errors.append(f"expected run gate did not fail: {name}")
     if names != _expected_gate_names(workload, condition):
         errors.append("run gate set is incomplete or unsupported")
+    if not expected_failed_gates.issubset(names):
+        errors.append("expected failed Gate set is incomplete or unsupported")
 
     probe = run.get("probe")
     runtime = run.get("runtime")
@@ -710,7 +720,10 @@ def _run_gate_errors(
         process_record = process if isinstance(process, Mapping) else {}
         residency = adapter_record.get("model_residency")
         residency_record = residency if isinstance(residency, Mapping) else {}
-        if adapter_record.get("translation_route") != "qwen":
+        if (
+            "translation_route_verified" not in expected_failed_gates
+            and adapter_record.get("translation_route") != "qwen"
+        ):
             errors.append("VLM translation route does not match the protocol")
         if (
             process_record.get("start_method") != "spawn"

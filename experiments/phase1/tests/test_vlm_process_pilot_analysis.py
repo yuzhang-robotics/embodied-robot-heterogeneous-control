@@ -12,6 +12,10 @@ from experiments.phase1.analyze_vlm_pilot import (
     main,
     render_markdown,
 )
+from experiments.phase1.summarize_vlm_process_slice import (
+    VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
+)
+from experiments.phase1.vlm_process_adapter import PROCESS_PROTOCOL_VERSION
 from experiments.phase1.tests.test_vlm_pilot_analysis import (
     ARCHIVE_SHA256,
     _write_run,
@@ -26,7 +30,7 @@ PROCESS_ARCHIVE_SHA256 = "2" * 64
 def _process_facts(condition: str) -> dict[str, object]:
     cancellation_forwarded = condition == "vlm_stale"
     return {
-        "protocol_version": "0.1.0",
+        "protocol_version": PROCESS_PROTOCOL_VERSION,
         "start_method": "spawn",
         "process_name": "phase1-vlm-process-worker",
         "process_id": 1234,
@@ -96,7 +100,7 @@ def _convert_run(run_dir: Path, condition: str) -> None:
     )
 
     process = {
-        "vlm_process_summary_schema_version": "0.1.0",
+        "vlm_process_summary_schema_version": VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
         "adapter_isolation": "spawned_process",
         "condition": condition,
         "valid": True,

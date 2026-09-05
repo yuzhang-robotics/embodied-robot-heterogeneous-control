@@ -8,7 +8,8 @@ from experiments.phase1.vlm_process_adapter import PROCESS_PROTOCOL_VERSION
 from experiments.phase1.vlm_slice import VLMSliceCondition
 
 
-VLM_PROCESS_SUMMARY_SCHEMA_VERSION = "0.1.0"
+VLM_PROCESS_SUMMARY_SCHEMA_VERSION = "0.2.0"
+LEGACY_VLM_PROCESS_SUMMARY_SCHEMA_VERSION = "0.1.0"
 VLM_PROCESS_ISOLATION = "spawned_process"
 
 
@@ -37,6 +38,8 @@ def build_vlm_process_summary(
     process_report: Mapping[str, object],
     *,
     condition: VLMSliceCondition,
+    protocol_version: str = PROCESS_PROTOCOL_VERSION,
+    schema_version: str = VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
 ) -> dict[str, object]:
     """Rebuild process ownership and cleanup Gates from serialized facts."""
 
@@ -44,6 +47,12 @@ def build_vlm_process_summary(
         raise TypeError("process_report must be a mapping")
     if not isinstance(condition, VLMSliceCondition):
         raise TypeError("condition must be a VLMSliceCondition")
+    supported_pairs = {
+        ("0.1.0", LEGACY_VLM_PROCESS_SUMMARY_SCHEMA_VERSION),
+        (PROCESS_PROTOCOL_VERSION, VLM_PROCESS_SUMMARY_SCHEMA_VERSION),
+    }
+    if (protocol_version, schema_version) not in supported_pairs:
+        raise ValueError("unsupported VLM process protocol and summary schema pair")
 
     process_id = _integer(process_report.get("process_id"))
     spawn_ns = _integer(process_report.get("spawn_requested_monotonic_ns"))
@@ -73,7 +82,7 @@ def build_vlm_process_summary(
         ),
         _gate(
             "bounded_protocol",
-            process_report.get("protocol_version") == PROCESS_PROTOCOL_VERSION
+            process_report.get("protocol_version") == protocol_version
             and process_report.get("protocol_complete") is True
             and process_report.get("error_code") is None,
             observed={
@@ -147,7 +156,7 @@ def build_vlm_process_summary(
         ),
     ]
     return {
-        "vlm_process_summary_schema_version": (VLM_PROCESS_SUMMARY_SCHEMA_VERSION),
+        "vlm_process_summary_schema_version": schema_version,
         "adapter_isolation": VLM_PROCESS_ISOLATION,
         "condition": condition.value,
         "valid": all(gate["passed"] for gate in gates),

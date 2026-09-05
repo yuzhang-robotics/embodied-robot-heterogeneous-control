@@ -8,13 +8,15 @@ Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
 A spawned-process VLM adapter and the fixed-input ASR subprocess slice have also
 completed independently validated Jetson correctness pilots. The fixed-input
 LLM HTTP slice has now completed its independently validated Jetson correctness
-pilot, closing G5. The amended G6 v2 protocol preregisters the formal paired
+pilot, closing G5. The amended G6 v2 protocol preregistered the formal paired
 comparison. Its protocol-bound session runner and independent analyzer are
 implemented. Commissioning exposed an LLM empty-history identity mismatch
 before measurement and a resource-trace tail race after a complete session. An
 outcome-independent schedule audit also found a repeated cross-session order
-relationship in v1. Neither collection is admissible formal evidence; v2
-changes only the condition-order matrix while retaining the scientific design.
+relationship in v1. The first v2 formal attempt then stopped on a VLM Qwen
+timeout and failed its required translation-route Gate. G6 v2 is closed without
+a confirmatory claim; a residency-order correction awaits descriptive Jetson
+validation before any new protocol is preregistered.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -24,8 +26,9 @@ changes only the condition-order matrix while retaining the scientific design.
 > 固定输入 LLM HTTP 切片也已完成 Jetson correctness pilot，G5 已关闭；修订后的 G6 v2
 > 正式协议冻结交叉平衡顺序，协议绑定的正式 runner 与独立分析器已实现；commissioning
 > 先后发现正式测量前的 LLM 空历史身份不一致、一个完整 session 后的资源轨迹尾部竞态，
-> 随后的结果无关顺序审计发现 v1 的跨 session 顺序关系重复；两次 collection 均不作为
-> 正式证据，v2 仅修改条件顺序矩阵并保留其余科学设计。
+> 随后的结果无关顺序审计发现 v1 的跨 session 顺序关系重复；首次 v2 正式尝试又在第 18
+> 个条目因 VLM 的 Qwen 30 秒超时而停止。v2 已关闭且不支持正式结论，当前先通过描述性
+> Jetson 诊断隔离 Moondream/Qwen 驻留顺序因素，再决定后续协议版本。
 
 ## Current status
 
@@ -56,11 +59,17 @@ changes only the condition-order matrix while retaining the scientific design.
 - Deterministic LLM-pilot reconstruction and public descriptive report:
   implemented; LLM component and G5 overall satisfied
 - Machine-validated G6 formal preregistration: v1 retained as history; amended
-  v2 activates only through its reviewed merge to `main`
+  v2 activated through its reviewed merge and is now closed after a system-
+  under-test failure
 - Protocol-bound formal session runner and independent analyzer: implemented
   and reviewed; LLM history binding corrected against the frozen adapter
-- Formal Phase 1 evidence: not yet admissible; two v1 commissioning collections
-  are retained as diagnostic evidence and are excluded from v2
+- Formal Phase 1 evidence: no confirmatory claim permitted; two v1 commissioning
+  collections and the failed v2 attempt are retained without replacement
+- Deterministic v2 failed-attempt reconstruction: implemented; all 42 manifest
+  artifacts, 18 run records, the ledger prefix and service log correlation
+  independently verified
+- VLM residency-order correction: implemented for review; descriptive Jetson
+  validation pending with the existing 30 s Qwen timeout
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -254,7 +263,9 @@ to prohibit causal performance and timing-isolation claims.
 
 The first real-workload integration reuses the exact Phase 0 C100 JPEG, the
 Moondream request path, Qwen rewrite with Argos fallback, output normalization
-and the per-request unload policy. `vlm_adapter.py` imports the model-facing
+and the per-request unload policy. The current adapter requests Moondream unload
+after description and before Qwen rewriting, with cleanup on earlier failure.
+`vlm_adapter.py` imports the model-facing
 module only inside the worker call. Importing the experiment package on a host
 does not load OpenCV, Argos, a camera or either model service.
 
@@ -533,7 +544,7 @@ inference.
 
 ## G6 formal preregistration
 
-The confirmatory Phase 1 comparison is fixed in the amended
+The G6 v2 confirmatory Phase 1 comparison is preserved in the amended
 [human-readable preregistration](../../docs/architecture/phase1-formal-preregistration.md)
 and the tracked
 [`phase1-g6-v2-preregistration.json`](formal/phase1-g6-v2-preregistration.json).
@@ -547,8 +558,8 @@ python3 -m experiments.phase1.formal_protocol --print-sha256
 
 The expected SHA-256 is
 `5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a`.
-The protocol becomes active only through its reviewed merge to `main`; formal
-data collected earlier are inadmissible.
+The protocol became active through its reviewed merge to `main`. Its first
+formal attempt subsequently produced a system-under-test failure, closing v2.
 
 The design fixes five sessions, six paired blocks per workload and session, 30
 pairs per workload and 180 measured runs overall. Every session uses each of the
@@ -616,46 +627,46 @@ environment constraints, thresholds, statistical methods, exclusions and
 stopping rules. Both v1 commissioning collections remain diagnostic and no v1
 run can enter the v2 analysis.
 
-With the corrected implementation on synchronized `main`, prepare the first
-session on the Jetson, assign one collection identifier, restart the model
-services, then run:
+Collection `20260905T140816Z_phase1_formal_g6_v2` was the first admissible v2
+attempt. It passed the frozen preflight, completed five warm-ups, the
+pre-measurement idle epoch and 12 measured runs, then stopped at measured
+ordinal 18. The VLM Qwen rewrite ran for 30029.203 ms at its 30 s client
+boundary, used the disallowed Argos fallback and failed
+`translation_route_verified`. The VLM child exited normally, llama-server
+cancelled the corresponding request and returned its slot to idle, all 3,558
+resource samples validated, and the maximum Tj was 55.093 C. The independently
+derived
+[failed-attempt report](results/20260905T140816Z_phase1_formal_g6_v2/)
+records 179 passed Gates and the single failure while retaining all raw model
+text, service logs and private paths outside Git.
+
+The recorded stage order placed the Moondream unload request after the failed
+Qwen rewrite and Argos fallback. This is a residency-order confound, not proof
+that residency caused the timeout. The implementation correction now requests
+Moondream unload before Qwen, records privacy-safe exception classes, and keeps
+cleanup on earlier failures. The process and summary schemas advance to `0.2.0`;
+the validator still reconstructs retained `0.1.0` pilot artifacts by their
+original contracts.
+
+Reconstruct the closed attempt from a private collection and service log with:
 
 ```bash
-export ROBOT_ENABLE_MOTION=0
-export COLLECTION_ID="$(date -u +%Y%m%dT%H%M%SZ)_phase1_formal_g6"
-
-python3 -m experiments.phase1.formal_protocol --print-sha256
-
-python3 -m experiments.phase1.run_formal_session \
-  --session-index 1 \
-  --collection-id "$COLLECTION_ID" \
-  --confirm-services-restarted \
-  --confirm-dynamic-dvfs
+python3 -m experiments.phase1.analyze_formal_failure \
+  /path/to/20260905T140816Z_phase1_formal_g6_v2 \
+  --llama-log /path/to/phase1_formal_v2_llama.log \
+  --source-archive-sha256 0306a0c9e5e2746b9da37c15db3189c51cc131771d515dfe97d420b1f829a892 \
+  --llama-log-archive-sha256 67352addf8dcb67c57eeaa19cd5b5e90afd6e819bddeab42ed3d669e2af6ab40 \
+  --json-output /tmp/phase1-g6-v2-failure.json \
+  --markdown-output /tmp/phase1-g6-v2-failure.md
 ```
 
-Sessions 2--5 reuse the same `COLLECTION_ID`. Each starts at least 30 minutes
-after the preceding session completed and requires another model-service
-restart. The runner compares process-start identities and refuses a skipped,
-duplicated or reordered session. A measured system-under-test failure is final
-and cannot be replaced. Only one of the four preregistered infrastructure
-failures can authorize an explicitly linked replacement attempt; the incomplete
-attempt remains in the ledger.
-
-After all five sessions complete, independently reconstruct and analyze the
-collection with:
-
-```bash
-python3 -m experiments.phase1.analyze_formal_runs \
-  "experiments/runs/phase1-formal/$COLLECTION_ID" \
-  --json-output /tmp/phase1-g6-analysis.json \
-  --markdown-output /tmp/phase1-g6-analysis.md
-```
-
-The analyzer recomputes every artifact hash, reconstructs all 90 pairs from the
-protocol and ledger, verifies event order, both 30 s idle epochs, thermal and
-resource coverage, result/adapter consistency and lifecycle closure, and uses
-the frozen 100,000-resample paired hierarchical bootstrap. It emits no source
-path, raw input or model output.
+The default formal runner refuses further v2 collection. The failed attempt is
+not rerun or replaced, and the incomplete matrix is not used for performance
+estimation. After this correction is reviewed on `main`, a repeated fixed-input
+VLM pilot will test the new residency order descriptively with the 30 s timeout
+unchanged. That diagnostic determines whether a future G6 protocol can retain
+the timeout or needs a separately justified value. Only a newly preregistered
+and reviewed protocol may restart formal collection from session 1.
 
 ## Planned implementation order
 
@@ -683,7 +694,8 @@ path, raw input or model output.
 12. implement and review the protocol-bound formal runner and independent
     analyzer — complete;
 13. collect, validate and publish the formal synchronous/asynchronous comparison
-    — two commissioning defects identified; admissible collection not started;
+    — v2 stopped on a system-under-test VLM timeout and is closed; residency-
+    order diagnostic and a new protocol version are required;
 14. add an opt-in motion-disabled application slice after the research Gates
     pass.
 
@@ -714,6 +726,7 @@ The reusable, hardware-independent kernel lives under
 ```text
 experiments/phase1/
 ├── analyze_asr_pilot.py
+├── analyze_formal_failure.py
 ├── analyze_formal_runs.py
 ├── analyze_llm_pilot.py
 ├── analyze_vlm_pilot.py

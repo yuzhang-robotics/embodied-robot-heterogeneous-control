@@ -16,7 +16,8 @@ from experiments.phase1.vlm_adapter import (
 from experiments.phase1.vlm_slice import VLMSliceCondition
 
 
-VLM_SUMMARY_SCHEMA_VERSION = "0.1.0"
+VLM_SUMMARY_SCHEMA_VERSION = "0.2.0"
+LEGACY_VLM_SUMMARY_SCHEMA_VERSION = "0.1.0"
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -48,6 +49,7 @@ def build_vlm_summary(
     resource_samples: Sequence[dict[str, object]],
     sampler_report: Mapping[str, object],
     development_injection: bool = False,
+    schema_version: str = VLM_SUMMARY_SCHEMA_VERSION,
 ) -> dict[str, object]:
     """Rebuild lifecycle, adapter and resource Gates from serialized facts."""
 
@@ -55,6 +57,11 @@ def build_vlm_summary(
         raise TypeError("condition must be a VLMSliceCondition")
     if not isinstance(development_injection, bool):
         raise TypeError("development_injection must be boolean")
+    if schema_version not in {
+        LEGACY_VLM_SUMMARY_SCHEMA_VERSION,
+        VLM_SUMMARY_SCHEMA_VERSION,
+    }:
+        raise ValueError("unsupported VLM summary schema version")
     replay = replay_file(
         event_path,
         profile=TraceProfile.RUNTIME_THREADED_PROBE,
@@ -67,6 +74,7 @@ def build_vlm_summary(
     cancellation = _mapping(adapter.get("cancellation"))
     model_residency = _mapping(adapter.get("model_residency"))
     stages = _mapping(adapter.get("stage_status"))
+    stage_error_codes = _mapping(adapter.get("stage_error_codes"))
     stage_durations = _mapping(adapter.get("stage_durations_ns"))
     shutdown = _mapping(report.get("shutdown"))
     probe = _mapping(report.get("probe"))
@@ -93,6 +101,12 @@ def build_vlm_summary(
     durations_ok = bool(stage_durations) and all(
         isinstance(value, int) and not isinstance(value, bool) and value >= 0
         for value in stage_durations.values()
+    )
+    stage_error_codes_ok = (
+        "stage_error_codes" not in adapter
+        if schema_version == LEGACY_VLM_SUMMARY_SCHEMA_VERSION
+        else set(stage_error_codes)
+        == {name for name, status in stages.items() if status == "error"}
     )
     output_sha256 = adapter_output.get("sha256")
     output_length = adapter_output.get("length")
@@ -189,11 +203,13 @@ def build_vlm_summary(
             adapter.get("execution_outcome") == expected_outcome
             and fixed_stages_ok
             and route_ok
-            and durations_ok,
+            and durations_ok
+            and stage_error_codes_ok,
             observed={
                 "execution_outcome": adapter.get("execution_outcome"),
                 "translation_route": route,
                 "stage_status": dict(stages),
+                "stage_error_codes": dict(stage_error_codes),
             },
             requirement=(
                 "Moondream, translation, normalization and the unload call complete"
@@ -263,7 +279,7 @@ def build_vlm_summary(
         ),
     ]
     return {
-        "vlm_summary_schema_version": VLM_SUMMARY_SCHEMA_VERSION,
+        "vlm_summary_schema_version": schema_version,
         "run_id": replay.run_id,
         "condition": condition.value,
         "trace_profile": TraceProfile.RUNTIME_THREADED_PROBE.value,

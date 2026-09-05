@@ -134,8 +134,14 @@ thresholds, order, sample size, exclusions, statistical method, five-session
 paired-block schedule and activation boundary. Its merge to `main` closes G6.
 A protocol-bound session runner and independent analyzer now implement that
 frozen design with fail-closed environment, ordering, lifecycle, artifact and
-statistical checks. Formal Jetson data collection remains pending their reviewed
-merge to `main`.
+statistical checks. The first v2 formal attempt stopped at measured ordinal 18
+when the VLM Qwen rewrite reached its 30 s client timeout and used the
+disallowed Argos route. Its
+[failed-attempt report](../../experiments/phase1/results/20260905T140816Z_phase1_formal_g6_v2/)
+verifies the preserved artifact, ledger, lifecycle, telemetry and service-log
+evidence. V2 is closed without a confirmatory claim. A Moondream residency-order
+correction awaits descriptive Jetson validation before any new protocol is
+preregistered.
 
 ## Evaluation plan
 
