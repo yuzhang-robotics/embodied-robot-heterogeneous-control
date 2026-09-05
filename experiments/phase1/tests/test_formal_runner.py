@@ -8,7 +8,9 @@ import time
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
+from experiments.phase1.formal_protocol import DEFAULT_PROTOCOL_PATH
 from experiments.phase1.jetson_telemetry import TegrastatsSampler
 from experiments.phase1.run_formal_session import (
     FormalSessionError,
@@ -148,6 +150,7 @@ class FormalRunnerTests(unittest.TestCase):
 
     def test_full_injected_session_preserves_the_frozen_order(self) -> None:
         observed: list[dict[str, object]] = []
+        tail_boundaries: list[int] = []
 
         def preflight_builder(*args: object, **kwargs: object) -> dict[str, object]:
             return passing_formal_preflight()
@@ -173,22 +176,41 @@ class FormalRunnerTests(unittest.TestCase):
             label: str,
             **kwargs: object,
         ) -> tuple[Path, dict[str, object]]:
+            started_ns = time.monotonic_ns()
             time.sleep(0.04)
+            finished_ns = time.monotonic_ns()
             run_dir = session_dir / "idle" / label
             run_dir.mkdir(parents=True)
             (run_dir / "events.jsonl").write_text("", encoding="utf-8")
-            (run_dir / "run.json").write_text("{}\n", encoding="utf-8")
-            return run_dir, {"valid": True}
+            record = {
+                "started_monotonic_ns": started_ns,
+                "finished_monotonic_ns": finished_ns,
+                "valid": True,
+            }
+            (run_dir / "run.json").write_text(
+                json.dumps(record) + "\n",
+                encoding="utf-8",
+            )
+            return run_dir, record
+
+        original_tail_wait = TegrastatsSampler.wait_for_sample_at_or_after
+
+        def recording_tail_wait(
+            sampler: TegrastatsSampler,
+            monotonic_ns: int,
+            *,
+            timeout_s: float = 2.0,
+        ) -> int:
+            tail_boundaries.append(monotonic_ns)
+            return original_tail_wait(
+                sampler,
+                monotonic_ns,
+                timeout_s=timeout_s,
+            )
 
         with tempfile.TemporaryDirectory() as temp_dir:
             args = argparse.Namespace(
-                protocol=(
-                    Path.cwd()
-                    / "experiments"
-                    / "phase1"
-                    / "formal"
-                    / "phase1-g6-preregistration.json"
-                ),
+                protocol=DEFAULT_PROTOCOL_PATH,
                 session_index=1,
                 attempt=1,
                 collection_id="20260902T000000Z_phase1_formal_test",
@@ -202,20 +224,30 @@ class FormalRunnerTests(unittest.TestCase):
                 confirm_dynamic_dvfs=True,
                 thermal_wait_timeout_s=2.0,
             )
-            session_dir = run_session(
-                args,
-                preflight_builder=preflight_builder,
-                sampler_factory=sampler_factory,
-                payloads_override={
-                    "asr": payload("audio/wav"),
-                    "llm": payload("text/plain"),
-                    "vlm": payload("image/jpeg"),
-                },
-                entry_runner=entry_runner,
-                idle_runner=idle_runner,
-            )
+            with mock.patch.object(
+                TegrastatsSampler,
+                "wait_for_sample_at_or_after",
+                recording_tail_wait,
+            ):
+                session_dir = run_session(
+                    args,
+                    preflight_builder=preflight_builder,
+                    sampler_factory=sampler_factory,
+                    payloads_override={
+                        "asr": payload("audio/wav"),
+                        "llm": payload("text/plain"),
+                        "vlm": payload("image/jpeg"),
+                    },
+                    entry_runner=entry_runner,
+                    idle_runner=idle_runner,
+                )
             manifest = json.loads(
                 (session_dir / "manifest.json").read_text(encoding="utf-8")
+            )
+            post_idle = json.loads(
+                (session_dir / "idle" / "post_measurement" / "run.json").read_text(
+                    encoding="utf-8"
+                )
             )
             ledger = [
                 json.loads(line)
@@ -236,6 +268,11 @@ class FormalRunnerTests(unittest.TestCase):
         self.assertFalse(manifest["formal_evidence_eligible"])
         self.assertEqual(manifest["completed_entries"], 41)
         self.assertEqual(len(ledger), 86)
+        self.assertEqual(tail_boundaries, [post_idle["finished_monotonic_ns"]])
+        self.assertGreaterEqual(
+            manifest["resource_sampler_report"]["last_sample_monotonic_ns"],
+            post_idle["finished_monotonic_ns"],
+        )
 
 
 if __name__ == "__main__":

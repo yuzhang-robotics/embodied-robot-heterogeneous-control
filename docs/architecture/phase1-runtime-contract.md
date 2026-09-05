@@ -10,25 +10,28 @@ old-generation rejection on the Jetson. A spawned-process VLM adapter and its
 evidence Gates have since completed one process-isolated Jetson correctness
 pilot. Fixed-input ASR and LLM adapters have since completed independently
 validated and analyzed Jetson correctness pilots. All three real-workload
-correctness components are complete, closing G5. G6 formal protocol
-preregistration is now fixed. The protocol-bound formal session runner and
-independent analyzer are implemented and reviewed. A pre-measurement Jetson
-commissioning attempt exposed an LLM empty-history identity mismatch in the
-runner and stopped before any measured run; the correction retains the frozen
-protocol and formal data have not been collected.
+correctness components are complete, closing G5. The amended G6 v2 formal
+protocol preregistration is now fixed. The protocol-bound formal session runner
+and independent analyzer are implemented. Jetson commissioning exposed an LLM
+empty-history identity mismatch before measurement and a resource-trace tail
+race after one complete session. An outcome-independent design audit then found
+that v1 repeated the same condition/predecessor relationship across sessions.
+Neither collection is admissible formal evidence; v2 changes only the frozen
+condition-order matrix while retaining the remaining scientific design.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
 > VLM 进程隔离路径以及固定输入 ASR、LLM 路径均已完成 Jetson correctness pilot，G5 已关闭；
-> G6 正式协议已冻结；协议绑定的正式 runner 与独立分析器已实现并完成评审；首次
-> pre-measurement commissioning attempt 在 measured run 开始前发现 LLM 空历史身份
-> 不一致并停止，修正不改变冻结协议，正式同步/异步数据尚未采集。
+> 修订后的 G6 v2 正式协议已冻结；协议绑定的正式 runner 与独立分析器已实现；Jetson
+> commissioning 先后发现 measured run 开始前的 LLM 空历史身份不一致，以及一个完整
+> session 后的资源轨迹尾部竞态；结果无关设计审计随后发现 v1 的跨 session 条件顺序关系
+> 重复；两次 collection 均不作为正式证据，v2 仅修改冻结的条件顺序矩阵。
 
 ## Status
 
-- Phase: Phase 1D correctness pilots and G6 preregistration complete; formal
-  runner and analyzer reviewed; pre-measurement correction in progress
+- Phase: Phase 1D correctness pilots and G6 v2 amendment complete; formal
+  commissioning corrections implemented; admissible collection not started
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -1048,9 +1051,9 @@ defense and must not be used as the Jetson scheduling success target.
 
 ## G6 formal preregistration
 
-The first formal comparison is fixed by the
+The formal comparison is fixed by the amended
 [G6 preregistration](phase1-formal-preregistration.md) and its machine-readable
-protocol. The protocol becomes active only through its reviewed merge to
+v2 protocol. The amendment becomes active only through its reviewed merge to
 `main`; data collected before that event are not eligible for the confirmatory
 analysis.
 
@@ -1060,6 +1063,10 @@ and 180 measured runs overall. Every session uses each of the six workload
 orders once. Sync-first and async-first pair order each occur three times per
 workload in every session and 15 times overall. Warm-ups and two 30 s idle
 references per session are retained but excluded by their predeclared roles.
+The v2 matrix additionally balances pair order two/three within every
+workload/block across sessions, five/five within every workload/position, and
+five/five or seven/eight within every measured preceding-workload context. Each
+session/block contains both pair orders.
 
 The primary responsiveness endpoint requires the asynchronous nearest-rank p95
 of per-run maximum probe gaps to remain at or below 300 ms and the upper 95%
@@ -1076,7 +1083,7 @@ then six paired blocks within each selected session, using 100,000 resamples,
 all endpoints and workloads. No post-hoc outlier exclusion, imputation,
 failed-run replacement or operator-selected reordering is permitted. The
 tracked protocol SHA-256 is
-`022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761`.
+`5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a`.
 
 The formal runner executes one complete protocol session per invocation. It
 loads the tracked protocol by hash, requires synchronized clean `main`, records
@@ -1110,6 +1117,32 @@ sync/async integration tests; it changes no protocol identity, hypothesis,
 schedule, threshold or analysis method. The measured collection restarts under
 a new collection identifier after the correction is reviewed on `main`.
 
+The second commissioning collection,
+`20260905T065922Z_phase1_formal_g6`, completed session 1's five warm-ups, both
+idle epochs and 36 measured invocations. The required pre-continuation integrity
+check ran before any endpoint review and found that the final resource sample
+preceded the post-measurement idle finish boundary by 170.607 ms, within the
+frozen 200 ms sampling period. The runner stopped tegrastats immediately after
+the idle probe returned, so this scheduler race could leave the trace short
+while marking the manifest complete. The collection is retained unchanged, is
+not continued or analyzed, and is not formal evidence. The correction waits for
+a resource sample at or after the final activity boundary before shutdown and
+treats failure to obtain it as a resource-sampler failure. It changes no
+protocol identity, hypothesis, schedule, threshold, exclusion or analysis
+method. Admissible collection restarts from session 1 under a new identifier
+after the correction is reviewed on `main`.
+
+Before restarting collection, an outcome-independent audit of the serialized
+v1 schedule found that both six-block cycles reset at every session. Its
+marginal three/three condition balance therefore hid a repeated relationship
+between pair order and the preceding workload. No timing, resource,
+model-output or endpoint value was used in the audit or replacement schedule.
+The exact v1 protocol remains tracked under its original ID and hash. G6 v2
+supersedes it with a fixed cross-balanced condition-order matrix and excludes
+all v1 commissioning data. The hypotheses, sample size, workloads, inputs,
+conditions, environment, thresholds, analysis, exclusions and stopping rules
+remain unchanged.
+
 The independent analyzer does not trust runner summaries. It verifies the
 protocol copy and every artifact hash, reconstructs the session ledger and all
 90 pairs, checks event boundaries, idle duration, thermal/resource coverage,
@@ -1118,8 +1151,8 @@ performance metrics, then applies one shared seeded session/block resampling
 stream for 100,000 percentile-bootstrap draws. Any missing run, reordered entry,
 mixed commit, un-restarted service, incomplete thermal gate, lifecycle failure
 or modified artifact invalidates the collection.
-Formal data collection remains prohibited until the commissioning correction is
-reviewed and merged to `main`.
+Formal data collection remains prohibited until the resource-tail correction
+and v2 protocol amendment are reviewed and merged to `main`.
 
 ## Phase 1 completion boundary
 

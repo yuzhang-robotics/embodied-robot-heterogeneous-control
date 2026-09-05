@@ -18,6 +18,9 @@ from experiments.phase1.formal_protocol import (
     NONINFERIORITY_RATIO,
     PAIRS_PER_SESSION,
     SESSION_COUNT,
+    SUPERSEDED_PROTOCOL_ID,
+    SUPERSEDED_PROTOCOL_PATH,
+    SUPERSEDED_PROTOCOL_SHA256,
     VLM_OLLAMA_BINARY_SHA256,
     VLM_OLLAMA_VERSION,
     WORKLOADS,
@@ -30,7 +33,15 @@ from experiments.phase1.formal_protocol import (
 
 
 EXPECTED_PROTOCOL_SHA256 = (
-    "022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761"
+    "5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a"
+)
+
+EXPECTED_PAIR_ORDER_MATRIX = (
+    {"asr": "100110", "llm": "100101", "vlm": "011001"},
+    {"asr": "101001", "llm": "011010", "vlm": "010110"},
+    {"asr": "010101", "llm": "101001", "vlm": "101010"},
+    {"asr": "011010", "llm": "010110", "vlm": "100101"},
+    {"asr": "001101", "llm": "100011", "vlm": "011010"},
 )
 
 
@@ -48,6 +59,16 @@ class FormalProtocolTests(unittest.TestCase):
             SESSION_COUNT * PAIRS_PER_SESSION,
         )
         self.assertEqual(tracked["design"]["total_measured_runs"], 180)
+
+    def test_superseded_protocol_is_preserved_with_its_frozen_identity(self) -> None:
+        superseded = load_formal_protocol(SUPERSEDED_PROTOCOL_PATH)
+
+        self.assertEqual(superseded["protocol_id"], SUPERSEDED_PROTOCOL_ID)
+        self.assertEqual(protocol_sha256(superseded), SUPERSEDED_PROTOCOL_SHA256)
+        self.assertEqual(
+            build_formal_protocol()["amendment"]["superseded_protocol_artifact"],
+            SUPERSEDED_PROTOCOL_PATH.name,
+        )
 
     def test_schedule_balances_conditions_pairs_and_workload_orders(self) -> None:
         protocol = build_formal_protocol()
@@ -152,6 +173,71 @@ class FormalProtocolTests(unittest.TestCase):
             self.assertEqual(set(orders.values()), {1})
             for workload in WORKLOADS:
                 self.assertEqual(set(pair_orders[workload].values()), {3})
+
+    def test_pair_order_matrix_is_fixed_and_cross_balanced(self) -> None:
+        protocol = build_formal_protocol()
+        observed_matrix = []
+        by_block: dict[tuple[str, int], Counter[str]] = {
+            (workload, block): Counter()
+            for workload in WORKLOADS
+            for block in range(1, PAIRS_PER_SESSION + 1)
+        }
+        by_position: dict[tuple[str, int], Counter[str]] = {
+            (workload, position): Counter()
+            for workload in WORKLOADS
+            for position in range(1, len(WORKLOADS) + 1)
+        }
+        by_predecessor: dict[tuple[str, str], Counter[str]] = {
+            (previous, workload): Counter()
+            for previous in WORKLOADS
+            for workload in WORKLOADS
+            if previous != workload
+        }
+
+        for session in protocol["sessions"]:
+            row = {workload: [] for workload in WORKLOADS}
+            previous = None
+            for block in range(1, PAIRS_PER_SESSION + 1):
+                first_runs = sorted(
+                    (
+                        run
+                        for run in session["measured_runs"]
+                        if run["block"] == block and run["pair_position"] == 1
+                    ),
+                    key=lambda run: run["workload_position"],
+                )
+                self.assertIn(
+                    sum(run["condition"] == "formal_async" for run in first_runs),
+                    {1, 2},
+                )
+                for run in first_runs:
+                    workload = run["workload"]
+                    condition = run["condition"]
+                    row[workload].append("1" if condition == "formal_async" else "0")
+                    by_block[(workload, block)][condition] += 1
+                    by_position[(workload, run["workload_position"])][condition] += 1
+                    if previous is not None:
+                        by_predecessor[(previous, workload)][condition] += 1
+                    previous = workload
+            observed_matrix.append(
+                {workload: "".join(row[workload]) for workload in WORKLOADS}
+            )
+
+        self.assertEqual(tuple(observed_matrix), EXPECTED_PAIR_ORDER_MATRIX)
+        for counts in by_block.values():
+            self.assertEqual(sum(counts.values()), 5)
+            self.assertEqual(set(counts.values()), {2, 3})
+        for counts in by_position.values():
+            self.assertEqual(
+                counts,
+                Counter({"formal_sync": 5, "formal_async": 5}),
+            )
+        for counts in by_predecessor.values():
+            total = sum(counts.values())
+            self.assertEqual(
+                set(counts.values()),
+                {total // 2, total - total // 2},
+            )
 
     def test_protocol_rejects_schedule_threshold_and_key_changes(self) -> None:
         protocol = build_formal_protocol()

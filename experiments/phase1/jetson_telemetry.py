@@ -620,6 +620,7 @@ class TegrastatsSampler:
         self._thread: threading.Thread | None = None
         self._stream: TextIO | None = None
         self._ready = threading.Event()
+        self._sample_condition = threading.Condition()
         self._sample_count = 0
         self._parse_error_count = 0
         self._first_sample_ns: int | None = None
@@ -734,16 +735,63 @@ class TegrastatsSampler:
                 self._stream.flush()
                 if self._sample_callback is not None:
                     self._sample_callback(sample)
-                self._sample_count += 1
-                self._parse_error_count += int(bool(sample["parse_errors"]))
-                if self._first_sample_ns is None:
-                    self._first_sample_ns = monotonic_ns
-                self._last_sample_ns = monotonic_ns
+                with self._sample_condition:
+                    self._sample_count += 1
+                    self._parse_error_count += int(bool(sample["parse_errors"]))
+                    if self._first_sample_ns is None:
+                        self._first_sample_ns = monotonic_ns
+                    self._last_sample_ns = monotonic_ns
+                    self._sample_condition.notify_all()
                 self._ready.set()
         except Exception as exc:
-            self._reader_error_code = type(exc).__name__.lower()
+            with self._sample_condition:
+                self._reader_error_code = type(exc).__name__.lower()
+                self._sample_condition.notify_all()
         finally:
             self._ready.set()
+            with self._sample_condition:
+                self._sample_condition.notify_all()
+
+    def wait_for_sample_at_or_after(
+        self,
+        monotonic_ns: int,
+        *,
+        timeout_s: float = 2.0,
+    ) -> int:
+        """Wait until the resource trace covers a monotonic-time boundary."""
+
+        if (
+            isinstance(monotonic_ns, bool)
+            or not isinstance(monotonic_ns, int)
+            or monotonic_ns < 0
+        ):
+            raise ValueError("monotonic_ns must be a nonnegative integer")
+        if (
+            isinstance(timeout_s, bool)
+            or not isinstance(timeout_s, (int, float))
+            or not math.isfinite(timeout_s)
+            or timeout_s <= 0
+        ):
+            raise ValueError("timeout_s must be positive and finite")
+        if self._process is None or self._stop_report is not None:
+            raise RuntimeError("tegrastats sampler is not running")
+
+        deadline = time.monotonic() + float(timeout_s)
+        with self._sample_condition:
+            while self._last_sample_ns is None or self._last_sample_ns < monotonic_ns:
+                if self._reader_error_code is not None:
+                    raise RuntimeError(
+                        "tegrastats reader failed before covering the boundary"
+                    )
+                if self._process.poll() is not None:
+                    raise RuntimeError("tegrastats exited before covering the boundary")
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError(
+                        "tegrastats did not cover the boundary before the timeout"
+                    )
+                self._sample_condition.wait(remaining)
+            return self._last_sample_ns
 
     def stop(
         self,
