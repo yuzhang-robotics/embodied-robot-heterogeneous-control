@@ -47,7 +47,7 @@ class VLMPipeline:
     rewrite_chinese: Callable[[str], str]
     translate_fallback: Callable[[str], str]
     normalize_output: Callable[[str, str], str]
-    unload_model: Callable[[], None]
+    unload_model: Callable[[], object]
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +69,7 @@ class VLMExecutionRecord:
     model_unload_confirmed: bool | None
     stage_durations_ns: Mapping[str, int]
     stage_status: Mapping[str, str]
+    stage_error_codes: Mapping[str, str]
     cancellation_requested: bool
     worker_observed_cancellation: bool
     backend_stop_confirmed: bool | None
@@ -83,6 +84,11 @@ class VLMExecutionRecord:
             self,
             "stage_status",
             MappingProxyType(dict(self.stage_status)),
+        )
+        object.__setattr__(
+            self,
+            "stage_error_codes",
+            MappingProxyType(dict(self.stage_error_codes)),
         )
 
     def to_dict(self) -> dict[str, object]:
@@ -115,6 +121,7 @@ class VLMExecutionRecord:
             },
             "stage_durations_ns": dict(self.stage_durations_ns),
             "stage_status": dict(self.stage_status),
+            "stage_error_codes": dict(self.stage_error_codes),
             "cancellation": {
                 "requested": self.cancellation_requested,
                 "worker_observed": self.worker_observed_cancellation,
@@ -130,6 +137,14 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _exception_code(exc: BaseException) -> str:
+    raw = type(exc).__name__.lower()
+    normalized = "".join(
+        character if character.isalnum() else "_" for character in raw
+    ).strip("_")
+    return (normalized or "exception")[:64]
 
 
 def fixed_c100_payload(path: Path | str) -> PayloadRef:
@@ -221,12 +236,14 @@ class FixedInputVLMAdapter:
         operation: Callable[[], object],
         durations: dict[str, int],
         statuses: dict[str, str],
+        error_codes: dict[str, str],
     ) -> object:
         started = self._clock_ns()
         try:
             value = operation()
-        except Exception:
+        except Exception as exc:
             statuses[name] = "error"
+            error_codes[name] = _exception_code(exc)
             raise
         else:
             statuses[name] = "ok"
@@ -245,6 +262,7 @@ class FixedInputVLMAdapter:
         route: str | None,
         durations: Mapping[str, int],
         statuses: Mapping[str, str],
+        stage_error_codes: Mapping[str, str],
     ) -> ResultEnvelope:
         task = claimed.task
         finished = max(claimed.started_monotonic_ns, self._clock_ns())
@@ -293,6 +311,7 @@ class FixedInputVLMAdapter:
             model_unload_confirmed=None,
             stage_durations_ns=durations,
             stage_status=statuses,
+            stage_error_codes=stage_error_codes,
             cancellation_requested=cancellation_requested,
             worker_observed_cancellation=observed,
             backend_stop_confirmed=None,
@@ -310,6 +329,7 @@ class FixedInputVLMAdapter:
         self.inference_started_event.clear()
         durations: dict[str, int] = {}
         statuses: dict[str, str] = {}
+        stage_error_codes: dict[str, str] = {}
         output_sha256: str | None = None
         output_length: int | None = None
         route: str | None = None
@@ -328,6 +348,7 @@ class FixedInputVLMAdapter:
                     route=None,
                     durations=durations,
                     statuses=statuses,
+                    stage_error_codes=stage_error_codes,
                 )
 
             try:
@@ -336,6 +357,7 @@ class FixedInputVLMAdapter:
                     lambda: self._verify_claimed_input(claimed),
                     durations,
                     statuses,
+                    stage_error_codes,
                 )
                 assert isinstance(input_path, Path)
                 pipeline_value = self._stage(
@@ -343,6 +365,7 @@ class FixedInputVLMAdapter:
                     self._pipeline_loader,
                     durations,
                     statuses,
+                    stage_error_codes,
                 )
                 if not isinstance(pipeline_value, VLMPipeline):
                     raise VLMExecutionError("invalid_pipeline")
@@ -360,10 +383,22 @@ class FixedInputVLMAdapter:
                         lambda: pipeline.describe_english(input_path),
                         durations,
                         statuses,
+                        stage_error_codes,
                     )
                     english = str(english_value).strip()
                     if not english:
                         raise VLMExecutionError("empty_vlm_description")
+
+                    try:
+                        self._stage(
+                            "model_unload",
+                            pipeline.unload_model,
+                            durations,
+                            statuses,
+                            stage_error_codes,
+                        )
+                    except Exception as exc:
+                        raise VLMExecutionError("model_unload_failed") from exc
 
                     try:
                         chinese_value = self._stage(
@@ -371,6 +406,7 @@ class FixedInputVLMAdapter:
                             lambda: pipeline.rewrite_chinese(english),
                             durations,
                             statuses,
+                            stage_error_codes,
                         )
                         chinese = str(chinese_value).strip()
                         route = "qwen"
@@ -380,6 +416,7 @@ class FixedInputVLMAdapter:
                             lambda: pipeline.translate_fallback(english),
                             durations,
                             statuses,
+                            stage_error_codes,
                         )
                         chinese = str(fallback_value).strip()
                         route = "argos"
@@ -389,6 +426,7 @@ class FixedInputVLMAdapter:
                         lambda: pipeline.normalize_output(chinese, english),
                         durations,
                         statuses,
+                        stage_error_codes,
                     )
                     output = str(output_value).strip()
                     if not output:
@@ -407,7 +445,7 @@ class FixedInputVLMAdapter:
                     for character in error_code
                 )[:64]
             finally:
-                if pipeline is not None:
+                if pipeline is not None and "model_unload" not in statuses:
                     try:
                         with contextlib.redirect_stdout(
                             io.StringIO()
@@ -417,6 +455,7 @@ class FixedInputVLMAdapter:
                                 pipeline.unload_model,
                                 durations,
                                 statuses,
+                                stage_error_codes,
                             )
                     except Exception:
                         outcome = ExecutionOutcome.ERROR
@@ -431,6 +470,7 @@ class FixedInputVLMAdapter:
                             lambda: self._verify_claimed_input(claimed),
                             durations,
                             statuses,
+                            stage_error_codes,
                         )
                     except Exception:
                         outcome = ExecutionOutcome.ERROR
@@ -445,6 +485,7 @@ class FixedInputVLMAdapter:
                 route=route,
                 durations=durations,
                 statuses=statuses,
+                stage_error_codes=stage_error_codes,
             )
         finally:
             self._invocation_lock.release()

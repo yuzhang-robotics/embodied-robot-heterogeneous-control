@@ -126,12 +126,24 @@ class FormalPreflightTests(unittest.TestCase):
                 service_identity=service_identity_record,
             )
 
-    def test_complete_frozen_identity_is_eligible(self) -> None:
+    def test_closed_v2_protocol_is_not_eligible(self) -> None:
         preflight = self.build()
 
-        self.assertTrue(preflight["eligible"])
-        self.assertEqual(formal_preflight_errors(preflight), [])
+        self.assertFalse(preflight["eligible"])
+        self.assertIn(
+            "formal preflight check failed: protocol_activated",
+            formal_preflight_errors(preflight),
+        )
         self.assertFalse(preflight["protocol"]["path_recorded"])
+        activated = next(
+            check
+            for check in preflight["checks"]
+            if check["name"] == "protocol_activated"
+        )
+        self.assertEqual(
+            activated["observed"]["collection_status"],
+            "closed_after_system_under_test_failure",
+        )
 
     def test_confirmation_and_identity_drift_fail_closed(self) -> None:
         preflight = self.build()

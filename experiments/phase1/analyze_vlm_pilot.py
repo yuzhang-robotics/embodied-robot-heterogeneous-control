@@ -18,7 +18,7 @@ from experiments.phase1.summarize_vlm_process_slice import VLM_PROCESS_ISOLATION
 from experiments.phase1.validate_vlm_slice import validate_vlm_slice_dir
 
 
-ANALYSIS_SCHEMA_VERSION = "0.1.0"
+ANALYSIS_SCHEMA_VERSION = "0.2.0"
 EXPECTED_CONDITIONS = ("vlm_async", "vlm_stale")
 THREAD_ANALYSIS_KIND = "phase1_fixed_input_vlm_pilot"
 PROCESS_ANALYSIS_KIND = "phase1_fixed_input_vlm_process_pilot"
@@ -47,7 +47,7 @@ _EXPECTED_PROCESS_GATES = {
     "boundary_order",
     "cancellation_forwarding",
 }
-_STAGE_ORDER = (
+_LEGACY_STAGE_ORDER = (
     "input_verify_before",
     "module_import",
     "moondream_inference",
@@ -55,6 +55,16 @@ _STAGE_ORDER = (
     "argos_fallback",
     "output_normalization",
     "model_unload",
+    "input_verify_after",
+)
+_STAGE_ORDER = (
+    "input_verify_before",
+    "module_import",
+    "moondream_inference",
+    "model_unload",
+    "qwen_rewrite",
+    "argos_fallback",
+    "output_normalization",
     "input_verify_after",
 )
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -162,10 +172,17 @@ def _disposition_counts(lifecycle: Mapping[str, object]) -> dict[str, int]:
 def _stage_records(adapter: Mapping[str, object]) -> list[dict[str, object]]:
     durations = _mapping(adapter.get("stage_durations_ns"), "adapter stage durations")
     statuses = _mapping(adapter.get("stage_status"), "adapter stage status")
+    error_codes_value = adapter.get("stage_error_codes")
+    error_codes = (
+        _mapping(error_codes_value, "adapter stage error codes")
+        if error_codes_value is not None
+        else {}
+    )
     started_ns = _integer(adapter.get("started_monotonic_ns"), "adapter start")
     cursor = started_ns
     rows: list[dict[str, object]] = []
-    for stage in _STAGE_ORDER:
+    stage_order = _STAGE_ORDER if error_codes_value is not None else _LEGACY_STAGE_ORDER
+    for stage in stage_order:
         if stage not in durations:
             continue
         duration_ns = _integer(durations.get(stage), f"stage duration {stage}")
@@ -173,6 +190,7 @@ def _stage_records(adapter: Mapping[str, object]) -> list[dict[str, object]]:
             {
                 "stage": stage,
                 "status": statuses.get(stage),
+                "error_code": error_codes.get(stage),
                 "duration_ms": _milliseconds(duration_ns, f"stage duration {stage}"),
                 "start_monotonic_ns": cursor,
                 "finish_monotonic_ns": cursor + duration_ns,

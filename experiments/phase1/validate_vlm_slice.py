@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -13,10 +14,12 @@ from experiments.phase1.jetson_telemetry import (
 )
 from experiments.phase1.manifest import MANIFEST_SCHEMA_VERSION, sha256_file
 from experiments.phase1.summarize_vlm_slice import (
+    LEGACY_VLM_SUMMARY_SCHEMA_VERSION,
     VLM_SUMMARY_SCHEMA_VERSION,
     build_vlm_summary,
 )
 from experiments.phase1.summarize_vlm_process_slice import (
+    LEGACY_VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
     VLM_PROCESS_ISOLATION,
     VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
     build_vlm_process_summary,
@@ -28,6 +31,7 @@ from experiments.phase1.vlm_adapter import (
     C100_INPUT_SIZE_BYTES,
 )
 from experiments.phase1.vlm_preflight import vlm_preflight_errors
+from experiments.phase1.vlm_process_adapter import PROCESS_PROTOCOL_VERSION
 from experiments.phase1.vlm_slice import VLMSliceCondition
 
 
@@ -64,8 +68,10 @@ _ADAPTER_KEYS = {
     "model_residency",
     "stage_durations_ns",
     "stage_status",
+    "stage_error_codes",
     "cancellation",
 }
+_LEGACY_ADAPTER_KEYS = _ADAPTER_KEYS - {"stage_error_codes"}
 _PROCESS_REPORT_KEYS = {
     "protocol_version",
     "start_method",
@@ -84,6 +90,7 @@ _PROCESS_REPORT_KEYS = {
     "protocol_complete",
     "error_code",
 }
+_ERROR_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 
 
 def _read_object(path: Path, errors: list[str]) -> dict[str, Any]:
@@ -144,6 +151,14 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
     summary = _read_object(directory / "summary.json", errors)
     if errors:
         return errors
+
+    summary_schema = summary.get("vlm_summary_schema_version")
+    legacy_schema = summary_schema == LEGACY_VLM_SUMMARY_SCHEMA_VERSION
+    if summary_schema not in {
+        LEGACY_VLM_SUMMARY_SCHEMA_VERSION,
+        VLM_SUMMARY_SCHEMA_VERSION,
+    }:
+        errors.append("unsupported VLM summary schema version")
 
     artifact_kind = manifest.get("artifact_kind")
     process_isolated = artifact_kind == "phase1_fixed_input_vlm_process_run"
@@ -267,10 +282,9 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
     else:
         moondream = workload_contract.get("moondream")
         qwen = workload_contract.get("qwen_rewrite")
-        if (
+        common_contract_invalid = (
             workload_contract.get("source") != "jetson.vision_vlm"
             or workload_contract.get("translation_fallback") != "argos_en_zh"
-            or workload_contract.get("unload_after_request") is not True
             or workload_contract.get("unload_confirmation") != "not_available"
             or workload_contract.get("raw_output_recorded") is not False
             or moondream
@@ -285,7 +299,17 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
                 "max_tokens": 96,
                 "request_timeout_s": 30,
             }
-        ):
+        )
+        residency_contract_valid = (
+            workload_contract.get("unload_after_request") is True
+            and "unload_before_qwen" not in workload_contract
+            and "cleanup_unload_on_failure" not in workload_contract
+            if legacy_schema
+            else workload_contract.get("unload_before_qwen") is True
+            and workload_contract.get("cleanup_unload_on_failure") is True
+            and "unload_after_request" not in workload_contract
+        )
+        if common_contract_invalid or not residency_contract_valid:
             errors.append("manifest workload contract differs from Phase 0")
     try:
         condition = VLMSliceCondition(manifest.get("condition"))
@@ -327,13 +351,17 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
         if set(report) != _REPORT_KEYS:
             errors.append("scenario VLM report fields are incomplete or unsupported")
         adapter = report.get("adapter")
-        if not isinstance(adapter, Mapping) or set(adapter) != _ADAPTER_KEYS:
+        expected_adapter_keys = _LEGACY_ADAPTER_KEYS if legacy_schema else _ADAPTER_KEYS
+        if not isinstance(adapter, Mapping) or set(adapter) != expected_adapter_keys:
             errors.append("scenario adapter fields are incomplete or unsupported")
         else:
             adapter_input = adapter.get("input")
             adapter_output = adapter.get("output")
             cancellation = adapter.get("cancellation")
             model_residency = adapter.get("model_residency")
+            stage_durations = adapter.get("stage_durations_ns")
+            stage_status = adapter.get("stage_status")
+            stage_error_codes = adapter.get("stage_error_codes")
             if not isinstance(adapter_input, Mapping) or set(adapter_input) != {
                 "sha256",
                 "size_bytes",
@@ -358,6 +386,31 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
                 "unload_confirmed",
             }:
                 errors.append("scenario model-residency fields are unsupported")
+            if not isinstance(stage_durations, Mapping) or any(
+                not isinstance(name, str)
+                or isinstance(duration, bool)
+                or not isinstance(duration, int)
+                or duration < 0
+                for name, duration in stage_durations.items()
+            ):
+                errors.append("scenario stage durations are unsupported")
+            if not isinstance(stage_status, Mapping) or any(
+                not isinstance(name, str) or status not in {"ok", "error"}
+                for name, status in stage_status.items()
+            ):
+                errors.append("scenario stage statuses are unsupported")
+            if not legacy_schema:
+                if not isinstance(stage_error_codes, Mapping) or any(
+                    not isinstance(name, str)
+                    or not isinstance(code, str)
+                    or _ERROR_CODE_RE.fullmatch(code) is None
+                    for name, code in stage_error_codes.items()
+                ):
+                    errors.append("scenario stage error codes are unsupported")
+                elif isinstance(stage_status, Mapping) and set(stage_error_codes) != {
+                    name for name, status in stage_status.items() if status == "error"
+                }:
+                    errors.append("scenario stage error codes are inconsistent")
 
     _check_artifacts(
         directory,
@@ -380,8 +433,6 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
     elif sampler_report.get("successful") is not True:
         errors.append("manifest resource sampler did not close successfully")
 
-    if summary.get("vlm_summary_schema_version") != VLM_SUMMARY_SCHEMA_VERSION:
-        errors.append("unsupported VLM summary schema version")
     if summary.get("run_id") != run_id:
         errors.append("summary run_id does not match the manifest")
     if summary.get("condition") != condition.value:
@@ -416,9 +467,17 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
         errors.append("one or more VLM summary Gates failed")
 
     if process_isolated:
+        expected_process_summary_schema = (
+            LEGACY_VLM_PROCESS_SUMMARY_SCHEMA_VERSION
+            if legacy_schema
+            else VLM_PROCESS_SUMMARY_SCHEMA_VERSION
+        )
+        expected_process_protocol = (
+            "0.1.0" if legacy_schema else PROCESS_PROTOCOL_VERSION
+        )
         if (
             process_summary.get("vlm_process_summary_schema_version")
-            != VLM_PROCESS_SUMMARY_SCHEMA_VERSION
+            != expected_process_summary_schema
         ):
             errors.append("unsupported VLM process summary schema version")
         if process_summary.get("adapter_isolation") != VLM_PROCESS_ISOLATION:
@@ -440,6 +499,8 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
                 rebuilt_process = build_vlm_process_summary(
                     process_report,
                     condition=condition,
+                    protocol_version=expected_process_protocol,
+                    schema_version=expected_process_summary_schema,
                 )
             except (TypeError, ValueError) as exc:
                 errors.append(
@@ -461,6 +522,7 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
                 resource_samples=samples,
                 sampler_report=sampler_report,
                 development_injection=bool(expected_injection),
+                schema_version=str(summary_schema),
             )
         except (OSError, TypeError, ValueError) as exc:
             errors.append(f"summary rebuild failed: {type(exc).__name__}: {exc}")

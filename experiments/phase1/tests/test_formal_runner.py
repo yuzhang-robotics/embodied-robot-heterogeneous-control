@@ -57,6 +57,14 @@ def payload(media_type: str) -> PayloadRef:
 
 
 class FormalRunnerTests(unittest.TestCase):
+    def test_default_formal_collection_is_closed_after_v2_failure(self) -> None:
+        args = argparse.Namespace(protocol=DEFAULT_PROTOCOL_PATH)
+        with self.assertRaisesRegex(
+            FormalSessionError,
+            "closed after a system-under-test failure",
+        ):
+            run_session(args)
+
     def test_thermal_monitor_requires_consecutive_cool_samples_and_stops_high(
         self,
     ) -> None:

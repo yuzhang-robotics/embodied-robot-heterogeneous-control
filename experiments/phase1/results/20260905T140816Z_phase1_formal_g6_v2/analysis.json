@@ -1,0 +1,355 @@
+{
+  "formal_failure_analysis_schema_version": "0.1.0",
+  "analysis_kind": "phase1_g6_v2_system_under_test_failure",
+  "collection_id": "20260905T140816Z_phase1_formal_g6_v2",
+  "source": {
+    "git_commit": "1e5e1c75f2dc3717ebcb07ea7f145e5a59e23a6f",
+    "git_branch": "main",
+    "source_archive_sha256": "0306a0c9e5e2746b9da37c15db3189c51cc131771d515dfe97d420b1f829a892",
+    "llama_log_archive_sha256": "67352addf8dcb67c57eeaa19cd5b5e90afd6e819bddeab42ed3d669e2af6ab40",
+    "session_artifacts": {
+      "idle/pre_measurement/events.jsonl": {
+        "size_bytes": 175339,
+        "sha256": "d316e2f83dbd0fe92d036bde1e485ea363e23b0adbd8f83c3ffb9dcf7d12aac3"
+      },
+      "idle/pre_measurement/run.json": {
+        "size_bytes": 584,
+        "sha256": "03a4fa2acf492b41211dc55ef12377f793431347ff2a1fc42e39ddb6f9783ed2"
+      },
+      "ledger.jsonl": {
+        "size_bytes": 8435,
+        "sha256": "bb570469776ca27cc5d959c9e349ddef382a503df9e064a3527b12f8dceae683"
+      },
+      "measured/006-asr-formal_async/events.jsonl": {
+        "size_bytes": 109247,
+        "sha256": "404cea576857c70b8ae7181aaa5b776a6da3eecb5f0a9c53ab4b5ffdf677b21d"
+      },
+      "measured/006-asr-formal_async/run.json": {
+        "size_bytes": 6016,
+        "sha256": "c6eee962a189594ed8747dd44cd48c7cc163f9ae5459309c2e1d733bf8d2ec21"
+      },
+      "measured/007-asr-formal_sync/events.jsonl": {
+        "size_bytes": 13641,
+        "sha256": "2bbd98024a708ccf84c51bb89d15636ef604d408fab8da38e8644d740acabff9"
+      },
+      "measured/007-asr-formal_sync/run.json": {
+        "size_bytes": 4978,
+        "sha256": "077b563bf8dc0c6640abba98de680e06a5628ad2bc8751a85af007db16e648b2"
+      },
+      "measured/008-llm-formal_async/events.jsonl": {
+        "size_bytes": 32683,
+        "sha256": "0e2e6aac9eb882876e1050c9f0d8ad6c3cbb12c30637a14d19ade3d54ad0dab2"
+      },
+      "measured/008-llm-formal_async/run.json": {
+        "size_bytes": 7200,
+        "sha256": "fd3a66014e379668e8c965f22856b253581edb3857f9b1b40e303425b3289d2b"
+      },
+      "measured/009-llm-formal_sync/events.jsonl": {
+        "size_bytes": 13659,
+        "sha256": "08b53172cfbb741ac2f5029f12c25abeae0ae9f3a808024b0f72055e9a022ea9"
+      },
+      "measured/009-llm-formal_sync/run.json": {
+        "size_bytes": 6165,
+        "sha256": "c76d8e9a3e6b6650f30364ac6e5d73f59c08a26d6e289b268295d5fece5854eb"
+      },
+      "measured/010-vlm-formal_sync/events.jsonl": {
+        "size_bytes": 13739,
+        "sha256": "a5584de594f33289736191242e37bebb9215393f3b53e87fa39411970acbf4eb"
+      },
+      "measured/010-vlm-formal_sync/run.json": {
+        "size_bytes": 6577,
+        "sha256": "6c30eaf195fc95b7c942d09f6a6250ab8f6a5aa6246b854badec88fa1f039879"
+      },
+      "measured/011-vlm-formal_async/events.jsonl": {
+        "size_bytes": 494640,
+        "sha256": "7a00fbd08fec4d2872a463a68ea707fc795f3298593f6d78755bf13252ded4d3"
+      },
+      "measured/011-vlm-formal_async/run.json": {
+        "size_bytes": 7618,
+        "sha256": "85d04cd56b28e0ddc79df75ca9ea2ec544497d361170ee434d92dfcaef3728d4"
+      },
+      "measured/012-llm-formal_sync/events.jsonl": {
+        "size_bytes": 13737,
+        "sha256": "1d96ef28437ee59cf86bfc10b43ad9fe63f0117ca97297e52a9d5294624276b4"
+      },
+      "measured/012-llm-formal_sync/run.json": {
+        "size_bytes": 6172,
+        "sha256": "cd9e087438810bf4f73d2bc910abe8980f63382fd39b0aa3ed61c797c2e60f13"
+      },
+      "measured/013-llm-formal_async/events.jsonl": {
+        "size_bytes": 36336,
+        "sha256": "2ba39c39851cdf6965219b40b198e67b329a52e98a5ffe524419eaf64519e465"
+      },
+      "measured/013-llm-formal_async/run.json": {
+        "size_bytes": 7206,
+        "sha256": "d853ebfc038f08c61902cd1470f09dcf9160d1ab9222dc8d0eea1d6c6ce59225"
+      },
+      "measured/014-vlm-formal_async/events.jsonl": {
+        "size_bytes": 494180,
+        "sha256": "c0435f24deda856c97720002e7d8c2ec96c0e8af887fc22b72f4b26454ddd6fc"
+      },
+      "measured/014-vlm-formal_async/run.json": {
+        "size_bytes": 7619,
+        "sha256": "579cadd2bf2e25e1847efa49476005f36815a4d339364f6f7c3c955b80bcd4d5"
+      },
+      "measured/015-vlm-formal_sync/events.jsonl": {
+        "size_bytes": 13763,
+        "sha256": "f7c29bf7a0af136b3abd06e6fa26871748470e057330501673ad7d3ed67649d8"
+      },
+      "measured/015-vlm-formal_sync/run.json": {
+        "size_bytes": 6589,
+        "sha256": "0eba80326c6e4e32fab26dade926875f92e87dfe699f0e9e52ccfdaeb363b046"
+      },
+      "measured/016-asr-formal_sync/events.jsonl": {
+        "size_bytes": 13766,
+        "sha256": "c40e1eeade5fbde4bf03000c61c6c91b7994452182d4ac52fd18e96b518b6c7c"
+      },
+      "measured/016-asr-formal_sync/run.json": {
+        "size_bytes": 4991,
+        "sha256": "020294d2d375b119793b90df1c33ae7bb1e36151e0f18526b98cb05764897a72"
+      },
+      "measured/017-asr-formal_async/events.jsonl": {
+        "size_bytes": 27119,
+        "sha256": "31011c45f714378ce97a6eef239541ee5dd64ccacf4c87ecdc4ff2b418b2dd36"
+      },
+      "measured/017-asr-formal_async/run.json": {
+        "size_bytes": 6021,
+        "sha256": "189d42b0608216184e4743d6027944466b5f727a88ca23a36ba53202d55c010c"
+      },
+      "measured/018-vlm-formal_async/events.jsonl": {
+        "size_bytes": 864385,
+        "sha256": "f76ebc4022868429c96898278c27e22ba6780f7f56066391ed09d79e3d803f83"
+      },
+      "measured/018-vlm-formal_async/run.json": {
+        "size_bytes": 7694,
+        "sha256": "5d9e2ec65f7614e2c0e1bf8e227ed5a706dbeebfa85ee129248959939ec43a04"
+      },
+      "preflight.json": {
+        "size_bytes": 35534,
+        "sha256": "d42ca742fc4a006ee548dab4526f0a1d7fa3ef6dddedf2cc8a05b85bf42ea376"
+      },
+      "protocol.json": {
+        "size_bytes": 65704,
+        "sha256": "5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a"
+      },
+      "resources.jsonl": {
+        "size_bytes": 4689662,
+        "sha256": "034f696ceacaec14c7c64e5ddbb9391b10f8ad7dceda150e2dbfa0f25c83fff6"
+      },
+      "warmups/001-asr-formal_sync/events.jsonl": {
+        "size_bytes": 13672,
+        "sha256": "30788a1260c2a6e73659b71a36a819be97f3e6b5cc21264dc204b83661143923"
+      },
+      "warmups/001-asr-formal_sync/run.json": {
+        "size_bytes": 4878,
+        "sha256": "864975af9aecba8bb41411697cf7ebfd36c5888d615df442a269897038248ffb"
+      },
+      "warmups/002-asr-formal_sync/events.jsonl": {
+        "size_bytes": 13658,
+        "sha256": "950e5217bea6f72d35026aed1b570dcd8dfdcb3d304352b97646a14a6039dbc0"
+      },
+      "warmups/002-asr-formal_sync/run.json": {
+        "size_bytes": 4877,
+        "sha256": "1d5029650d84d022a0694a39919e514357914a2a941b7a27769c5230a2bbe2c7"
+      },
+      "warmups/003-asr-formal_sync/events.jsonl": {
+        "size_bytes": 13681,
+        "sha256": "b84337876641bd95e0ff9c4426ddfd3de6afb12de41e623e60065aa08ef4c1ff"
+      },
+      "warmups/003-asr-formal_sync/run.json": {
+        "size_bytes": 4877,
+        "sha256": "0665d6f2e80cb7b5b7d249c6fdb64ca3b503453fd83fcd73fdf5ed1236a5e245"
+      },
+      "warmups/004-llm-formal_sync/events.jsonl": {
+        "size_bytes": 13644,
+        "sha256": "8fd572b6b8403f261343f7bde6f764bd05073e6635fb362ed9e5e236f0061a0f"
+      },
+      "warmups/004-llm-formal_sync/run.json": {
+        "size_bytes": 6064,
+        "sha256": "f599bab43222ac5d520dcfd4abbdabdbdb65e04aff6c2d0d33d0a9e3f789d59e"
+      },
+      "warmups/005-vlm-formal_sync/events.jsonl": {
+        "size_bytes": 13685,
+        "sha256": "cfb0ac55d86570b9c2ca85bb473391967290885ca1e7e6c49117124be0ac434f"
+      },
+      "warmups/005-vlm-formal_sync/run.json": {
+        "size_bytes": 6474,
+        "sha256": "5b3161dc4794e6f9043f53ad4561095d7db687e4a8b79e1440078dc228a162ff"
+      }
+    },
+    "source_path_recorded": false
+  },
+  "protocol": {
+    "id": "phase1-g6-fixed-input-sync-async-v2",
+    "sha256": "5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a",
+    "collection_status": "closed_after_system_under_test_failure"
+  },
+  "attempt": {
+    "session_id": "session-01-attempt-01",
+    "protocol_session": "session-01",
+    "attempt": 1,
+    "status": "aborted",
+    "failure_class": "system_under_test",
+    "failure_code": "formalsessionerror",
+    "formal_evidence_eligible": false,
+    "replacement_permitted": false,
+    "duration_s": 733.057629
+  },
+  "integrity": {
+    "manifest_artifact_count": 42,
+    "manifest_artifacts_verified": true,
+    "protocol_verified": true,
+    "preflight_verified": true,
+    "ledger_prefix_verified": true,
+    "resource_trace_verified": true,
+    "resource_sampler_successful": true,
+    "completed_run_records_verified": 17,
+    "failed_run_records_verified": 1,
+    "run_record_count": 18,
+    "passed_gate_count": 179,
+    "failed_gate_count": 1
+  },
+  "observed_runs": {
+    "completed_by_role": {
+      "measured": 12,
+      "warmup": 5
+    },
+    "completed_by_workload": {
+      "asr": 7,
+      "llm": 5,
+      "vlm": 5
+    },
+    "completed_by_condition": {
+      "formal_async": 6,
+      "formal_sync": 11
+    }
+  },
+  "failure": {
+    "ordinal": 18,
+    "role": "measured",
+    "block": 3,
+    "workload": "vlm",
+    "condition": "formal_async",
+    "run_status": "failed",
+    "failed_gates": [
+      "translation_route_verified"
+    ],
+    "adapter_execution_outcome": "ok",
+    "translation_route": "argos",
+    "stage_order": [
+      "moondream_inference",
+      "qwen_rewrite",
+      "argos_fallback",
+      "model_unload"
+    ],
+    "stage_status": {
+      "argos_fallback": "ok",
+      "input_verify_after": "ok",
+      "input_verify_before": "ok",
+      "model_unload": "ok",
+      "module_import": "ok",
+      "moondream_inference": "ok",
+      "output_normalization": "ok",
+      "qwen_rewrite": "error"
+    },
+    "stage_duration_ms": {
+      "input_verify_before": 0.431469,
+      "module_import": 19634.703668,
+      "moondream_inference": 69732.742606,
+      "qwen_rewrite": 30029.202736,
+      "argos_fallback": 25733.957171,
+      "output_normalization": 0.030563,
+      "model_unload": 917.261858,
+      "input_verify_after": 2.049653
+    },
+    "qwen_timeout_s": 30.0,
+    "timeout_boundary_consistent": true,
+    "child_process": {
+      "protocol_version": "0.1.0",
+      "exit_code": 0,
+      "protocol_complete": true,
+      "terminate_requested": false,
+      "error_code": null
+    },
+    "residency": {
+      "moondream_unload_requested": true,
+      "unload_confirmation_available": false,
+      "qwen_preceded_unload_request": true
+    },
+    "llama_server": {
+      "content_sha256": "0ef14ce7139500e3e581fb4df008da74b4193357c303cadc72694337ba527d52",
+      "size_bytes": 12804,
+      "cancelled_task_id": 318,
+      "launch_to_cancel_ms": 30073.946,
+      "cancel_to_release_ms": 431.875,
+      "slot_idle_after_release": true,
+      "raw_log_recorded": false
+    }
+  },
+  "resources": {
+    "session": {
+      "sample_count": 3558,
+      "ram_used_mb": {
+        "mean": 4583.585160202361,
+        "peak": 6286.0
+      },
+      "gr3d_usage_pct": {
+        "mean": 4.744519392917369,
+        "peak": 99.0
+      },
+      "tj_c": {
+        "mean": 52.473367903316465,
+        "peak": 55.093
+      },
+      "vdd_in_mw": {
+        "mean": 5690.654581225407,
+        "peak": 16293.0
+      }
+    },
+    "failed_run": {
+      "sample_count": 722,
+      "ram_used_mb": {
+        "mean": 4745.983379501385,
+        "peak": 5564.0
+      },
+      "gr3d_usage_pct": {
+        "mean": 2.1274238227146816,
+        "peak": 99.0
+      },
+      "tj_c": {
+        "mean": 52.74054293628809,
+        "peak": 54.812
+      },
+      "vdd_in_mw": {
+        "mean": 5628.592797783934,
+        "peak": 15784.0
+      }
+    },
+    "session_maximum_tj_c": 55.093,
+    "failed_run_maximum_tj_c": 54.812,
+    "thermal_stop_tj_c": 85.0,
+    "thermal_stop_requested": false
+  },
+  "interpretation": {
+    "client_timeout_observed": true,
+    "model_service_crash_observed": false,
+    "child_process_lifecycle_failure_observed": false,
+    "resource_sampler_failure_observed": false,
+    "thermal_failure_observed": false,
+    "residency_order_confound_present": true,
+    "residency_order_causality_established": false
+  },
+  "decision": {
+    "confirmatory_analysis_permitted": false,
+    "formal_claim_permitted": false,
+    "v2_rerun_permitted": false,
+    "v2_replacement_permitted": false,
+    "next_evidence_role": "descriptive_vlm_residency_order_diagnostic"
+  },
+  "claim_boundary": {
+    "timeout_cause_established": false,
+    "performance_comparison_permitted": false,
+    "hard_real_time_claim_permitted": false,
+    "heterogeneous_inference_claim_permitted": false
+  }
+}

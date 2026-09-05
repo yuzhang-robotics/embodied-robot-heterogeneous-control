@@ -14,6 +14,7 @@ from experiments.phase1.asr_preflight import (
 )
 from experiments.phase1.formal_protocol import (
     DEFAULT_PROTOCOL_PATH,
+    FORMAL_COLLECTION_STATUS,
     LLAMA_SOURCE_VERSION,
     VLM_MOONDREAM_DIGEST,
     VLM_OLLAMA_BINARY_SHA256,
@@ -295,13 +296,17 @@ def build_formal_preflight(
             protocol_commit.get("returncode") == 0
             and re.fullmatch(r"[0-9a-f]{40}", str(protocol_commit.get("output")))
             is not None
-            and re.fullmatch(r"[0-9a-f]{40}", str(git_record.get("commit")))
-            is not None,
+            and re.fullmatch(r"[0-9a-f]{40}", str(git_record.get("commit"))) is not None
+            and FORMAL_COLLECTION_STATUS == "active",
             observed={
                 "protocol_commit": protocol_commit.get("output"),
                 "runner_commit": git_record.get("commit"),
+                "collection_status": FORMAL_COLLECTION_STATUS,
             },
-            requirement="the protocol and runner are committed on synchronized main",
+            requirement=(
+                "the protocol is active and the protocol and runner are committed "
+                "on synchronized main"
+            ),
         ),
         _check(
             "python_version",

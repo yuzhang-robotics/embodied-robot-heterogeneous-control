@@ -16,8 +16,12 @@ and independent analyzer are implemented. Jetson commissioning exposed an LLM
 empty-history identity mismatch before measurement and a resource-trace tail
 race after one complete session. An outcome-independent design audit then found
 that v1 repeated the same condition/predecessor relationship across sessions.
-Neither collection is admissible formal evidence; v2 changes only the frozen
-condition-order matrix while retaining the remaining scientific design.
+Neither collection is admissible formal evidence; v2 changed only the frozen
+condition-order matrix while retaining the remaining scientific design. The
+first v2 attempt then stopped on a VLM Qwen timeout and failed its required
+translation-route Gate. V2 is closed without a confirmatory claim. The current
+correction isolates Moondream residency order for descriptive Jetson validation
+before any new formal protocol is created.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
@@ -26,12 +30,14 @@ condition-order matrix while retaining the remaining scientific design.
 > 修订后的 G6 v2 正式协议已冻结；协议绑定的正式 runner 与独立分析器已实现；Jetson
 > commissioning 先后发现 measured run 开始前的 LLM 空历史身份不一致，以及一个完整
 > session 后的资源轨迹尾部竞态；结果无关设计审计随后发现 v1 的跨 session 条件顺序关系
-> 重复；两次 collection 均不作为正式证据，v2 仅修改冻结的条件顺序矩阵。
+> 重复；两次 collection 均不作为正式证据，v2 仅修改冻结的条件顺序矩阵。首次 v2 正式
+> 尝试随后因 VLM 的 Qwen 30 秒超时而停止并关闭；当前先以描述性 Jetson 诊断隔离
+> Moondream 驻留顺序，再决定新的正式协议。
 
 ## Status
 
-- Phase: Phase 1D correctness pilots and G6 v2 amendment complete; formal
-  commissioning corrections implemented; admissible collection not started
+- Phase: Phase 1D correctness pilots complete; G6 v2 closed after a system-
+  under-test failure; VLM residency-order diagnostic pending
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -43,6 +49,8 @@ condition-order matrix while retaining the remaining scientific design.
   `20260831T140705Z_phase1_asr_pilot_v2`
 - LLM-pilot result: `main@6e83ede`, session
   `20260901T143315Z_phase1_llm_pilot`
+- G6 v2 failed attempt: `main@1e5e1c7`, collection
+  `20260905T140816Z_phase1_formal_g6_v2`; no formal claim permitted
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -97,7 +105,13 @@ The current implementation includes:
   monitoring, append-only ordering evidence and fail-closed session artifacts;
 - an independent formal analyzer that revalidates artifact hashes, reconstructs
   every preregistered pair and applies the frozen hierarchical bootstrap and
-  intersection-union decision.
+  intersection-union decision;
+- a deterministic failed-attempt analyzer that verifies an aborted collection's
+  artifact inventory, protocol, preflight, ledger prefix, run records, resource
+  trace and correlated llama-server cancellation without publishing raw logs;
+- a VLM adapter residency-order correction that requests Moondream unload before
+  Qwen and records bounded stage exception classes while preserving legacy
+  schema reconstruction.
 
 The VLM, ASR and LLM pilots include no formal performance data. They validate
 real-model integration, result freshness and workload-specific boundaries. The
@@ -793,9 +807,10 @@ assigned causally to R0--R4, and no sample is excluded post hoc.
 
 Phase 1C reuses the exact Phase 0 C100 JPEG identity (320 × 193, 9009 bytes,
 SHA-256 `607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7`).
-The adapter invokes the existing Moondream description, Qwen rewrite with
-Argos fallback, speech-oriented normalization and per-request Moondream unload
-functions. Those dependencies are imported only inside the explicit worker
+The adapter invokes the existing Moondream description, per-request Moondream
+unload, Qwen rewrite with Argos fallback and speech-oriented normalization
+functions in that order. Cleanup still requests unload when an earlier stage
+fails. Those dependencies are imported only inside the explicit worker
 call; importing the Phase 1 runtime or experiment modules must not start a
 model, service request, camera or device.
 
@@ -1051,11 +1066,11 @@ defense and must not be used as the Jetson scheduling success target.
 
 ## G6 formal preregistration
 
-The formal comparison is fixed by the amended
+The G6 v2 formal comparison is preserved by the amended
 [G6 preregistration](phase1-formal-preregistration.md) and its machine-readable
-v2 protocol. The amendment becomes active only through its reviewed merge to
-`main`; data collected before that event are not eligible for the confirmatory
-analysis.
+v2 protocol. The amendment became active through its reviewed merge to `main`;
+data collected before that event are not eligible for the confirmatory analysis.
+Its first formal attempt subsequently closed v2 on a system-under-test failure.
 
 The design contains five sessions and six paired sync/async blocks per workload
 and session: 30 pairs per workload, 30 measured runs per condition and workload,
@@ -1143,6 +1158,26 @@ all v1 commissioning data. The hypotheses, sample size, workloads, inputs,
 conditions, environment, thresholds, analysis, exclusions and stopping rules
 remain unchanged.
 
+The first v2 collection,
+`20260905T140816Z_phase1_formal_g6_v2`, passed the frozen preflight and completed
+five warm-ups, the pre-measurement idle reference and 12 measured runs. Measured
+ordinal 18 then reached the VLM Qwen rewrite's 30 s client timeout, used the
+Argos fallback and failed `translation_route_verified`. Independent
+reconstruction verified all 42 manifest artifacts, the 37-record ledger prefix,
+18 run records, 3,558 resource samples and 179 passed Gates plus the single
+failure. The child process exited normally, the llama-server task was cancelled
+at the timeout boundary and its slot returned to idle. Session Tj peaked at
+55.093 C and no sampler or thermal failure occurred. The public
+[failed-attempt report](../../experiments/phase1/results/20260905T140816Z_phase1_formal_g6_v2/)
+contains derived identities and diagnostics only.
+
+The v2 stage order placed its Moondream unload request after Qwen and the Argos
+fallback. This is a residency-order confound but does not establish the timeout's
+cause. The isolated implementation correction moves unload between Moondream
+inference and Qwen, retains cleanup on earlier failure and leaves the 30 s Qwen
+timeout unchanged. A separate descriptive Jetson pilot must evaluate that
+single change before any timeout amendment or new formal protocol is justified.
+
 The independent analyzer does not trust runner summaries. It verifies the
 protocol copy and every artifact hash, reconstructs the session ledger and all
 90 pairs, checks event boundaries, idle duration, thermal/resource coverage,
@@ -1151,8 +1186,11 @@ performance metrics, then applies one shared seeded session/block resampling
 stream for 100,000 percentile-bootstrap draws. Any missing run, reordered entry,
 mixed commit, un-restarted service, incomplete thermal gate, lifecycle failure
 or modified artifact invalidates the collection.
-Formal data collection remains prohibited until the resource-tail correction
-and v2 protocol amendment are reviewed and merged to `main`.
+The default runner refuses any further v2 session. The failed measured run is
+not replaced, the collection is not continued, and its partial timing data do
+not enter confirmatory analysis. Formal collection remains prohibited until the
+residency-order diagnostic is complete and a new protocol version is
+preregistered and reviewed on `main`.
 
 ## Phase 1 completion boundary
 

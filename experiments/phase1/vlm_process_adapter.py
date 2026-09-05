@@ -28,7 +28,7 @@ from jetson.phase1_runtime import (
 from .vlm_adapter import VLMExecutionRecord
 
 
-PROCESS_PROTOCOL_VERSION = "0.1.0"
+PROCESS_PROTOCOL_VERSION = "0.2.0"
 DEFAULT_FACTORY_REF = "experiments.phase1.vlm_adapter:FixedInputVLMAdapter"
 MAX_PROCESS_MESSAGE_BYTES = 65_536
 
@@ -48,6 +48,7 @@ _RECORD_KEYS = {
     "model_residency",
     "stage_durations_ns",
     "stage_status",
+    "stage_error_codes",
     "cancellation",
 }
 
@@ -335,6 +336,9 @@ def _deserialize_record(value: object) -> VLMExecutionRecord:
     cancellation = _mapping(record["cancellation"], "record_cancellation")
     durations = _mapping(record["stage_durations_ns"], "record_durations")
     statuses = _mapping(record["stage_status"], "record_statuses")
+    stage_error_codes = _mapping(
+        record["stage_error_codes"], "record_stage_error_codes"
+    )
     _require_keys(
         input_value,
         {"sha256", "size_bytes", "media_type"},
@@ -376,6 +380,16 @@ def _deserialize_record(value: object) -> VLMExecutionRecord:
         for name, status in statuses.items()
     ):
         raise VLMProcessProtocolError("record_statuses_invalid")
+    if any(
+        not isinstance(name, str)
+        or not isinstance(code, str)
+        or _ERROR_CODE_RE.fullmatch(code) is None
+        for name, code in stage_error_codes.items()
+    ):
+        raise VLMProcessProtocolError("record_stage_error_codes_invalid")
+    failed_stages = {name for name, status in statuses.items() if status == "error"}
+    if set(stage_error_codes) != failed_stages:
+        raise VLMProcessProtocolError("record_stage_error_codes_inconsistent")
     return VLMExecutionRecord(
         task_id=record["task_id"],
         worker_thread_id=record["worker_thread_id"],
@@ -392,6 +406,7 @@ def _deserialize_record(value: object) -> VLMExecutionRecord:
         model_unload_confirmed=residency["unload_confirmed"],
         stage_durations_ns=dict(durations),
         stage_status=dict(statuses),
+        stage_error_codes=dict(stage_error_codes),
         cancellation_requested=cancellation["requested"],
         worker_observed_cancellation=cancellation["worker_observed"],
         backend_stop_confirmed=cancellation["backend_stop_confirmed"],
@@ -705,6 +720,7 @@ class ProcessIsolatedVLMAdapter:
             model_unload_confirmed=None,
             stage_durations_ns={},
             stage_status={},
+            stage_error_codes={},
             cancellation_requested=requested,
             worker_observed_cancellation=requested,
             backend_stop_confirmed=None,

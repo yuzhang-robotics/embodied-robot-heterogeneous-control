@@ -29,25 +29,37 @@ from jetson.phase1_runtime import (
 def make_pipeline(
     *,
     qwen_error: bool = False,
+    unload_error: bool = False,
     description_delay_s: float = 0.0,
+    calls: list[str] | None = None,
 ) -> VLMPipeline:
+    observed_calls = calls if calls is not None else []
+
     def describe(_path: Path) -> str:
+        observed_calls.append("moondream_inference")
         print("private English model output")
         if description_delay_s:
             threading.Event().wait(description_delay_s)
         return "A camera is centered in the image."
 
     def rewrite(_english: str) -> str:
+        observed_calls.append("qwen_rewrite")
         if qwen_error:
             raise OSError("private Qwen error")
         return "画面中间是一台摄像机"
+
+    def unload() -> None:
+        observed_calls.append("model_unload")
+        if unload_error:
+            raise RuntimeError("private unload failure")
+        print("private unload message")
 
     return VLMPipeline(
         describe_english=describe,
         rewrite_chinese=rewrite,
         translate_fallback=lambda _english: "图像中有一台摄像机",
         normalize_output=lambda chinese, _english: chinese + "。",
-        unload_model=lambda: print("private unload message"),
+        unload_model=unload,
     )
 
 
@@ -106,11 +118,12 @@ class FixedInputVLMAdapterTests(unittest.TestCase):
 
     def test_pipeline_loading_is_lazy_and_output_is_hash_only(self) -> None:
         load_count = 0
+        calls: list[str] = []
 
         def load_pipeline() -> VLMPipeline:
             nonlocal load_count
             load_count += 1
-            return make_pipeline()
+            return make_pipeline(calls=calls)
 
         adapter = FixedInputVLMAdapter(pipeline_loader=load_pipeline)
         self.assertEqual(load_count, 0)
@@ -131,6 +144,11 @@ class FixedInputVLMAdapterTests(unittest.TestCase):
         self.assertEqual(record.translation_route, "qwen")
         self.assertTrue(record.model_unload_requested)
         self.assertIsNone(record.model_unload_confirmed)
+        self.assertEqual(record.stage_error_codes, {})
+        self.assertEqual(
+            calls,
+            ["moondream_inference", "model_unload", "qwen_rewrite"],
+        )
         for stage in (
             "input_verify_before",
             "module_import",
@@ -153,8 +171,34 @@ class FixedInputVLMAdapterTests(unittest.TestCase):
         assert record is not None
         self.assertEqual(record.translation_route, "argos")
         self.assertEqual(record.stage_status["qwen_rewrite"], "error")
+        self.assertEqual(record.stage_error_codes["qwen_rewrite"], "oserror")
         self.assertEqual(record.stage_status["argos_fallback"], "ok")
         self.assertNotIn("private Qwen error", json.dumps(record.to_dict()))
+
+    def test_unload_failure_prevents_qwen_from_starting(self) -> None:
+        calls: list[str] = []
+        adapter = FixedInputVLMAdapter(
+            pipeline_loader=lambda: make_pipeline(
+                unload_error=True,
+                calls=calls,
+            )
+        )
+
+        result = adapter(self.claimed_task())
+        record = adapter.last_record
+
+        self.assertEqual(result.execution_outcome, ExecutionOutcome.ERROR)
+        self.assertEqual(result.error_code, "model_unload_failed")
+        self.assertEqual(calls, ["moondream_inference", "model_unload"])
+        self.assertIsNotNone(record)
+        assert record is not None
+        self.assertIsNone(record.translation_route)
+        self.assertEqual(record.stage_status["model_unload"], "error")
+        self.assertEqual(
+            record.stage_error_codes["model_unload"],
+            "runtimeerror",
+        )
+        self.assertNotIn("private unload failure", json.dumps(record.to_dict()))
 
     def test_input_mismatch_fails_before_loading_the_pipeline(self) -> None:
         claimed = self.claimed_task()
