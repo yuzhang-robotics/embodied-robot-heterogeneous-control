@@ -12,7 +12,7 @@ import threading
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable, Sequence, TextIO
+from typing import Any, Callable, Iterable, Mapping, Sequence, TextIO
 
 
 RESOURCE_SCHEMA_VERSION = "0.1.0"
@@ -597,6 +597,7 @@ class TegrastatsSampler:
         interval_ms: int = 200,
         *,
         command: Sequence[str] | None = None,
+        sample_callback: Callable[[Mapping[str, object]], None] | None = None,
     ) -> None:
         if isinstance(interval_ms, bool) or not isinstance(interval_ms, int):
             raise TypeError("interval_ms must be an integer")
@@ -608,10 +609,13 @@ class TegrastatsSampler:
             or any(not isinstance(item, str) or not item for item in command)
         ):
             raise ValueError("command must be a non-empty sequence of strings")
+        if sample_callback is not None and not callable(sample_callback):
+            raise TypeError("sample_callback must be callable or None")
         self.session_dir = Path(session_dir)
         self.interval_ms = interval_ms
         self.path = self.session_dir / "resources.jsonl"
         self._configured_command = tuple(command) if command is not None else None
+        self._sample_callback = sample_callback
         self._process: subprocess.Popen[str] | None = None
         self._thread: threading.Thread | None = None
         self._stream: TextIO | None = None
@@ -728,6 +732,8 @@ class TegrastatsSampler:
                     + "\n"
                 )
                 self._stream.flush()
+                if self._sample_callback is not None:
+                    self._sample_callback(sample)
                 self._sample_count += 1
                 self._parse_error_count += int(bool(sample["parse_errors"]))
                 if self._first_sample_ns is None:

@@ -132,7 +132,10 @@ components are therefore complete and G5 is closed. The reviewed
 [G6 formal preregistration](phase1-formal-preregistration.md) fixes the formal
 thresholds, order, sample size, exclusions, statistical method, five-session
 paired-block schedule and activation boundary. Its merge to `main` closes G6.
-Formal runner implementation and Jetson data collection remain pending.
+A protocol-bound session runner and independent analyzer now implement that
+frozen design with fail-closed environment, ordering, lifecycle, artifact and
+statistical checks. Formal Jetson data collection remains pending their reviewed
+merge to `main`.
 
 ## Evaluation plan
 

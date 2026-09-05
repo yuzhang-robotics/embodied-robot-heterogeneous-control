@@ -11,19 +11,21 @@ evidence Gates have since completed one process-isolated Jetson correctness
 pilot. Fixed-input ASR and LLM adapters have since completed independently
 validated and analyzed Jetson correctness pilots. All three real-workload
 correctness components are complete, closing G5. G6 formal protocol
-preregistration is now fixed; formal runner implementation and synchronous/
-asynchronous data collection remain incomplete.
+preregistration is now fixed. The protocol-bound formal session runner and
+independent analyzer are implemented and host-tested; synchronous/asynchronous
+formal data have not been collected.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
 > VLM 进程隔离路径以及固定输入 ASR、LLM 路径均已完成 Jetson correctness pilot，G5 已关闭；
-> G6 正式协议已冻结；正式 runner 与同步/异步对比实验仍需按 Gate 逐步完成。
+> G6 正式协议已冻结；协议绑定的正式 runner 与独立分析器已实现并通过 host 测试，
+> 正式同步/异步数据尚未采集，采集必须等待工具经评审合入 `main`。
 
 ## Status
 
 - Phase: Phase 1D correctness pilots and G6 preregistration complete; formal
-  runner implementation next
+  runner and analyzer implemented; formal collection pending review
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -83,7 +85,13 @@ The current implementation includes:
 - deterministic LLM-pilot reconstruction and a hash-fixed public descriptive
   report;
 - a machine-validated G6 preregistration with fixed hypotheses, environment,
-  paired schedule, thresholds, exclusions, stopping rules and analysis method.
+  paired schedule, thresholds, exclusions, stopping rules and analysis method;
+- a protocol-bound formal session runner with exact preflight identities,
+  inline synchronous and bounded asynchronous paths, continuous thermal/resource
+  monitoring, append-only ordering evidence and fail-closed session artifacts;
+- an independent formal analyzer that revalidates artifact hashes, reconstructs
+  every preregistered pair and applies the frozen hierarchical bootstrap and
+  intersection-union decision.
 
 The VLM, ASR and LLM pilots include no formal performance data. They validate
 real-model integration, result freshness and workload-specific boundaries. The
@@ -1066,6 +1074,37 @@ all endpoints and workloads. No post-hoc outlier exclusion, imputation,
 failed-run replacement or operator-selected reordering is permitted. The
 tracked protocol SHA-256 is
 `022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761`.
+
+The formal runner executes one complete protocol session per invocation. It
+loads the tracked protocol by hash, requires synchronized clean `main`, records
+the protocol and runner commits, and checks the exact Python, JetPack, L4T,
+power-mode, model, executable and service contracts. Session start and
+measurement start each require ten consecutive Tj samples no greater than 55 C.
+The continuous sampler requests a stop at 85 C, and every exception closes the
+sampler, probe, worker and child-process evidence before marking the attempt
+aborted. An append-only ledger fixes all warm-up, idle and measured transitions.
+
+`formal_sync` invokes the same adapter on the calling control flow while an
+inline absolute-schedule probe exposes the blocking interval. `formal_async`
+uses a one-pending/one-result Phase 1 lane and an independent probe. ASR keeps
+its supervised Whisper subprocess in both conditions; LLM keeps the same
+pre-existing llama-server; VLM keeps the spawned-process adapter and
+per-invocation Moondream unload policy in both conditions. Thus the intended
+condition difference is the Phase 1 scheduling boundary rather than a model,
+request or residency change. Each run binds the adapter record to a separate
+privacy-preserving result envelope and enforces workload-specific output,
+request, process and residency Gates.
+
+The independent analyzer does not trust runner summaries. It verifies the
+protocol copy and every artifact hash, reconstructs the session ledger and all
+90 pairs, checks event boundaries, idle duration, thermal/resource coverage,
+result consistency and lifecycle closure, calculates the three preregistered
+performance metrics, then applies one shared seeded session/block resampling
+stream for 100,000 percentile-bootstrap draws. Any missing run, reordered entry,
+mixed commit, un-restarted service, incomplete thermal gate, lifecycle failure
+or modified artifact invalidates the collection.
+Formal data collection remains prohibited until this implementation is reviewed
+and merged to `main`.
 
 ## Phase 1 completion boundary
 
