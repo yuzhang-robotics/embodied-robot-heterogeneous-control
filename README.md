@@ -6,7 +6,7 @@
 
 This repository began with my bachelor's thesis on speech interaction and visual perception for a wheeled robot. The thesis system runs fully local speech and vision pipelines on a Jetson Orin Nano, while an STM32F407 executes motion commands and enforces a communication watchdog. The same platform will now be used to study how long-running perception and inference can coexist with predictable control timing.
 
-> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，并完成 VLM、ASR 与 LLM 的固定输入 Jetson correctness pilot；G6 正式协议已预注册，正式 runner、同步/异步对比数据与整机应用适配尚未完成。
+> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，并完成 VLM、ASR 与 LLM 的固定输入 Jetson correctness pilot；G6 正式协议已预注册，协议绑定的正式 runner 与独立分析器已实现并通过 host 测试，正式同步/异步数据尚未采集，整机应用适配尚未开始。
 
 ## Project status
 
@@ -15,7 +15,7 @@ This repository began with my bachelor's thesis on speech interaction and visual
 | Bachelor's thesis software and firmware | Complete and hardware validated |
 | Custom base-driver PCB | Published and tested on the physical robot |
 | Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
-| Asynchronous inference runtime | Bounded executor, probe and replay validated by Jetson simulation; fixed-input VLM, ASR and LLM correctness pilots complete; G6 protocol preregistered, formal runner and data collection next |
+| Asynchronous inference runtime | Bounded executor, probe and replay validated by Jetson simulation; fixed-input VLM, ASR and LLM correctness pilots complete; G6 protocol preregistered; protocol-bound formal runner and independent analyzer implemented; formal data not yet collected |
 
 The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
@@ -100,9 +100,11 @@ This closes the LLM component and G5 overall. The reviewed
 [G6 formal preregistration](docs/architecture/phase1-formal-preregistration.md)
 freezes the numerical thresholds, balanced order, sample size, exclusions and
 statistical methods. Its merge to `main` closes G6 and makes it the sole
-admissible plan. The next implementation is a formal runner and independent
-analyzer that reject any schedule or protocol mismatch before Jetson
-collection.
+admissible plan. A protocol-bound formal session runner and independent analyzer
+now reject protocol, schedule, environment, artifact or statistical-method
+drift. Formal Jetson collection remains gated on review of those tools on
+`main`.
+
 All pilot timings are descriptive, not formal performance or cancellation-
 latency data. The broader research stage will investigate:
 
@@ -126,7 +128,7 @@ These are research objectives, not claims about the current implementation. The 
 | [`docs/hardware/`](docs/hardware/) | Physical platform, wiring, pin assignments, power and safety notes |
 | [`docs/architecture/`](docs/architecture/) | Current timing model and the boundary of the planned asynchronous architecture |
 | [`experiments/phase0/`](experiments/phase0/) | Synchronous fixed-input measurement, validation and formal analysis tools |
-| [`experiments/phase1/`](experiments/phase1/) | Host tests, simulation, fixed-input VLM, ASR and LLM runners, Jetson pilots, deterministic analysis, trace schemas and validation |
+| [`experiments/phase1/`](experiments/phase1/) | Host tests, simulation, fixed-input workload runners, Jetson pilots, the G6 formal session runner and independent analysis, trace schemas and validation |
 
 ## Reproducing the baseline
 

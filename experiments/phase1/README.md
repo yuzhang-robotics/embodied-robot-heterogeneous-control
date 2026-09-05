@@ -8,9 +8,9 @@ Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
 A spawned-process VLM adapter and the fixed-input ASR subprocess slice have also
 completed independently validated Jetson correctness pilots. The fixed-input
 LLM HTTP slice has now completed its independently validated Jetson correctness
-pilot, closing G5. The G6 protocol now preregisters the formal paired comparison;
-formal runner implementation and synchronous/asynchronous data collection remain
-incomplete.
+pilot, closing G5. The G6 protocol preregisters the formal paired comparison.
+Its protocol-bound session runner and independent analyzer are now implemented
+and host-tested; synchronous/asynchronous formal data have not been collected.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -18,7 +18,8 @@ incomplete.
 > 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
 > Jetson correctness pilot；固定输入 ASR 子进程切片也已完成 Jetson correctness pilot；
 > 固定输入 LLM HTTP 切片也已完成 Jetson correctness pilot，G5 已关闭；G6 正式协议
-> 已冻结，正式 runner 与同步/异步对比数据收集尚未完成。
+> 已冻结，协议绑定的正式 runner 与独立分析器已实现并通过 host 测试；正式同步/异步
+> 数据尚未采集，采集必须等待工具经评审合入 `main`。
 
 ## Current status
 
@@ -50,6 +51,8 @@ incomplete.
   implemented; LLM component and G5 overall satisfied
 - Machine-validated G6 formal preregistration: implemented; activates on its
   reviewed merge to `main`
+- Protocol-bound formal session runner and independent analyzer: implemented
+  and host-tested; collection remains gated on reviewed merge to `main`
 - Formal Phase 1 data: not collected
 - Physical motion and UART: excluded
 
@@ -551,10 +554,60 @@ reordering is permitted. Warm-ups and idle epochs are excluded only by their
 predeclared roles. Every planned attempt remains in the completion denominator,
 and lifecycle or safety failure prevents the overall formal claim.
 
-The next code increment is a session runner and independent analyzer that load
-this exact protocol and refuse schedule, identity, threshold or analysis-method
-drift. Formal Jetson collection begins only after those tools are reviewed on
-`main`.
+The formal tools load this exact protocol and refuse schedule, identity,
+threshold or analysis-method drift. The runner records one complete protocol
+session at a time beneath the ignored `experiments/runs/phase1-formal/` root.
+It requires a clean synchronized `main`, exact workload and service identities,
+dynamic DVFS, restarted model services, ten consecutive Tj samples no greater
+than 55 C, continuous 200 ms resource telemetry and `ROBOT_ENABLE_MOTION=0`.
+Each measured `formal_sync` call uses the inline same-thread probe; each
+`formal_async` call uses the one-worker bounded runtime and independent probe.
+Both VLM conditions retain the same spawned-process adapter. Every run binds
+the adapter record to a separate privacy-preserving result envelope. The Gates
+also enforce the expected ASR transcript identity, the frozen LLM request and
+token/residency facts, and VLM child reaping and per-invocation unload request.
+
+After this implementation is reviewed and merged, prepare the first session on
+the Jetson, assign one collection identifier, restart the model services, then
+run:
+
+```bash
+export ROBOT_ENABLE_MOTION=0
+export COLLECTION_ID="$(date -u +%Y%m%dT%H%M%SZ)_phase1_formal_g6"
+
+python3 -m experiments.phase1.formal_protocol --print-sha256
+
+python3 -m experiments.phase1.run_formal_session \
+  --session-index 1 \
+  --collection-id "$COLLECTION_ID" \
+  --confirm-services-restarted \
+  --confirm-dynamic-dvfs
+```
+
+Sessions 2--5 reuse the same `COLLECTION_ID`. Each starts at least 30 minutes
+after the preceding session completed and requires another model-service
+restart. The runner compares process-start identities and refuses a skipped,
+duplicated or reordered session. A measured system-under-test failure is final
+and cannot be replaced. Only one of the four preregistered infrastructure
+failures can authorize an explicitly linked replacement attempt; the incomplete
+attempt remains in the ledger.
+
+After all five sessions complete, independently reconstruct and analyze the
+collection with:
+
+```bash
+python3 -m experiments.phase1.analyze_formal_runs \
+  "experiments/runs/phase1-formal/$COLLECTION_ID" \
+  --json-output /tmp/phase1-g6-analysis.json \
+  --markdown-output /tmp/phase1-g6-analysis.md
+```
+
+The analyzer recomputes every artifact hash, reconstructs all 90 pairs from the
+protocol and ledger, verifies event order, both 30 s idle epochs, thermal and
+resource coverage, result/adapter consistency and lifecycle closure, and uses
+the frozen 100,000-resample paired hierarchical bootstrap. It emits no source
+path, raw input or model output. Formal Jetson collection must not begin until
+these tools are reviewed on `main`.
 
 ## Planned implementation order
 
@@ -578,9 +631,9 @@ drift. Formal Jetson collection begins only after those tools are reviewed on
 10. extend the adapter/runtime boundary to ASR and LLM, then independently
     analyze both Jetson correctness pilots — complete; G5 closed;
 11. preregister formal thresholds, balanced order, sample size, exclusions and
-    statistical methods — complete when the reviewed protocol merges to `main`;
+    statistical methods — complete;
 12. implement and review the protocol-bound formal runner and independent
-    analyzer;
+    analyzer — implementation and host tests complete; review pending;
 13. collect, validate and publish the formal synchronous/asynchronous comparison;
 14. add an opt-in motion-disabled application slice after the research Gates
     pass.
@@ -612,6 +665,7 @@ The reusable, hardware-independent kernel lives under
 ```text
 experiments/phase1/
 ├── analyze_asr_pilot.py
+├── analyze_formal_runs.py
 ├── analyze_llm_pilot.py
 ├── analyze_vlm_pilot.py
 ├── asr_adapter.py
@@ -620,6 +674,8 @@ experiments/phase1/
 ├── formal/
 │   └── phase1-g6-preregistration.json
 ├── formal_protocol.py
+├── formal_preflight.py
+├── formal_run.py
 ├── jetson_preflight.py
 ├── jetson_telemetry.py
 ├── llm_adapter.py
@@ -627,8 +683,10 @@ experiments/phase1/
 ├── llm_slice.py
 ├── manifest.py
 ├── pilot.py
-├── run_jetson_pilot.py
+├── replay_lifecycle.py
 ├── run_asr_slice.py
+├── run_formal_session.py
+├── run_jetson_pilot.py
 ├── run_llm_slice.py
 ├── run_simulation.py
 ├── run_vlm_slice.py
@@ -652,7 +710,6 @@ experiments/phase1/
 ├── vlm_preflight.py
 ├── vlm_process_adapter.py
 ├── vlm_slice.py
-├── replay_lifecycle.py
 └── README.md
 ```
 
