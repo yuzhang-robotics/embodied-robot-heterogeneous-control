@@ -1,0 +1,580 @@
+{
+  "vlm_residency_analysis_schema_version": "0.1.0",
+  "analysis_kind": "phase1_vlm_residency_order_diagnostic",
+  "session_id": "20260905T160805Z_phase1_vlm_residency_diag",
+  "source": {
+    "git_commit": "08e262dfe999bda9fd5a3c79aaa6ff2f611b50bd",
+    "git_branch": "main",
+    "source_archive_sha256": "f6c22ce6e396494af4d0dfcc16c30602d1dedd9f95d87ad8a5af22fdf599911e",
+    "llama_log_archive_sha256": "a9be360fa20036d53f057f2190b74c3ff427f5de8fd5c7cfe2f8861b6fa5a0ad",
+    "run_artifacts": {
+      "vlm_async": {
+        "preflight.json": {
+          "size_bytes": 8141,
+          "sha256": "dacdebf0dfb30fb32b4814b47801d99b36826c98f0285ec88b283ff43fc38394"
+        },
+        "events.jsonl": {
+          "size_bytes": 696855,
+          "sha256": "6343d60a5ad6783b165992415419e12ce2d4d43dd360eeebb6e338452022dd87"
+        },
+        "resources.jsonl": {
+          "size_bytes": 761205,
+          "sha256": "21f3770a9acb16eb24f8f4f322e59db73b7834b04b77e266d1c6a4b7e15e9641"
+        },
+        "scenario.json": {
+          "size_bytes": 3693,
+          "sha256": "5fab2f8ff651dc818ee5488e3050f35db4daf33d666adb43f15f5c46eb1075c9"
+        },
+        "summary.json": {
+          "size_bytes": 13956,
+          "sha256": "c0df2228d0df624528173cf25f0b15fe2fe19a3aa4236b18e93e96d6fdb9d6f4"
+        },
+        "process.json": {
+          "size_bytes": 2285,
+          "sha256": "87d1099abd1ae46ad8fd0669f2fc9c77267b5bcde418503f7612490241d1943f"
+        }
+      },
+      "vlm_stale": {
+        "preflight.json": {
+          "size_bytes": 8141,
+          "sha256": "816b82609d21d96d22cb3e5a74f609374ca938bff8849ea7d6031a75061d9f1d"
+        },
+        "events.jsonl": {
+          "size_bytes": 413340,
+          "sha256": "1e883ad9472c788a5eb94c359b75b22f5b95d14deaa1b185c7fef16258511ab6"
+        },
+        "resources.jsonl": {
+          "size_bytes": 451163,
+          "sha256": "4b5aa463804c692c3a03ee92ccf9d951f333797abffe7132cd9758344d487f1d"
+        },
+        "scenario.json": {
+          "size_bytes": 3719,
+          "sha256": "592a8e97049692827004a172c63c91088a4346276fa318058aa516a1cb576364"
+        },
+        "summary.json": {
+          "size_bytes": 14030,
+          "sha256": "5a800103de8ce719158eb293c6fb9aeadd0dbaadb66cdba56c0f93a7d6270d9e"
+        },
+        "process.json": {
+          "size_bytes": 2298,
+          "sha256": "a13c0f5f4d08c1d2cbacf750228f7ba576ce4ec6482d441e07a715a40fedb720"
+        }
+      }
+    },
+    "source_paths_recorded": false
+  },
+  "identity": {
+    "input": {
+      "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+      "size_bytes": 9009,
+      "media_type": "image/jpeg",
+      "path_recorded": false
+    },
+    "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+    "qwen_model_ids": [
+      "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    ]
+  },
+  "design": {
+    "role": "descriptive_correctness_diagnostic",
+    "condition_order": [
+      "vlm_async",
+      "vlm_stale"
+    ],
+    "run_count": 2,
+    "fixed_input": true,
+    "formal_evidence": false
+  },
+  "contract": {
+    "adapter_isolation": "spawned_process",
+    "process_protocol_version": "0.2.0",
+    "stage_order": [
+      "input_verify_before",
+      "module_import",
+      "moondream_inference",
+      "model_unload",
+      "qwen_rewrite",
+      "output_normalization",
+      "input_verify_after"
+    ],
+    "moondream_unload_before_qwen": true,
+    "cleanup_unload_on_failure": true,
+    "qwen_request_timeout_s": 30,
+    "model_unload_confirmation_available": false
+  },
+  "validation": {
+    "run_count": 2,
+    "all_runs_valid": true,
+    "correctness_observed": true,
+    "listener_binding_evidence_complete": true,
+    "all_process_gates_passed": true,
+    "process_boundary_correctness_observed": true,
+    "periodic_probe_continuity_observed": true,
+    "residency_contract_verified": true,
+    "qwen_route_all_runs": true,
+    "all_stages_passed": true,
+    "qwen_completed_within_request_timeout": true,
+    "llama_server": {
+      "request_count": 2,
+      "released_request_count": 2,
+      "cancellation_record_count": 0,
+      "all_requests_released": true,
+      "idle_after_final_release": true,
+      "raw_log_recorded": false
+    }
+  },
+  "runs": [
+    {
+      "condition": "vlm_async",
+      "run_id": "20260905T160805Z_phase1_vlm_process_async_vlm_001",
+      "session_id": "20260905T160805Z_phase1_vlm_residency_diag",
+      "source": {
+        "git_commit": "08e262dfe999bda9fd5a3c79aaa6ff2f611b50bd",
+        "git_branch": "main",
+        "artifacts": {
+          "preflight.json": {
+            "size_bytes": 8141,
+            "sha256": "dacdebf0dfb30fb32b4814b47801d99b36826c98f0285ec88b283ff43fc38394"
+          },
+          "events.jsonl": {
+            "size_bytes": 696855,
+            "sha256": "6343d60a5ad6783b165992415419e12ce2d4d43dd360eeebb6e338452022dd87"
+          },
+          "resources.jsonl": {
+            "size_bytes": 761205,
+            "sha256": "21f3770a9acb16eb24f8f4f322e59db73b7834b04b77e266d1c6a4b7e15e9641"
+          },
+          "scenario.json": {
+            "size_bytes": 3693,
+            "sha256": "5fab2f8ff651dc818ee5488e3050f35db4daf33d666adb43f15f5c46eb1075c9"
+          },
+          "summary.json": {
+            "size_bytes": 13956,
+            "sha256": "c0df2228d0df624528173cf25f0b15fe2fe19a3aa4236b18e93e96d6fdb9d6f4"
+          },
+          "process.json": {
+            "size_bytes": 2285,
+            "sha256": "87d1099abd1ae46ad8fd0669f2fc9c77267b5bcde418503f7612490241d1943f"
+          }
+        }
+      },
+      "input": {
+        "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+        "size_bytes": 9009,
+        "media_type": "image/jpeg",
+        "path_recorded": false
+      },
+      "services": {
+        "moondream_model": "moondream",
+        "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+        "qwen_model_ids": [
+          "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        ],
+        "listener_evidence": {
+          "preflight_schema_version": "0.2.0",
+          "complete": true,
+          "services": {
+            "ollama": {
+              "recorded": true,
+              "addresses": [
+                "127.0.0.1"
+              ],
+              "loopback_only": true
+            },
+            "qwen": {
+              "recorded": true,
+              "addresses": [
+                "127.0.0.1"
+              ],
+              "loopback_only": true
+            }
+          }
+        }
+      },
+      "validation": {
+        "manifest_status": "completed",
+        "summary_valid": true,
+        "all_gates_passed": true,
+        "real_vlm_path_executed": true,
+        "process_summary_valid": true,
+        "all_process_gates_passed": true
+      },
+      "result": {
+        "execution_outcome": "ok",
+        "translation_route": "qwen",
+        "disposition_counts": {
+          "consumed": 1
+        },
+        "accepted_result_count": 1,
+        "stale_consumed_count": 0,
+        "raw_text_recorded": false,
+        "model_unload": {
+          "unload_requested": true,
+          "unload_confirmed": null
+        },
+        "cancellation": {
+          "requested": false,
+          "worker_observed": false,
+          "client_wait_stopped": false,
+          "backend_stop_confirmed": null
+        }
+      },
+      "timing": {
+        "adapter_total_ms": 117501.17885,
+        "stages": [
+          {
+            "stage": "input_verify_before",
+            "status": "ok",
+            "duration_ms": 0.418428
+          },
+          {
+            "stage": "module_import",
+            "status": "ok",
+            "duration_ms": 31463.442359
+          },
+          {
+            "stage": "moondream_inference",
+            "status": "ok",
+            "duration_ms": 66796.177386
+          },
+          {
+            "stage": "model_unload",
+            "status": "ok",
+            "duration_ms": 649.693766
+          },
+          {
+            "stage": "qwen_rewrite",
+            "status": "ok",
+            "duration_ms": 18400.090836
+          },
+          {
+            "stage": "output_normalization",
+            "status": "ok",
+            "duration_ms": 0.043492
+          },
+          {
+            "stage": "input_verify_after",
+            "status": "ok",
+            "duration_ms": 3.220912
+          }
+        ],
+        "probe": {
+          "period_ms": 100.0,
+          "deadline_ms": 100.0,
+          "tick_count": 1196,
+          "skipped_releases": 0,
+          "scheduled_release_count": 1196,
+          "skipped_release_rate": 0.0,
+          "deadline_miss_count": 0,
+          "max_lateness_ms": 0.821312,
+          "maximum_observed_gap_ms": 100.721053,
+          "joined": true,
+          "error_code": null,
+          "skipped_releases_by_adapter_stage": {}
+        }
+      },
+      "resources": {
+        "sample_count": 581,
+        "inference_interval_sample_count": 571,
+        "parse_error_count": 0,
+        "parse_warning_counts": {
+          "emc_missing": 581
+        },
+        "sample_interval_ms": {
+          "mean": 205.934749,
+          "p95": 206.509734,
+          "p99": 206.933622,
+          "max": 210.027681
+        },
+        "ram_used_mb": {
+          "mean": 4369.660929,
+          "p95": 6113.0,
+          "max": 6266.0
+        },
+        "gr3d_usage_pct": {
+          "mean": 3.39759,
+          "p95": 15.0,
+          "max": 99.0
+        },
+        "junction_temperature_c": {
+          "mean": 50.30368,
+          "p95": 50.843,
+          "max": 52.562
+        },
+        "vdd_in_instant_mw": {
+          "mean": 5533.874355,
+          "p95": 6745.0,
+          "max": 15888.0
+        }
+      },
+      "adapter_isolation": "spawned_process",
+      "process": {
+        "protocol_version": "0.2.0",
+        "start_method": "spawn",
+        "process_id_recorded": true,
+        "protocol_complete": true,
+        "exit_code": 0,
+        "cancellation_forwarded": false,
+        "terminate_requested": false,
+        "terminate_confirmed": false,
+        "error_code": null,
+        "valid": true,
+        "gate_results": {
+          "spawned_process": true,
+          "bounded_protocol": true,
+          "process_reaped": true,
+          "boundary_order": true,
+          "cancellation_forwarding": true
+        },
+        "timing_ms": {
+          "spawn_to_child_start": 181.312184,
+          "child_start_to_inference": 31465.088901,
+          "inference_to_completion_receipt": 85850.698788,
+          "completion_receipt_to_join": 80.306937,
+          "total_supervision": 117577.40681
+        }
+      }
+    },
+    {
+      "condition": "vlm_stale",
+      "run_id": "20260905T161321Z_phase1_vlm_process_stale_vlm_001",
+      "session_id": "20260905T160805Z_phase1_vlm_residency_diag",
+      "source": {
+        "git_commit": "08e262dfe999bda9fd5a3c79aaa6ff2f611b50bd",
+        "git_branch": "main",
+        "artifacts": {
+          "preflight.json": {
+            "size_bytes": 8141,
+            "sha256": "816b82609d21d96d22cb3e5a74f609374ca938bff8849ea7d6031a75061d9f1d"
+          },
+          "events.jsonl": {
+            "size_bytes": 413340,
+            "sha256": "1e883ad9472c788a5eb94c359b75b22f5b95d14deaa1b185c7fef16258511ab6"
+          },
+          "resources.jsonl": {
+            "size_bytes": 451163,
+            "sha256": "4b5aa463804c692c3a03ee92ccf9d951f333797abffe7132cd9758344d487f1d"
+          },
+          "scenario.json": {
+            "size_bytes": 3719,
+            "sha256": "592a8e97049692827004a172c63c91088a4346276fa318058aa516a1cb576364"
+          },
+          "summary.json": {
+            "size_bytes": 14030,
+            "sha256": "5a800103de8ce719158eb293c6fb9aeadd0dbaadb66cdba56c0f93a7d6270d9e"
+          },
+          "process.json": {
+            "size_bytes": 2298,
+            "sha256": "a13c0f5f4d08c1d2cbacf750228f7ba576ce4ec6482d441e07a715a40fedb720"
+          }
+        }
+      },
+      "input": {
+        "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+        "size_bytes": 9009,
+        "media_type": "image/jpeg",
+        "path_recorded": false
+      },
+      "services": {
+        "moondream_model": "moondream",
+        "moondream_digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+        "qwen_model_ids": [
+          "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        ],
+        "listener_evidence": {
+          "preflight_schema_version": "0.2.0",
+          "complete": true,
+          "services": {
+            "ollama": {
+              "recorded": true,
+              "addresses": [
+                "127.0.0.1"
+              ],
+              "loopback_only": true
+            },
+            "qwen": {
+              "recorded": true,
+              "addresses": [
+                "127.0.0.1"
+              ],
+              "loopback_only": true
+            }
+          }
+        }
+      },
+      "validation": {
+        "manifest_status": "completed",
+        "summary_valid": true,
+        "all_gates_passed": true,
+        "real_vlm_path_executed": true,
+        "process_summary_valid": true,
+        "all_process_gates_passed": true
+      },
+      "result": {
+        "execution_outcome": "cancel_observed",
+        "translation_route": "qwen",
+        "disposition_counts": {
+          "rejected_state": 1
+        },
+        "accepted_result_count": 0,
+        "stale_consumed_count": 0,
+        "raw_text_recorded": false,
+        "model_unload": {
+          "unload_requested": true,
+          "unload_confirmed": null
+        },
+        "cancellation": {
+          "requested": true,
+          "worker_observed": true,
+          "client_wait_stopped": false,
+          "backend_stop_confirmed": null
+        }
+      },
+      "timing": {
+        "adapter_total_ms": 68528.17677,
+        "stages": [
+          {
+            "stage": "input_verify_before",
+            "status": "ok",
+            "duration_ms": 0.424116
+          },
+          {
+            "stage": "module_import",
+            "status": "ok",
+            "duration_ms": 17771.94615
+          },
+          {
+            "stage": "moondream_inference",
+            "status": "ok",
+            "duration_ms": 31490.742798
+          },
+          {
+            "stage": "model_unload",
+            "status": "ok",
+            "duration_ms": 201.025159
+          },
+          {
+            "stage": "qwen_rewrite",
+            "status": "ok",
+            "duration_ms": 18864.649201
+          },
+          {
+            "stage": "output_normalization",
+            "status": "ok",
+            "duration_ms": 0.042115
+          },
+          {
+            "stage": "input_verify_after",
+            "status": "ok",
+            "duration_ms": 1.383063
+          }
+        ],
+        "probe": {
+          "period_ms": 100.0,
+          "deadline_ms": 100.0,
+          "tick_count": 706,
+          "skipped_releases": 0,
+          "scheduled_release_count": 706,
+          "skipped_release_rate": 0.0,
+          "deadline_miss_count": 0,
+          "max_lateness_ms": 0.59744,
+          "maximum_observed_gap_ms": 100.448841,
+          "joined": true,
+          "error_code": null,
+          "skipped_releases_by_adapter_stage": {}
+        }
+      },
+      "resources": {
+        "sample_count": 343,
+        "inference_interval_sample_count": 333,
+        "parse_error_count": 0,
+        "parse_warning_counts": {
+          "emc_missing": 343
+        },
+        "sample_interval_ms": {
+          "mean": 205.993296,
+          "p95": 206.578618,
+          "p99": 207.527257,
+          "max": 324.19254
+        },
+        "ram_used_mb": {
+          "mean": 4239.781341,
+          "p95": 5940.0,
+          "max": 5951.0
+        },
+        "gr3d_usage_pct": {
+          "mean": 5.411079,
+          "p95": 43.0,
+          "max": 99.0
+        },
+        "junction_temperature_c": {
+          "mean": 51.068399,
+          "p95": 51.5,
+          "max": 53.312
+        },
+        "vdd_in_instant_mw": {
+          "mean": 5866.553936,
+          "p95": 8253.0,
+          "max": 16998.0
+        }
+      },
+      "adapter_isolation": "spawned_process",
+      "process": {
+        "protocol_version": "0.2.0",
+        "start_method": "spawn",
+        "process_id_recorded": true,
+        "protocol_complete": true,
+        "exit_code": 0,
+        "cancellation_forwarded": true,
+        "terminate_requested": false,
+        "terminate_confirmed": false,
+        "error_code": null,
+        "valid": true,
+        "gate_results": {
+          "spawned_process": true,
+          "bounded_protocol": true,
+          "process_reaped": true,
+          "boundary_order": true,
+          "cancellation_forwarding": true
+        },
+        "timing_ms": {
+          "spawn_to_child_start": 188.877936,
+          "child_start_to_inference": 17773.62012,
+          "inference_to_completion_receipt": 50558.736698,
+          "completion_receipt_to_join": 45.651899,
+          "total_supervision": 68566.886653
+        }
+      }
+    }
+  ],
+  "decision": {
+    "v3_preregistration_readiness_supported": true,
+    "retain_qwen_request_timeout_s": 30,
+    "timeout_change_supported": false,
+    "v2_reopening_permitted": false
+  },
+  "claim_boundary": {
+    "descriptive_only": true,
+    "residency_order_causality_established": false,
+    "performance_comparison_permitted": false,
+    "timing_domain_isolation_claim_permitted": false,
+    "hard_real_time_claim_permitted": false,
+    "heterogeneous_inference_claim_permitted": false,
+    "condition_resource_attribution_permitted": false,
+    "backend_preemption_established": false
+  },
+  "data_quality": {
+    "total_probe_skipped_releases": 0,
+    "limitations": [
+      "single_run_per_condition",
+      "fixed_condition_order",
+      "no_real_workload_synchronous_condition",
+      "formal_thresholds_not_frozen",
+      "model_unload_not_independently_confirmed",
+      "resource_activity_not_attributed_to_a_model_or_processor",
+      "emc_unavailable",
+      "backend_stop_not_confirmed_by_process_exit"
+    ],
+    "total_probe_deadline_misses": 0
+  }
+}

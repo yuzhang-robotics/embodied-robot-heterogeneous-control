@@ -21,6 +21,7 @@ from experiments.phase1.formal_protocol import (
     SUPERSEDED_PROTOCOL_ID,
     SUPERSEDED_PROTOCOL_PATH,
     SUPERSEDED_PROTOCOL_SHA256,
+    VLM_PROCESS_PROTOCOL_VERSION,
     VLM_OLLAMA_BINARY_SHA256,
     VLM_OLLAMA_VERSION,
     WORKLOADS,
@@ -33,7 +34,7 @@ from experiments.phase1.formal_protocol import (
 
 
 EXPECTED_PROTOCOL_SHA256 = (
-    "5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a"
+    "070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b"
 )
 
 EXPECTED_PAIR_ORDER_MATRIX = (
@@ -145,6 +146,31 @@ class FormalProtocolTests(unittest.TestCase):
         self.assertEqual(ollama["version"], VLM_OLLAMA_VERSION)
         self.assertEqual(ollama["binary_sha256"], VLM_OLLAMA_BINARY_SHA256)
         self.assertNotIn("path", ollama)
+        vlm = protocol["workloads"]["vlm"]
+        self.assertEqual(vlm["process_protocol_version"], VLM_PROCESS_PROTOCOL_VERSION)
+        self.assertEqual(
+            vlm["successful_stage_order"],
+            [
+                "input_verify_before",
+                "module_import",
+                "moondream_inference",
+                "model_unload",
+                "qwen_rewrite",
+                "output_normalization",
+                "input_verify_after",
+            ],
+        )
+        self.assertEqual(vlm["qwen"]["request"]["timeout_s"], 30)
+        self.assertTrue(vlm["cleanup_unload_on_failure"])
+        self.assertEqual(vlm["unload_confirmation"], "not_available")
+        amendment = protocol["amendment"]
+        self.assertFalse(amendment["outcome_values_used_to_modify_schedule"])
+        self.assertFalse(
+            amendment["outcome_values_used_to_modify_hypotheses_thresholds_or_analysis"]
+        )
+        self.assertFalse(
+            amendment["diagnostic"]["performance_or_causal_claim_permitted"]
+        )
 
     def test_each_session_is_independently_order_balanced(self) -> None:
         protocol = build_formal_protocol()

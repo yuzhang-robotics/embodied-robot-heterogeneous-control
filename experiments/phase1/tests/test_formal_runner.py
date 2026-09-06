@@ -10,7 +10,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
-from experiments.phase1.formal_protocol import DEFAULT_PROTOCOL_PATH
+from experiments.phase1.formal_protocol import (
+    DEFAULT_PROTOCOL_PATH,
+    FORMAL_COLLECTION_STATUS,
+)
 from experiments.phase1.jetson_telemetry import TegrastatsSampler
 from experiments.phase1.run_formal_session import (
     FormalSessionError,
@@ -57,13 +60,8 @@ def payload(media_type: str) -> PayloadRef:
 
 
 class FormalRunnerTests(unittest.TestCase):
-    def test_default_formal_collection_is_closed_after_v2_failure(self) -> None:
-        args = argparse.Namespace(protocol=DEFAULT_PROTOCOL_PATH)
-        with self.assertRaisesRegex(
-            FormalSessionError,
-            "closed after a system-under-test failure",
-        ):
-            run_session(args)
+    def test_default_formal_collection_is_active_for_v3(self) -> None:
+        self.assertEqual(FORMAL_COLLECTION_STATUS, "active")
 
     def test_thermal_monitor_requires_consecutive_cool_samples_and_stops_high(
         self,

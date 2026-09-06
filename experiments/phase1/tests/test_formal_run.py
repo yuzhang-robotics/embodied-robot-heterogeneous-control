@@ -60,6 +60,22 @@ class FakeRecord:
             ASR_EXPECTED_OUTPUT_SHA256 if self.workload == "asr" else "b" * 64
         )
         output_length = ASR_EXPECTED_OUTPUT_LENGTH if self.workload == "asr" else 1
+        stage_durations = {"llama_inference": 1_000_000}
+        stage_status: dict[str, str] = {}
+        if self.workload == "vlm":
+            stage_durations = {
+                name: 1
+                for name in (
+                    "input_verify_before",
+                    "module_import",
+                    "moondream_inference",
+                    "model_unload",
+                    "qwen_rewrite",
+                    "output_normalization",
+                    "input_verify_after",
+                )
+            }
+            stage_status = {name: "ok" for name in stage_durations}
         return {
             "task_id": self.task_id,
             "worker_thread_id": self.worker_thread_id,
@@ -98,7 +114,9 @@ class FakeRecord:
             },
             "model_residency": residency,
             "translation_route": "qwen" if self.workload == "vlm" else None,
-            "stage_durations_ns": {"llama_inference": 1_000_000},
+            "stage_durations_ns": stage_durations,
+            "stage_status": stage_status,
+            "stage_error_codes": {},
             "cancellation": {
                 "requested": False,
                 "worker_observed": False,
@@ -112,6 +130,7 @@ class FakeRecord:
 class FakeProcessReport:
     def to_dict(self) -> dict[str, object]:
         return {
+            "protocol_version": "0.2.0",
             "start_method": "spawn",
             "protocol_complete": True,
             "exit_code": 0,

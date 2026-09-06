@@ -40,6 +40,16 @@ from jetson.phase1_runtime import (
 
 
 FORMAL_RUN_SCHEMA_VERSION = "0.1.0"
+_VLM_SUCCESSFUL_STAGE_ORDER = (
+    "input_verify_before",
+    "module_import",
+    "moondream_inference",
+    "model_unload",
+    "qwen_rewrite",
+    "output_normalization",
+    "input_verify_after",
+)
+_VLM_PROCESS_PROTOCOL_VERSION = "0.2.0"
 
 
 class FormalCondition(str, Enum):
@@ -506,6 +516,14 @@ def _gates(
         process_record = process or {}
         residency = adapter.get("model_residency")
         residency_record = residency if isinstance(residency, Mapping) else {}
+        stage_status_value = adapter.get("stage_status")
+        stage_status = (
+            stage_status_value if isinstance(stage_status_value, Mapping) else {}
+        )
+        stage_errors_value = adapter.get("stage_error_codes")
+        stage_errors = (
+            stage_errors_value if isinstance(stage_errors_value, Mapping) else {}
+        )
         gates.extend(
             [
                 _gate(
@@ -526,6 +544,22 @@ def _gates(
                     residency_record.get("unload_requested") is True
                     and residency_record.get("unload_confirmed") is None,
                     dict(residency_record),
+                ),
+                _gate(
+                    "residency_contract_verified",
+                    process_record.get("protocol_version")
+                    == _VLM_PROCESS_PROTOCOL_VERSION
+                    and set(stage_status) == set(_VLM_SUCCESSFUL_STAGE_ORDER)
+                    and all(value == "ok" for value in stage_status.values())
+                    and not stage_errors,
+                    {
+                        "process_protocol_version": process_record.get(
+                            "protocol_version"
+                        ),
+                        "completed_stages": sorted(stage_status),
+                        "required_stage_order": list(_VLM_SUCCESSFUL_STAGE_ORDER),
+                        "stage_error_codes": dict(stage_errors),
+                    },
                 ),
             ]
         )

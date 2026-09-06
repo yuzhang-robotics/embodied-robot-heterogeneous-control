@@ -29,14 +29,12 @@ from experiments.phase1.analyze_formal_runs import (
     _verify_artifacts,
     _write_text_atomic,
 )
-from experiments.phase1.formal_preflight import (
-    FROZEN_PROTOCOL_SHA256,
-    formal_preflight_errors,
-)
+from experiments.phase1.formal_preflight import formal_preflight_errors
 from experiments.phase1.formal_protocol import (
-    FORMAL_COLLECTION_STATUS,
-    FORMAL_PROTOCOL_ID,
-    formal_protocol_errors,
+    FORMAL_V2_COLLECTION_STATUS,
+    FORMAL_V2_PROTOCOL_ID,
+    FORMAL_V2_PROTOCOL_PATH,
+    FORMAL_V2_PROTOCOL_SHA256,
     protocol_sha256,
 )
 from experiments.phase1.jetson_telemetry import (
@@ -341,16 +339,17 @@ def analyze_failed_formal_attempt(
         or manifest.get("infrastructure_failure") is not None
     ):
         raise ValueError("attempt is not the unreplaced system-under-test failure")
-    if FORMAL_COLLECTION_STATUS != "closed_after_system_under_test_failure":
+    if FORMAL_V2_COLLECTION_STATUS != "closed_after_system_under_test_failure":
         raise ValueError("formal v2 collection status is not closed")
     _verify_artifacts(session_dir, manifest)
 
     protocol = _read_json(session_dir / "protocol.json")
+    tracked_v2_protocol = _read_json(FORMAL_V2_PROTOCOL_PATH)
     if (
-        formal_protocol_errors(protocol)
-        or protocol_sha256(protocol) != FROZEN_PROTOCOL_SHA256
-        or manifest.get("protocol_id") != FORMAL_PROTOCOL_ID
-        or manifest.get("protocol_sha256") != FROZEN_PROTOCOL_SHA256
+        protocol != tracked_v2_protocol
+        or protocol_sha256(protocol) != FORMAL_V2_PROTOCOL_SHA256
+        or manifest.get("protocol_id") != FORMAL_V2_PROTOCOL_ID
+        or manifest.get("protocol_sha256") != FORMAL_V2_PROTOCOL_SHA256
     ):
         raise ValueError("failed attempt protocol identity does not match G6 v2")
     protocol_sessions = protocol.get("sessions")
@@ -368,7 +367,11 @@ def analyze_failed_formal_attempt(
         raise ValueError("failed attempt protocol session is missing")
 
     preflight = _read_json(session_dir / "preflight.json")
-    preflight_failures = formal_preflight_errors(preflight)
+    preflight_failures = formal_preflight_errors(
+        preflight,
+        expected_protocol_id=FORMAL_V2_PROTOCOL_ID,
+        expected_protocol_sha256=FORMAL_V2_PROTOCOL_SHA256,
+    )
     if preflight_failures:
         raise ValueError(
             "failed attempt preflight is invalid: " + "; ".join(preflight_failures)
@@ -390,8 +393,8 @@ def analyze_failed_formal_attempt(
         "service_identity": preflight.get("service_identity"),
     }
     if (
-        preflight_protocol_record.get("id") != FORMAL_PROTOCOL_ID
-        or preflight_protocol_record.get("sha256") != FROZEN_PROTOCOL_SHA256
+        preflight_protocol_record.get("id") != FORMAL_V2_PROTOCOL_ID
+        or preflight_protocol_record.get("sha256") != FORMAL_V2_PROTOCOL_SHA256
         or preflight_protocol_record.get("path_recorded") is not False
         or preflight_protocol_record.get("runner_commit") != git_record.get("commit")
         or manifest.get("preflight") != expected_manifest_preflight
@@ -530,9 +533,9 @@ def analyze_failed_formal_attempt(
             "source_path_recorded": False,
         },
         "protocol": {
-            "id": FORMAL_PROTOCOL_ID,
-            "sha256": FROZEN_PROTOCOL_SHA256,
-            "collection_status": FORMAL_COLLECTION_STATUS,
+            "id": FORMAL_V2_PROTOCOL_ID,
+            "sha256": FORMAL_V2_PROTOCOL_SHA256,
+            "collection_status": FORMAL_V2_COLLECTION_STATUS,
         },
         "attempt": {
             "session_id": manifest.get("session_id"),

@@ -15,6 +15,7 @@ from experiments.phase1.asr_preflight import (
 from experiments.phase1.formal_protocol import (
     DEFAULT_PROTOCOL_PATH,
     FORMAL_COLLECTION_STATUS,
+    FORMAL_PROTOCOL_ID,
     LLAMA_SOURCE_VERSION,
     VLM_MOONDREAM_DIGEST,
     VLM_OLLAMA_BINARY_SHA256,
@@ -44,7 +45,7 @@ from experiments.phase1.vlm_preflight import (
 
 FORMAL_PREFLIGHT_SCHEMA_VERSION = "0.1.0"
 FROZEN_PROTOCOL_SHA256 = (
-    "5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a"
+    "070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b"
 )
 _REQUIRED_CHECKS = {
     "protocol_identity",
@@ -426,7 +427,12 @@ def build_formal_preflight(
     }
 
 
-def formal_preflight_errors(preflight: Mapping[str, object]) -> list[str]:
+def formal_preflight_errors(
+    preflight: Mapping[str, object],
+    *,
+    expected_protocol_id: str = FORMAL_PROTOCOL_ID,
+    expected_protocol_sha256: str = FROZEN_PROTOCOL_SHA256,
+) -> list[str]:
     errors: list[str] = []
     if (
         preflight.get("formal_preflight_schema_version")
@@ -459,8 +465,11 @@ def formal_preflight_errors(preflight: Mapping[str, object]) -> list[str]:
     protocol = preflight.get("protocol")
     if not isinstance(protocol, Mapping):
         errors.append("formal protocol identity is missing")
-    elif protocol.get("sha256") != FROZEN_PROTOCOL_SHA256:
-        errors.append("formal protocol hash does not match G6")
+    elif (
+        protocol.get("id") != expected_protocol_id
+        or protocol.get("sha256") != expected_protocol_sha256
+    ):
+        errors.append("formal protocol identity does not match G6")
     if preflight.get("eligible") is not (not errors):
         errors.append("formal preflight eligibility is inconsistent")
     return errors
