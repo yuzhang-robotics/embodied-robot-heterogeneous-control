@@ -1,0 +1,269 @@
+{
+  "analysis_schema_version": "0.1.0",
+  "analysis_kind": "phase1_vlm_timeout_repair_diagnostic",
+  "source": {
+    "diagnostic_id": "20260906T082627Z_phase1_vlm_timeout_diag",
+    "source_archive_sha256": "fb76b78c0d54895ddcd44682dbc1fe688451444c9682c976ff9719b7f6740500",
+    "operator_recorded_source_commit": "52c041d2969dd8029c00e8c49f2009164c1debf9",
+    "raw_artifacts_recorded": false,
+    "private_paths_recorded": false
+  },
+  "integrity": {
+    "file_count": 6,
+    "file_sha256": {
+      "llama-models.json": "5c0e5018f85b06e1340615f00eb4b2b547de565e01b9d03130f7b9ad1cd400d7",
+      "llama-server.log": "b7cc5b3c044aebf6aa22431e6cf5f92fe0bf7831b92c27be49c64cc724b27c65",
+      "llama-server.pid": "117655f9f2e2dcc2a1dc48be5c4fe3832071c5df6117b4a41de39c17dbaa31e5",
+      "ollama-tags.json": "cb0a7fe46b8ba20327d21baa8131fb61c9d2d7affebac00d97d53f8e5516dc3b",
+      "results.json": "ba4d16f87523eaa1cfe90e4d9c467e21537af4968012a805bd3f9fd254049123",
+      "tegrastats.log": "cbc84e4b50c09f350f100485331b0184b236a71ccd173c014c149814195b7e80"
+    },
+    "llama_server_pid_record_valid": true
+  },
+  "design": {
+    "role": "descriptive_vlm_timeout_repair_diagnostic",
+    "formal_evidence_eligible": false,
+    "repository_adapter_executed": false,
+    "request_contract": {
+      "llama_server_arguments_changed": false,
+      "moondream_num_predict": 100,
+      "moondream_temperature": 0.0,
+      "moondream_timeout_s": 180,
+      "qwen_max_tokens": 96,
+      "qwen_temperature": 0.0,
+      "qwen_timeout_s": 60,
+      "seed": 20260906,
+      "unload_confirmation": "ollama_process_list_absence"
+    },
+    "safety": {
+      "motion_enabled": false,
+      "motion_environment_value": "0",
+      "uart_accessed": false
+    }
+  },
+  "input": {
+    "path_recorded": false,
+    "sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+    "size_bytes": 9009
+  },
+  "models": {
+    "ollama_models": [
+      {
+        "name": "moondream:latest",
+        "digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b"
+      },
+      {
+        "name": "qwen2.5vl:3b",
+        "digest": "fb90415cde1ef08aa669ae74b082d49b158729b6db1ab183c941417d507e71a1"
+      }
+    ],
+    "llama_server_model": "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+  },
+  "runs": [
+    {
+      "repetition": 1,
+      "duration_ms": 79161.865,
+      "description": {
+        "sha256": "e640f016910dd57d31ef0b688ed170a7cf278369b49d8299f8646df0f2762994",
+        "characters": 208,
+        "bytes": 208,
+        "raw_text_recorded": false
+      },
+      "moondream": {
+        "client_ms": 56900.817,
+        "generation_ms": 1020.524,
+        "load_ms": 54567.19,
+        "prompt_eval_ms": 728.79,
+        "total_ms": 56880.786,
+        "eval_count": 44,
+        "prompt_eval_count": 742
+      },
+      "model_unload": {
+        "requested": true,
+        "confirmed": true,
+        "duration_ms": 507.303
+      },
+      "qwen": {
+        "client_ms": 21753.498,
+        "usage": {
+          "completion_tokens": 32,
+          "prompt_tokens": 164,
+          "total_tokens": 196
+        },
+        "output": {
+          "sha256": "2b3052f9836122ca49649e3b93d1a18a7b461103b0d30525123c299d2c9ab83a",
+          "characters": 50,
+          "bytes": 150,
+          "raw_text_recorded": false
+        }
+      }
+    },
+    {
+      "repetition": 2,
+      "duration_ms": 42098.505,
+      "description": {
+        "sha256": "e640f016910dd57d31ef0b688ed170a7cf278369b49d8299f8646df0f2762994",
+        "characters": 208,
+        "bytes": 208,
+        "raw_text_recorded": false
+      },
+      "moondream": {
+        "client_ms": 30673.955,
+        "generation_ms": 1014.54,
+        "load_ms": 28304.979,
+        "prompt_eval_ms": 772.623,
+        "total_ms": 30670.953,
+        "eval_count": 44,
+        "prompt_eval_count": 742
+      },
+      "model_unload": {
+        "requested": true,
+        "confirmed": true,
+        "duration_ms": 541.286
+      },
+      "qwen": {
+        "client_ms": 10883.012,
+        "usage": {
+          "completion_tokens": 32,
+          "prompt_tokens": 164,
+          "total_tokens": 196
+        },
+        "output": {
+          "sha256": "0fc50bda1524350074d97e402373591c7aba1acd91e82f81472708b557b17a5e",
+          "characters": 48,
+          "bytes": 144,
+          "raw_text_recorded": false
+        }
+      }
+    },
+    {
+      "repetition": 3,
+      "duration_ms": 30850.604,
+      "description": {
+        "sha256": "e640f016910dd57d31ef0b688ed170a7cf278369b49d8299f8646df0f2762994",
+        "characters": 208,
+        "bytes": 208,
+        "raw_text_recorded": false
+      },
+      "moondream": {
+        "client_ms": 20169.432,
+        "generation_ms": 816.637,
+        "load_ms": 18348.168,
+        "prompt_eval_ms": 509.388,
+        "total_ms": 20166.399,
+        "eval_count": 44,
+        "prompt_eval_count": 742
+      },
+      "model_unload": {
+        "requested": true,
+        "confirmed": true,
+        "duration_ms": 477.571
+      },
+      "qwen": {
+        "client_ms": 10203.343,
+        "usage": {
+          "completion_tokens": 32,
+          "prompt_tokens": 164,
+          "total_tokens": 196
+        },
+        "output": {
+          "sha256": "0fc50bda1524350074d97e402373591c7aba1acd91e82f81472708b557b17a5e",
+          "characters": 48,
+          "bytes": 144,
+          "raw_text_recorded": false
+        }
+      }
+    }
+  ],
+  "reconstruction": {
+    "all_completed": true,
+    "all_unloads_confirmed": true,
+    "completed_repetitions": 3,
+    "description_identity_count": 1,
+    "qwen_client_max_ms": 21753.498,
+    "qwen_client_min_ms": 10203.343,
+    "qwen_output_identity_count": 2,
+    "qwen_requests_over_legacy_timeout": 0,
+    "requested_repetitions": 3,
+    "all_qwen_requests_below_legacy_timeout": true,
+    "qwen_client_ms": [
+      21753.498,
+      10883.012,
+      10203.343
+    ],
+    "model_unload_ms": [
+      507.303,
+      541.286,
+      477.571
+    ],
+    "client_minus_server_ms": [
+      45.988,
+      21.772,
+      19.853
+    ]
+  },
+  "llama_server": {
+    "line_count": 66,
+    "request_count": 3,
+    "released_request_count": 3,
+    "cancellation_record_count": 0,
+    "timeout_record_count": 0,
+    "error_record_count": 0,
+    "all_requests_released": true,
+    "idle_after_final_release": true,
+    "server_total_ms": [
+      21707.51,
+      10861.24,
+      10183.49
+    ],
+    "first_request_prompt_tokens": 164,
+    "generation_tokens": [
+      32,
+      32,
+      32
+    ],
+    "subsequent_prompt_eval_tokens": [
+      1,
+      1
+    ],
+    "raw_log_recorded": false
+  },
+  "resources": {
+    "sample_count": 739,
+    "parse_error_count": 0,
+    "first_tegrastats_time": "09-06-2026 16:30:51",
+    "last_tegrastats_time": "09-06-2026 16:33:23",
+    "ram_used_mb": {
+      "min": 2824,
+      "max": 5681
+    },
+    "gr3d_usage_pct": {
+      "mean": 7.261164,
+      "max": 99
+    },
+    "maximum_tj_c": 54.062,
+    "vdd_in_instant_mw": {
+      "mean": 5867.380244,
+      "max": 17831
+    },
+    "raw_telemetry_recorded": false
+  },
+  "decision": {
+    "repair_contract_supported": true,
+    "qwen_timeout_extension_supported": true,
+    "deterministic_request_size_supported": true,
+    "model_unload_polling_supported": true,
+    "llama_server_argument_change_supported": false,
+    "actual_repaired_path_validation_required": true,
+    "formal_collection_authorized": false,
+    "phase1_complete": false,
+    "g6_v3_remains_closed": true
+  },
+  "evidence_gaps": [
+    "descriptive_three_run_diagnostic",
+    "inline_contract_replica_not_repository_adapter",
+    "unload_process_list_responses_not_retained",
+    "qwen_output_identity_not_fixed",
+    "formal_evidence_ineligible"
+  ]
+}

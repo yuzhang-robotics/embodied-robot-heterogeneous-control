@@ -33,6 +33,7 @@ from experiments.phase1.vlm_adapter import (
 from experiments.phase1.vlm_preflight import vlm_preflight_errors
 from experiments.phase1.vlm_process_adapter import PROCESS_PROTOCOL_VERSION
 from experiments.phase1.vlm_slice import VLMSliceCondition
+from jetson.vlm_request_contract import current_vlm_workload_contract
 
 
 REQUIRED_FILES = (
@@ -90,6 +91,44 @@ _PROCESS_REPORT_KEYS = {
     "protocol_complete",
     "error_code",
 }
+
+
+def _legacy_workload_contract_valid(
+    contract: Mapping[str, object],
+    *,
+    legacy_schema: bool,
+) -> bool:
+    common_valid = (
+        contract.get("request_contract_version") is None
+        and contract.get("source") == "jetson.vision_vlm"
+        and contract.get("translation_fallback") == "argos_en_zh"
+        and contract.get("unload_confirmation") == "not_available"
+        and contract.get("raw_output_recorded") is False
+        and contract.get("moondream")
+        == {
+            "temperature": 0.1,
+            "num_predict": 100,
+            "request_timeout_s": 180,
+        }
+        and contract.get("qwen_rewrite")
+        == {
+            "temperature": 0.2,
+            "max_tokens": 96,
+            "request_timeout_s": 30,
+        }
+    )
+    residency_valid = (
+        contract.get("unload_after_request") is True
+        and "unload_before_qwen" not in contract
+        and "cleanup_unload_on_failure" not in contract
+        if legacy_schema
+        else contract.get("unload_before_qwen") is True
+        and contract.get("cleanup_unload_on_failure") is True
+        and "unload_after_request" not in contract
+    )
+    return common_valid and residency_valid
+
+
 _ERROR_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 
 
@@ -277,40 +316,23 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
                 errors.append(f"manifest and preflight Git {key} differ")
 
     workload_contract = manifest.get("workload_contract")
+    unload_confirmation_required = False
     if not isinstance(workload_contract, Mapping):
         errors.append("manifest workload contract is missing")
     else:
-        moondream = workload_contract.get("moondream")
-        qwen = workload_contract.get("qwen_rewrite")
-        common_contract_invalid = (
-            workload_contract.get("source") != "jetson.vision_vlm"
-            or workload_contract.get("translation_fallback") != "argos_en_zh"
-            or workload_contract.get("unload_confirmation") != "not_available"
-            or workload_contract.get("raw_output_recorded") is not False
-            or moondream
-            != {
-                "temperature": 0.1,
-                "num_predict": 100,
-                "request_timeout_s": 180,
-            }
-            or qwen
-            != {
-                "temperature": 0.2,
-                "max_tokens": 96,
-                "request_timeout_s": 30,
-            }
+        unload_confirmation_required = (
+            workload_contract.get("request_contract_version") is not None
         )
-        residency_contract_valid = (
-            workload_contract.get("unload_after_request") is True
-            and "unload_before_qwen" not in workload_contract
-            and "cleanup_unload_on_failure" not in workload_contract
-            if legacy_schema
-            else workload_contract.get("unload_before_qwen") is True
-            and workload_contract.get("cleanup_unload_on_failure") is True
-            and "unload_after_request" not in workload_contract
+        contract_valid = (
+            _legacy_workload_contract_valid(
+                workload_contract,
+                legacy_schema=legacy_schema,
+            )
+            if workload_contract.get("request_contract_version") is None
+            else dict(workload_contract) == current_vlm_workload_contract()
         )
-        if common_contract_invalid or not residency_contract_valid:
-            errors.append("manifest workload contract differs from Phase 0")
+        if not contract_valid:
+            errors.append("manifest VLM workload contract is unsupported")
     try:
         condition = VLMSliceCondition(manifest.get("condition"))
     except ValueError:
@@ -386,6 +408,11 @@ def validate_vlm_slice_dir(run_dir: Path | str) -> list[str]:
                 "unload_confirmed",
             }:
                 errors.append("scenario model-residency fields are unsupported")
+            elif unload_confirmation_required and (
+                model_residency.get("unload_requested") is not True
+                or model_residency.get("unload_confirmed") is not True
+            ):
+                errors.append("scenario does not confirm VLM model unload")
             if not isinstance(stage_durations, Mapping) or any(
                 not isinstance(name, str)
                 or isinstance(duration, bool)

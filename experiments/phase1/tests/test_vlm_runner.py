@@ -43,6 +43,7 @@ from experiments.phase1.vlm_preflight import (
 )
 from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
 from experiments.phase1.vlm_slice import VLMSliceCondition
+from jetson.vlm_request_contract import current_vlm_workload_contract
 
 
 SESSION_ID = "20260828T170000Z_phase1_vlm_test"
@@ -189,7 +190,7 @@ class VLMRunnerTests(unittest.TestCase):
                 rewrite_chinese=lambda _text: "固定结果",
                 translate_fallback=lambda _text: "备用结果",
                 normalize_output=lambda chinese, _english: chinese + "。",
-                unload_model=lambda: None,
+                unload_model=lambda: True,
             )
         )
 
@@ -471,11 +472,23 @@ class VLMRunnerTests(unittest.TestCase):
                     "phase1_fixed_input_vlm_process_run",
                 )
                 self.assertEqual(manifest["adapter_isolation"], VLM_PROCESS_ISOLATION)
+                self.assertEqual(
+                    manifest["workload_contract"],
+                    current_vlm_workload_contract(),
+                )
                 self.assertIn("process.json", manifest["artifacts"])
                 self.assertTrue(process["valid"])
                 self.assertTrue(all(gate["passed"] for gate in process["gates"]))
                 self.assertEqual(process["process"]["exit_code"], 0)
                 self.assertFalse(process["process"]["terminate_requested"])
+                scenario = json.loads(
+                    (run_dir / "scenario.json").read_text(encoding="utf-8")
+                )
+                self.assertTrue(
+                    scenario["report"]["adapter"]["model_residency"][
+                        "unload_confirmed"
+                    ]
+                )
                 combined = "\n".join(
                     (run_dir / name).read_text(encoding="utf-8")
                     for name in (
@@ -639,11 +652,26 @@ class VLMRunnerTests(unittest.TestCase):
         process_path = run_dir / "process.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         contract = manifest["workload_contract"]
+        contract.pop("request_contract_version")
+        contract["moondream"] = {
+            "temperature": 0.1,
+            "num_predict": 100,
+            "request_timeout_s": 180,
+        }
+        contract["qwen_rewrite"] = {
+            "temperature": 0.2,
+            "max_tokens": 96,
+            "request_timeout_s": 30,
+        }
+        contract["unload_confirmation"] = "not_available"
         contract.pop("unload_before_qwen")
         contract.pop("cleanup_unload_on_failure")
         contract["unload_after_request"] = True
         scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
         scenario["report"]["adapter"].pop("stage_error_codes")
+        scenario["report"]["adapter"]["model_residency"][
+            "unload_confirmed"
+        ] = None
         scenario["process"]["protocol_version"] = "0.1.0"
         write_json_atomic(scenario_path, scenario)
         samples = load_resource_samples(run_dir / "resources.jsonl")

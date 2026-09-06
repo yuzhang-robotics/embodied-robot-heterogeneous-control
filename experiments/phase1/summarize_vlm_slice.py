@@ -218,10 +218,15 @@ def build_vlm_summary(
         _gate(
             "model_unload_claim_bounded",
             model_residency.get("unload_requested") is True
-            and model_residency.get("unload_confirmed") is None,
+            and (
+                model_residency.get("unload_confirmed") is None
+                or model_residency.get("unload_confirmed") is True
+            ),
             observed=dict(model_residency),
             requirement=(
                 "the unload request returns without claiming confirmed eviction"
+                if model_residency.get("unload_confirmed") is None
+                else "the unload request records positive process-list confirmation"
             ),
         ),
         _gate(

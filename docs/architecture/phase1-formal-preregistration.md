@@ -20,8 +20,10 @@ protocol uses schema `0.2.0`, protocol ID
 > 正式尝试出现系统被测对象失败而永久关闭；独立的描述性诊断随后验证了修正后的 VLM
 > 驻留顺序。v3 保留 v2 的五个 session、交叉平衡条件顺序、样本量、成功阈值、失败处理
 > 和分层配对 bootstrap 方法，仅冻结 `Moondream -> 卸载请求 -> Qwen` 顺序及进程协议。
-> 首次 v3 正式尝试又因 VLM Qwen 30 秒超时触发两个系统被测对象 Gate 失败；v3 与
-> Phase 1 均以负结果关闭，不重跑、不替换、不进行正式性能比较，也不进入整机应用切片。
+> 首次 v3 正式尝试又因 VLM Qwen 30 秒超时触发两个系统被测对象 Gate 失败；v3 永久
+> 关闭且不重跑或替换。修正后的 VLM 仓库路径已经在 Jetson 上完成协议外直接验证，但
+> Phase 1 尚未完成；后续正式对照仍需单独评审并激活新协议，目前不进行正式性能比较，
+> 也不进入整机应用切片。
 
 ## Protocol amendment history
 
@@ -111,8 +113,24 @@ fail a Gate, and does not override the recorded normal child-process closure.
 Under the frozen rules this system-under-test failure is not replaceable. V3 is
 closed, no later session is collected, the partial timings do not enter
 confirmatory analysis, and no v4 is implied as an automatic retry. The G6 success
-criterion is not met. Phase 1 closes with a negative result and its application
-slice is not authorized.
+criterion is not met and its application slice is not authorized.
+
+This protocol remains immutable while broader Phase 1 corrective work
+continues. A subsequent three-repetition descriptive diagnostic exercised
+temperature `0.0`, seed `20260906`, a 60 s Qwen client timeout and explicit
+Ollama process-list polling after each Moondream stop request. All three Qwen
+calls completed within the former 30 s boundary with a stable 164 + 32 token
+request size, but the inline harness did not directly execute the modified
+repository adapter. The
+[timeout-repair report](../../experiments/phase1/results/20260906T082627Z_phase1_vlm_timeout_diag/)
+therefore supports the candidate repair only. A later
+[target validation](../../experiments/phase1/results/20260906T101723Z_phase1_vlm_timeout_repair_validation/)
+directly exercised the modified repository adapter. Its nominal and stale
+conditions both confirmed Moondream absence before Qwen, completed through the
+Qwen route, passed every slice/process Gate and closed both child processes.
+This validates the repair path but is not a formal comparison. Phase 1 remains
+incomplete. No successor formal protocol is active; any future version requires
+separate review and a fresh collection from session 1.
 
 ## Research questions and hypotheses
 

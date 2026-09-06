@@ -21,6 +21,15 @@ from .config import (
     RUNTIME_DIR,
     VLM_MODEL,
 )
+from .vlm_request_contract import (
+    MODEL_UNLOAD_TIMEOUT_S,
+    MOONDREAM_PROMPTS,
+    MOONDREAM_REQUEST_TIMEOUT_S,
+    QWEN_REQUEST_TIMEOUT_S,
+    build_moondream_payload,
+    build_qwen_payload,
+    wait_for_ollama_model_unload,
+)
 
 
 SCENE_IMAGE_PATH = RUNTIME_DIR / "scene_vlm.jpg"
@@ -28,30 +37,7 @@ SCENE_IMAGE_PATH = RUNTIME_DIR / "scene_vlm.jpg"
 
 def translate_with_qwen(english_text):
     """Rewrite an English VLM description as concise spoken Chinese."""
-    system_prompt = (
-        "你是一个中文视觉描述助手。"
-        "你的任务是把英文图像描述改写成自然、简短、适合语音播报的中文。"
-        "不要逐字硬翻译，不要解释。"
-        "如果英文里出现 urn、vase、container、cup、bottle 等不确定物体，"
-        "不要翻译成骨灰、骨灰盒；优先翻译成容器、杯子、瓶子或物体。"
-        "如果英文描述不确定，就用保守说法。"
-    )
-
-    user_prompt = (
-        "请把下面这句英文图像描述改写成自然中文，控制在一到两句话：\n"
-        f"{english_text}"
-    )
-
-    payload = {
-        "model": "qwen",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "temperature": 0.2,
-        "max_tokens": 96,
-        "stream": False,
-    }
+    payload = build_qwen_payload(english_text)
 
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
 
@@ -62,7 +48,7 @@ def translate_with_qwen(english_text):
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=QWEN_REQUEST_TIMEOUT_S) as resp:
         result = json.loads(resp.read().decode("utf-8"))
 
     return result["choices"][0]["message"]["content"].strip()
@@ -107,30 +93,10 @@ def ask_moondream_english(image_path):
     """Request an English description, retrying empty responses with new prompts."""
     image_b64 = image_to_base64(image_path)
 
-    prompts = [
-        "Describe this image briefly.",
-        "What is in this image?",
-        "Describe the main objects and scene in this image in one sentence.",
-    ]
-
     last_raw = ""
 
-    for idx, prompt in enumerate(prompts, start=1):
-        payload = {
-            "model": VLM_MODEL,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt,
-                    "images": [image_b64]
-                }
-            ],
-            "stream": False,
-            "options": {
-                "temperature": 0.1,
-                "num_predict": 100
-            }
-        }
+    for idx, prompt in enumerate(MOONDREAM_PROMPTS, start=1):
+        payload = build_moondream_payload(VLM_MODEL, prompt, image_b64)
 
         data = json.dumps(payload).encode("utf-8")
 
@@ -144,7 +110,10 @@ def ask_moondream_english(image_path):
         print(f"[VLM] 第{idx}次请求 moondream，prompt={prompt}")
 
         try:
-            with urllib.request.urlopen(req, timeout=180) as resp:
+            with urllib.request.urlopen(
+                req,
+                timeout=MOONDREAM_REQUEST_TIMEOUT_S,
+            ) as resp:
                 raw = resp.read().decode("utf-8")
                 last_raw = raw
                 result = json.loads(raw)
@@ -235,20 +204,42 @@ def make_speech_friendly(chinese_text, english_text=""):
     return text
 
 
+def _ollama_processes():
+    base_url = OLLAMA_CHAT_URL.split("/api/", 1)[0]
+    request = urllib.request.Request(f"{base_url}/api/ps", method="GET")
+    with urllib.request.urlopen(request, timeout=2) as response:
+        value = json.loads(response.read().decode("utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("Ollama process response is not an object")
+    return value
+
+
 def unload_moondream():
-    """Release the VLM so Whisper can reclaim Jetson unified memory."""
+    """Release the VLM and confirm that Ollama no longer reports it loaded."""
     try:
         print(f"[VLM] 正在释放 {VLM_MODEL} 模型...")
-        subprocess.run(
+        completed = subprocess.run(
             ["ollama", "stop", VLM_MODEL],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            timeout=20,
+            timeout=MODEL_UNLOAD_TIMEOUT_S,
             check=False,
         )
-        print(f"[VLM] {VLM_MODEL} 已请求释放")
+        if completed.returncode != 0:
+            print(f"[VLM] {VLM_MODEL} 释放请求失败")
+            return False
+        confirmed = wait_for_ollama_model_unload(
+            VLM_MODEL,
+            _ollama_processes,
+        )
+        if confirmed:
+            print(f"[VLM] {VLM_MODEL} 已确认释放")
+        else:
+            print(f"[VLM] {VLM_MODEL} 释放未确认")
+        return confirmed
     except Exception as e:
         print(f"[VLM] 释放 moondream 时出现异常：{e}")
+        return False
 
 
 def describe_scene_with_vlm():

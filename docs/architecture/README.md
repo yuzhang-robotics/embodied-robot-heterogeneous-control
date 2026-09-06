@@ -150,8 +150,17 @@ system-under-test Gates. The independently reconstructed
 [v3 failed-attempt report](../../experiments/phase1/results/20260906T055511Z_phase1_formal_g6_v3/)
 binds the archive and service-log identities without publishing raw evidence.
 V3 will not be rerun or replaced; its incomplete matrix supports no formal
-sync/async comparison. G6 is not met, Phase 1 closes with a negative result, and
-the application slice is not authorized.
+sync/async comparison. G6 is not met and the application slice is not
+authorized. A later
+[timeout-repair diagnostic](../../experiments/phase1/results/20260906T082627Z_phase1_vlm_timeout_diag/)
+completed three deterministic, unload-confirmed Qwen requests within a 60 s
+client boundary while retaining the llama-server arguments. It supports the
+candidate repair contract, not a formal result. The later
+[target validation](../../experiments/phase1/results/20260906T101723Z_phase1_vlm_timeout_repair_validation/)
+directly executed the modified repository adapter in both lifecycle conditions.
+Both unload confirmations, Qwen routes, slice/process Gate sets and child
+closures passed. The repair is ready for review, but Phase 1 remains incomplete
+and no successor formal protocol is active.
 
 ## Evaluation plan
 
