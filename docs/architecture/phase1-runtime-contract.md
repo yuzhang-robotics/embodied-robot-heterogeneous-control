@@ -24,8 +24,13 @@ descriptive Jetson diagnostic validated the corrected Moondream-unload-before-
 Qwen order in both lifecycle conditions. G6 v3 retains the v2 scientific design
 and timeout while binding that order and spawned-process protocol `0.2.0`. Its
 first formal attempt stopped on a synchronous VLM Qwen timeout and failed two
-system-under-test Gates. V3 and Phase 1 are closed with a negative result; no
-formal performance comparison or application slice is authorized.
+system-under-test Gates. V3 is permanently closed. A later three-repetition
+diagnostic supports deterministic model requests, explicit unload confirmation
+and a 60 s Qwen client boundary. A subsequent nonformal target validation
+directly exercised the modified repository path in both VLM lifecycle
+conditions; both runs confirmed unload, used the Qwen route and passed their
+slice/process Gates. The repair is ready for review, but Phase 1 is incomplete;
+no formal performance comparison or application slice is authorized.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
@@ -38,12 +43,15 @@ formal performance comparison or application slice is authorized.
 > 尝试随后因 VLM 的 Qwen 30 秒超时而停止并关闭；随后完成的描述性 Jetson 诊断验证了
 > 修正后的 `Moondream -> 卸载请求 -> Qwen` 路径。G6 v3 保留 v2 的科学设计和超时，
 > 仅冻结该顺序与进程协议。首次 v3 正式尝试又因同步 VLM Qwen 超时触发两个系统被测
-> 对象 Gate 失败；v3 与 Phase 1 均以负结果关闭，不进行正式性能比较或整机应用切片。
+> 对象 Gate 失败，v3 永久关闭。随后完成的三次描述性诊断支持确定性请求、显式卸载确认
+> 与 60 秒 Qwen 边界；之后的非正式目标机验证直接运行了修改后的仓库路径，两个 VLM
+> 生命周期条件均确认卸载、使用 Qwen 路径并通过切片与进程 Gate。修复已具备评审条件，
+> 但 Phase 1 尚未完成，不进行正式性能比较或整机应用切片。
 
 ## Status
 
-- Phase: closed with a negative result after the first G6 v3 attempt stopped on
-  a system-under-test VLM failure; G6 not met; application slice not authorized
+- Phase: incomplete after the closed G6 v3 attempt; repaired VLM path validated
+  on target and ready for review; G6 not met; application slice not authorized
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -61,6 +69,11 @@ formal performance comparison or application slice is authorized.
   `20260905T160805Z_phase1_vlm_residency_diag`; descriptive only
 - G6 v3 failed attempt: `main@3dca66b`, collection
   `20260906T055511Z_phase1_formal_g6_v3`; no formal claim permitted
+- VLM timeout-repair diagnostic: `main@52c041d`, diagnostic
+  `20260906T082627Z_phase1_vlm_timeout_diag`; descriptive only
+- VLM timeout-repair target validation: base `main@52c041d`, validation
+  `20260906T101723Z_phase1_vlm_timeout_repair_validation`; modified repository
+  path validated; nonformal correctness evidence only
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -94,6 +107,8 @@ The current implementation includes:
   cleanup facts and independently rebuilt process Gates;
 - deterministic process-pilot reconstruction with a hash-fixed descriptive
   thread reference.
+- a shared deterministic VLM request contract, a 60 s Qwen client boundary and
+  fail-closed Ollama process-list polling after each unload request;
 - a fixed-input ASR adapter that supervises the native `whisper-cli` process,
   publishes transcript identity only, and distinguishes normal exit, timeout,
   cancellation termination and process reaping;
@@ -1240,8 +1255,32 @@ The default runner refuses any further v3 session. The v3 failed measured run is
 not replaced, the collection is not continued, and its partial timing data do
 not enter confirmatory analysis. The incomplete matrix supports no sync/async
 performance conclusion, and no v4 is implied as an automatic retry. G6 is not
-met. Phase 1 closes with a negative result and the application slice is not
-authorized.
+met and the application slice is not authorized.
+
+The subsequent descriptive timeout-repair diagnostic repeated the fixed input
+three times with temperature `0.0`, seed `20260906`, the existing model and
+output-token limits, explicit Ollama process-list polling after unload and a
+60 s Qwen client boundary. Qwen completed in 21753.498, 10883.012 and
+10203.343 ms with identical 164-token prompts and 32-token completions. All
+three llama-server tasks released normally, no cancellation was recorded, all
+739 tegrastats samples parsed, and maximum Tj was 54.062 C. Its
+[derived report](../../experiments/phase1/results/20260906T082627Z_phase1_vlm_timeout_diag/)
+contains no raw model text, logs, telemetry or private paths.
+
+The diagnostic reproduced the candidate contract in an inline harness rather
+than executing the modified repository adapter. It supports the repair design
+but did not itself validate the repository path. The subsequent
+[target validation](../../experiments/phase1/results/20260906T101723Z_phase1_vlm_timeout_repair_validation/)
+applied the exact repair source bundle to a clean Jetson checkout and directly
+ran `run_vlm_slice` for the nominal and stale conditions. Both independent
+validators returned `VALID`; all slice/process Gates passed, both Moondream
+unloads were confirmed, both rewrites used Qwen, and the service log contained
+two matching request releases with no cancellation, timeout or error record.
+The Qwen stages completed in 23704.782 and 26854.584 ms. This is nonformal
+correctness evidence from one fixed-order run per condition, not a performance
+comparison. V3 remains closed and is not reclassified; Phase 1 remains
+incomplete. Any later formal comparison requires an explicit versioned protocol
+activated after review and cannot reuse the v3 partial collection.
 
 ## Phase 1 completion boundary
 
@@ -1256,5 +1295,8 @@ The original completion boundary required:
    runtime while the synchronous baseline remains available.
 
 Items 4 and 6 were not satisfied. The non-replaceable G6 v3 failure prevents the
-formal comparison and therefore blocks the application slice. Phase 1 is closed
-with that negative result rather than extended through an unpreregistered retry.
+formal comparison and therefore blocks the application slice. The VLM repair
+path is validated on the target and ready for review, but that corrective result
+does not complete Phase 1 or authorize an unpreregistered retry. Any successor
+comparison requires a new reviewed protocol and a fresh collection after the
+implementation is fixed on `main`.

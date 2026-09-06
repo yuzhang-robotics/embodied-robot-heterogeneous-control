@@ -792,14 +792,22 @@ def analyze_vlm_pilot_dir(
         and deadline_miss_total == 0
         and all(run["timing"]["probe"]["joined"] is True for run in runs)
     )
+    unload_confirmation_observed = all(
+        _mapping(run["result"]["model_unload"], "model unload record").get(
+            "unload_confirmed"
+        )
+        is True
+        for run in runs
+    )
     limitations = [
         "single_run_per_condition",
         "fixed_condition_order",
         "no_real_workload_synchronous_condition",
         "formal_thresholds_not_frozen",
-        "model_unload_not_independently_confirmed",
         "resource_activity_not_attributed_to_a_model_or_processor",
     ]
+    if not unload_confirmation_observed:
+        limitations.append("model_unload_not_independently_confirmed")
     if not listener_complete:
         limitations.append("listener_binding_evidence_not_recorded")
     if skipped_total:

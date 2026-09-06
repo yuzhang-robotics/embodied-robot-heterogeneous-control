@@ -30,6 +30,7 @@ def make_pipeline(
     *,
     qwen_error: bool = False,
     unload_error: bool = False,
+    unload_confirmed: bool = True,
     description_delay_s: float = 0.0,
     calls: list[str] | None = None,
 ) -> VLMPipeline:
@@ -48,11 +49,12 @@ def make_pipeline(
             raise OSError("private Qwen error")
         return "画面中间是一台摄像机"
 
-    def unload() -> None:
+    def unload() -> bool:
         observed_calls.append("model_unload")
         if unload_error:
             raise RuntimeError("private unload failure")
         print("private unload message")
+        return unload_confirmed
 
     return VLMPipeline(
         describe_english=describe,
@@ -143,7 +145,7 @@ class FixedInputVLMAdapterTests(unittest.TestCase):
         self.assertFalse(record.to_dict()["output"]["raw_text_recorded"])
         self.assertEqual(record.translation_route, "qwen")
         self.assertTrue(record.model_unload_requested)
-        self.assertIsNone(record.model_unload_confirmed)
+        self.assertTrue(record.model_unload_confirmed)
         self.assertEqual(record.stage_error_codes, {})
         self.assertEqual(
             calls,
@@ -199,6 +201,30 @@ class FixedInputVLMAdapterTests(unittest.TestCase):
             "runtimeerror",
         )
         self.assertNotIn("private unload failure", json.dumps(record.to_dict()))
+
+    def test_unconfirmed_unload_prevents_qwen_from_starting(self) -> None:
+        calls: list[str] = []
+        adapter = FixedInputVLMAdapter(
+            pipeline_loader=lambda: make_pipeline(
+                unload_confirmed=False,
+                calls=calls,
+            )
+        )
+
+        result = adapter(self.claimed_task())
+        record = adapter.last_record
+
+        self.assertEqual(result.execution_outcome, ExecutionOutcome.ERROR)
+        self.assertEqual(result.error_code, "model_unload_unconfirmed")
+        self.assertEqual(calls, ["moondream_inference", "model_unload"])
+        self.assertIsNotNone(record)
+        assert record is not None
+        self.assertFalse(record.model_unload_confirmed)
+        self.assertEqual(record.stage_status["model_unload"], "error")
+        self.assertEqual(
+            record.stage_error_codes["model_unload"],
+            "model_unload_unconfirmed",
+        )
 
     def test_input_mismatch_fails_before_loading_the_pipeline(self) -> None:
         claimed = self.claimed_task()

@@ -64,7 +64,7 @@ class FixtureVLMAdapter:
             output_length=22,
             translation_route="qwen",
             model_unload_requested=True,
-            model_unload_confirmed=None,
+            model_unload_confirmed=True,
             stage_durations_ns={
                 "input_verify_before": 1,
                 "module_import": 1,

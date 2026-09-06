@@ -19,8 +19,13 @@ a confirmatory claim. A separate residency-order diagnostic validated both
 corrected Qwen paths. G6 v3 retained the complete v2 scientific design while
 freezing that execution order, but its first formal attempt stopped on a
 synchronous VLM Qwen timeout and failed two system-under-test Gates. V3 and
-Phase 1 are closed with a negative result; no confirmatory comparison or
-application slice is authorized.
+its partial collection are permanently closed. A three-repetition descriptive
+diagnostic now supports a deterministic request contract, explicit unload
+confirmation and a 60 s Qwen boundary. A subsequent nonformal Jetson validation
+directly exercised the modified repository path in both lifecycle conditions;
+both runs confirmed unload, used Qwen and passed all slice/process Gates. The
+repair is ready for review, but Phase 1 is incomplete and no confirmatory
+comparison or application slice is authorized.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -34,8 +39,11 @@ application slice is authorized.
 > 个条目因 VLM 的 Qwen 30 秒超时而停止。v2 已关闭且不支持正式结论；随后完成的描述性
 > Jetson 诊断验证了 `Moondream -> 卸载请求 -> Qwen` 路径。G6 v3 保留 v2 的完整科学
 > 设计并冻结修正后的顺序，但首次正式尝试又在第 10 个条目因同步 VLM Qwen 30 秒超时
-> 触发两个系统被测对象 Gate 失败。v3 与 Phase 1 均以负结果关闭，不重跑或替换，不支持
-> 正式同步/异步性能结论，也不授权整机应用切片。
+> 触发两个系统被测对象 Gate 失败。v3 永久关闭且不重跑或替换。随后完成的三次描述性
+> 诊断支持确定性请求、显式卸载确认和 60 秒 Qwen 边界；之后的非正式 Jetson 验证直接
+> 运行了修改后的仓库路径，两个生命周期条件均确认卸载、使用 Qwen 并通过全部切片与进程
+> Gate。修复已具备评审条件，但 Phase 1 尚未完成，不支持正式同步/异步性能结论，也不
+> 授权整机应用切片。
 
 ## Current status
 
@@ -78,7 +86,14 @@ application slice is authorized.
   Qwen paths completed inside the retained 30 s timeout with all Gates passing
 - Deterministic v3 failed-attempt reconstruction: implemented; 26 manifest
   artifacts, 10 run records, the ledger prefix, resource trace and five service
-  requests independently verified; G6 not met and Phase 1 closed negatively
+  requests independently verified; G6 not met and v3 permanently closed
+- VLM timeout-repair diagnostic: three deterministic request repetitions
+  independently reconstructed; repair design supported
+- VLM timeout-repair target validation: modified repository path directly
+  exercised on Jetson; both lifecycle runs valid with confirmed unload and Qwen
+  completion; repair ready for review
+- Phase 1 completion: pending a later reviewed, versioned formal protocol and
+  successful comparison; no successor protocol is active
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -739,8 +754,64 @@ python3 -m experiments.phase1.analyze_formal_v3_failure \
 Under the frozen rules this is a non-replaceable system-under-test result. V3
 is closed, no later session is collected, and the partial matrix does not enter
 confirmatory analysis. No v4 is implied as an automatic retry. The G6 success
-criterion is not met, Phase 1 closes with a negative result, and the application
-slice is not authorized.
+criterion is not met and the application slice is not authorized.
+
+Corrective work proceeds outside the closed protocol. Diagnostic
+`20260906T082627Z_phase1_vlm_timeout_diag` repeated the fixed input three times
+with temperature `0.0`, seed `20260906`, the existing model and output-token
+bounds, explicit Ollama process-list polling after unload, and a 60 s Qwen
+client timeout. All three Qwen calls completed in 21753.498, 10883.012 and
+10203.343 ms. Their request usage was consistently 164 prompt plus 32
+completion tokens; all three server tasks released normally, no cancellation
+was recorded, and maximum Tj was 54.062 C. The independently reconstructed
+[timeout-repair report](results/20260906T082627Z_phase1_vlm_timeout_diag/)
+publishes no raw prompt, model text, service log, telemetry or private path.
+
+This diagnostic used an inline harness that reproduced the proposed contract;
+it did not directly execute the modified repository adapter. It therefore
+supports the repair design but does not by itself validate the repository path.
+
+Reconstruct the diagnostic privately with:
+
+```bash
+python3 -m experiments.phase1.analyze_vlm_timeout_diagnostic \
+  /path/to/20260906T082627Z_phase1_vlm_timeout_diag \
+  --source-archive-sha256 fb76b78c0d54895ddcd44682dbc1fe688451444c9682c976ff9719b7f6740500 \
+  --json-output /tmp/phase1-vlm-timeout-diagnostic.json \
+  --markdown-output /tmp/phase1-vlm-timeout-diagnostic.md
+```
+
+Target validation `20260906T101723Z_phase1_vlm_timeout_repair_validation`
+then directly executed the modified `run_vlm_slice` path in the nominal and
+stale lifecycle conditions. Both independent validators returned `VALID`, all
+slice and process Gates passed, both Moondream unloads were confirmed, and both
+rewrites used Qwen. The Qwen stages completed in 23704.782 and 26854.584 ms;
+the llama-server log records two matching releases and no cancellation, timeout
+or error. The independently reconstructed
+[target-validation report](results/20260906T101723Z_phase1_vlm_timeout_repair_validation/)
+binds the transferred collection, service log and exact 11-file validation
+source bundle without publishing private paths or raw evidence.
+
+This validates the repair path and makes it ready for review. It is one
+fixed-order correctness run per condition, not formal sync/async evidence. G6
+v3 remains closed and immutable, Phase 1 remains incomplete, and any future
+formal comparison requires a separately reviewed and activated protocol rather
+than reuse of any v3 run.
+
+Reconstruct the target validation privately with:
+
+```bash
+python3 -m experiments.phase1.analyze_vlm_timeout_repair \
+  /path/to/20260906T101723Z_phase1_vlm_timeout_repair_validation \
+  --llama-log /path/to/validation_llama-server.log \
+  --source-bundle /path/to/phase1-vlm-qwen-timeout-validation-source.tar.gz \
+  --repository-root /path/to/repository \
+  --collection-archive-sha256 f8e4df5000f64cc26f18f03b92677b4f3f061433d6bed6ccb2a73ed7efae1b78 \
+  --llama-log-archive-sha256 64792cc3a8aaa32146ca617192390657699af7bf529b65311426270d867f11ea \
+  --source-bundle-sha256 e344b0461ac9f96d70f56f1561d8b5cd214487f5f75cd5a080b432bb8b5132e5 \
+  --json-output /tmp/phase1-vlm-timeout-repair.json \
+  --markdown-output /tmp/phase1-vlm-timeout-repair.md
+```
 
 ## Planned implementation order
 
@@ -769,8 +840,9 @@ slice is not authorized.
     analyzer — complete;
 13. collect, validate and publish the formal synchronous/asynchronous comparison
     — v3 stopped on a non-replaceable system-under-test VLM timeout; the partial
-    matrix supports no performance comparison, so G6 is not met and Phase 1
-    closes with a negative result;
+    matrix supports no performance comparison, so G6 is not met; deterministic
+    request and unload-confirmation repair is target-validated and ready for
+    review; a successor formal protocol is not yet active;
 14. add an opt-in motion-disabled application slice after the research Gates
     pass — not authorized because G6 did not pass.
 
@@ -803,6 +875,8 @@ experiments/phase1/
 ├── analyze_asr_pilot.py
 ├── analyze_formal_failure.py
 ├── analyze_formal_runs.py
+├── analyze_vlm_timeout_diagnostic.py
+├── analyze_vlm_timeout_repair.py
 ├── analyze_vlm_residency.py
 ├── analyze_llm_pilot.py
 ├── analyze_vlm_pilot.py

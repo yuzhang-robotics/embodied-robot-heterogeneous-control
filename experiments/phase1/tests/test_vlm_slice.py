@@ -42,7 +42,7 @@ class VLMSliceTests(unittest.TestCase):
                     rewrite_chinese=lambda _text: "固定输出",
                     translate_fallback=lambda _text: "备用输出",
                     normalize_output=lambda chinese, _english: chinese + "。",
-                    unload_model=lambda: None,
+                    unload_model=lambda: True,
                 )
             )
             spec = VLMSliceSpec(

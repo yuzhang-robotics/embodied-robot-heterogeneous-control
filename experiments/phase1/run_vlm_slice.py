@@ -38,6 +38,7 @@ from experiments.phase1.vlm_slice import (
     VLMSliceSpec,
     run_vlm_slice,
 )
+from jetson.vlm_request_contract import current_vlm_workload_contract
 
 
 DEFAULT_INPUT = (
@@ -292,24 +293,7 @@ def run_once(
             "media_type": payload.media_type,
             "path_recorded": False,
         },
-        "workload_contract": {
-            "source": "jetson.vision_vlm",
-            "moondream": {
-                "temperature": 0.1,
-                "num_predict": 100,
-                "request_timeout_s": 180,
-            },
-            "qwen_rewrite": {
-                "temperature": 0.2,
-                "max_tokens": 96,
-                "request_timeout_s": 30,
-            },
-            "translation_fallback": "argos_en_zh",
-            "unload_before_qwen": True,
-            "cleanup_unload_on_failure": True,
-            "unload_confirmation": "not_available",
-            "raw_output_recorded": False,
-        },
+        "workload_contract": current_vlm_workload_contract(),
         "spec": spec_record,
         "resource_interval_ms": args.resource_interval_ms,
         "resource_sampler_report": None,

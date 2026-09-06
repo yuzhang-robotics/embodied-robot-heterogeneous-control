@@ -140,11 +140,19 @@ def _sha256_file(path: Path) -> str:
 
 
 def _exception_code(exc: BaseException) -> str:
+    if isinstance(exc, VLMExecutionError):
+        return exc.code
     raw = type(exc).__name__.lower()
     normalized = "".join(
         character if character.isalnum() else "_" for character in raw
     ).strip("_")
     return (normalized or "exception")[:64]
+
+
+def _unload_and_confirm(pipeline: VLMPipeline) -> bool:
+    if pipeline.unload_model() is not True:
+        raise VLMExecutionError("model_unload_unconfirmed")
+    return True
 
 
 def fixed_c100_payload(path: Path | str) -> PayloadRef:
@@ -308,7 +316,11 @@ class FixedInputVLMAdapter:
             output_length=output_length,
             translation_route=route,
             model_unload_requested="model_unload" in statuses,
-            model_unload_confirmed=None,
+            model_unload_confirmed=(
+                True
+                if statuses.get("model_unload") == "ok"
+                else False if statuses.get("model_unload") == "error" else None
+            ),
             stage_durations_ns=durations,
             stage_status=statuses,
             stage_error_codes=stage_error_codes,
@@ -392,11 +404,13 @@ class FixedInputVLMAdapter:
                     try:
                         self._stage(
                             "model_unload",
-                            pipeline.unload_model,
+                            lambda: _unload_and_confirm(pipeline),
                             durations,
                             statuses,
                             stage_error_codes,
                         )
+                    except VLMExecutionError:
+                        raise
                     except Exception as exc:
                         raise VLMExecutionError("model_unload_failed") from exc
 
@@ -452,11 +466,14 @@ class FixedInputVLMAdapter:
                         ), contextlib.redirect_stderr(io.StringIO()):
                             self._stage(
                                 "model_unload",
-                                pipeline.unload_model,
+                                lambda: _unload_and_confirm(pipeline),
                                 durations,
                                 statuses,
                                 stage_error_codes,
                             )
+                    except VLMExecutionError as exc:
+                        outcome = ExecutionOutcome.ERROR
+                        error_code = exc.code
                     except Exception:
                         outcome = ExecutionOutcome.ERROR
                         error_code = "model_unload_failed"
