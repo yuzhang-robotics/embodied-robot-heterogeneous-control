@@ -10,10 +10,11 @@ old-generation rejection on the Jetson. A spawned-process VLM adapter and its
 evidence Gates have since completed one process-isolated Jetson correctness
 pilot. Fixed-input ASR and LLM adapters have since completed independently
 validated and analyzed Jetson correctness pilots. All three real-workload
-correctness components are complete, closing G5. The protocol-bound formal session runner
-and independent analyzer are implemented. Jetson commissioning exposed an LLM
-empty-history identity mismatch before measurement and a resource-trace tail
-race after one complete session. An outcome-independent design audit then found
+correctness components are complete, closing G5. The protocol-bound formal
+session runner and independent analyzer are implemented. Jetson commissioning
+exposed an LLM empty-history identity mismatch before measurement and a
+resource-trace tail race after one complete session. An outcome-independent
+design audit then found
 that v1 repeated the same condition/predecessor relationship across sessions.
 Neither collection is admissible formal evidence; v2 changed only the frozen
 condition-order matrix while retaining the remaining scientific design. The
@@ -21,7 +22,10 @@ first v2 attempt then stopped on a VLM Qwen timeout and failed its required
 translation-route Gate. V2 is closed without a confirmatory claim. A subsequent
 descriptive Jetson diagnostic validated the corrected Moondream-unload-before-
 Qwen order in both lifecycle conditions. G6 v3 retains the v2 scientific design
-and timeout while binding that order and spawned-process protocol `0.2.0`.
+and timeout while binding that order and spawned-process protocol `0.2.0`. Its
+first formal attempt stopped on a synchronous VLM Qwen timeout and failed two
+system-under-test Gates. V3 and Phase 1 are closed with a negative result; no
+formal performance comparison or application slice is authorized.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
@@ -33,13 +37,13 @@ and timeout while binding that order and spawned-process protocol `0.2.0`.
 > 重复；两次 collection 均不作为正式证据，v2 仅修改冻结的条件顺序矩阵。首次 v2 正式
 > 尝试随后因 VLM 的 Qwen 30 秒超时而停止并关闭；随后完成的描述性 Jetson 诊断验证了
 > 修正后的 `Moondream -> 卸载请求 -> Qwen` 路径。G6 v3 保留 v2 的科学设计和超时，
-> 仅冻结该顺序与进程协议，等待评审激活后从 session 1 重新采集。
+> 仅冻结该顺序与进程协议。首次 v3 正式尝试又因同步 VLM Qwen 超时触发两个系统被测
+> 对象 Gate 失败；v3 与 Phase 1 均以负结果关闭，不进行正式性能比较或整机应用切片。
 
 ## Status
 
-- Phase: Phase 1D correctness pilots complete; G6 v2 closed after a system-
-  under-test failure; VLM residency-order diagnostic complete; G6 v3 frozen
-  for reviewed activation
+- Phase: closed with a negative result after the first G6 v3 attempt stopped on
+  a system-under-test VLM failure; G6 not met; application slice not authorized
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -55,6 +59,8 @@ and timeout while binding that order and spawned-process protocol `0.2.0`.
   `20260905T140816Z_phase1_formal_g6_v2`; no formal claim permitted
 - VLM residency-order diagnostic: `main@08e262d`, session
   `20260905T160805Z_phase1_vlm_residency_diag`; descriptive only
+- G6 v3 failed attempt: `main@3dca66b`, collection
+  `20260906T055511Z_phase1_formal_g6_v3`; no formal claim permitted
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -120,7 +126,9 @@ The current implementation includes:
   and service-log archives, verifies the corrected stage/process contract and
   publishes only claim-bounded derived evidence;
 - a G6 v3 preregistration that preserves the v2 schedule, hypotheses, sample
-  size, thresholds and analysis while binding the corrected VLM order.
+  size, thresholds and analysis while binding the corrected VLM order;
+- a deterministic G6 v3 failure analyzer that verifies the closed attempt,
+  correlates all llama-server requests and publishes only claim-bounded evidence.
 
 The VLM, ASR and LLM pilots include no formal performance data. They validate
 real-model integration, result freshness and workload-specific boundaries. The
@@ -1078,9 +1086,9 @@ defense and must not be used as the Jetson scheduling success target.
 The G6 v3 formal comparison is preserved by the amended
 [G6 preregistration](phase1-formal-preregistration.md) and its machine-readable
 v3 protocol. V1 and v2 remain immutable history, and v2 remains closed after a
-system-under-test failure. V3 becomes active only through its reviewed merge to
-`main`; data collected before that event are not eligible for confirmatory
-analysis.
+system-under-test failure. V3 became active only through its reviewed merge to
+`main`; data collected before that event were not eligible for confirmatory
+analysis. Its first attempt has now closed v3 as described below.
 
 The design contains five sessions and six paired sync/async blocks per workload
 and session: 30 pairs per workload, 30 measured runs per condition and workload,
@@ -1198,6 +1206,28 @@ binds the collection and log archive hashes without publishing raw evidence.
 The fixed order and single run per condition prohibit causal or performance
 claims, but support retaining the 30 s boundary for v3.
 
+The first v3 collection, `20260906T055511Z_phase1_formal_g6_v3`, passed the
+frozen preflight and completed five warm-ups, the pre-measurement idle reference
+and four measured runs. Measured ordinal 10 then reached the synchronous VLM
+Qwen rewrite's 30 s client timeout, used the Argos fallback and failed
+`translation_route_verified` and `residency_contract_verified`. Independent
+reconstruction verified 26 manifest artifacts, the 21-record ledger prefix, 10
+run records, 1,724 resource samples, 97 passed Gates and two failed Gates. The
+VLM child exited normally under process protocol `0.2.0`; all five llama-server
+requests completed and released their slots, the server returned to idle, and
+no thermal, sampler or service failure occurred. The public
+[v3 failed-attempt report](../../experiments/phase1/results/20260906T055511Z_phase1_formal_g6_v3/)
+contains only hash-bound derived evidence.
+
+The failed server request completed in 30117.120 ms, 117.120 ms beyond the
+configured client boundary, with no cancellation record. It used 10 more prompt
+tokens and generated 5 more tokens than the VLM warm-up request, but these two
+observations do not establish a causal explanation. The unload request returned
+before Qwen; actual Ollama unload completion remains unobservable. The separate
+`multiprocessing.resource_tracker` semaphore warning seen only on the operator
+console is secondary, is absent from the bound archives, did not fail a Gate and
+does not contradict the recorded child-process closure.
+
 The independent analyzer does not trust runner summaries. It verifies the
 protocol copy and every artifact hash, reconstructs the session ledger and all
 90 pairs, checks event boundaries, idle duration, thermal/resource coverage,
@@ -1206,15 +1236,16 @@ performance metrics, then applies one shared seeded session/block resampling
 stream for 100,000 percentile-bootstrap draws. Any missing run, reordered entry,
 mixed commit, un-restarted service, incomplete thermal gate, lifecycle failure
 or modified artifact invalidates the collection.
-The default runner refuses any further v2 session. The failed measured run is
+The default runner refuses any further v3 session. The v3 failed measured run is
 not replaced, the collection is not continued, and its partial timing data do
-not enter confirmatory analysis. V3 changes no schedule, hypothesis, sample
-size, endpoint, threshold or analysis method. Its reviewed merge activates a
-new formal collection beginning at session 1.
+not enter confirmatory analysis. The incomplete matrix supports no sync/async
+performance conclusion, and no v4 is implied as an automatic retry. G6 is not
+met. Phase 1 closes with a negative result and the application slice is not
+authorized.
 
 ## Phase 1 completion boundary
 
-Phase 1 is complete only when:
+The original completion boundary required:
 
 1. host-only concurrency and lifecycle replay pass;
 2. safe Jetson simulation passes with valid telemetry;
@@ -1223,3 +1254,7 @@ Phase 1 is complete only when:
 5. results and limitations are published without hard-real-time claims;
 6. at least one opt-in, motion-disabled application slice uses the validated
    runtime while the synchronous baseline remains available.
+
+Items 4 and 6 were not satisfied. The non-replaceable G6 v3 failure prevents the
+formal comparison and therefore blocks the application slice. Phase 1 is closed
+with that negative result rather than extended through an unpreregistered retry.

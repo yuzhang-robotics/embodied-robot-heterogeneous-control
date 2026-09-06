@@ -60,8 +60,11 @@ def payload(media_type: str) -> PayloadRef:
 
 
 class FormalRunnerTests(unittest.TestCase):
-    def test_default_formal_collection_is_active_for_v3(self) -> None:
-        self.assertEqual(FORMAL_COLLECTION_STATUS, "active")
+    def test_default_formal_collection_is_closed_after_v3_failure(self) -> None:
+        self.assertEqual(
+            FORMAL_COLLECTION_STATUS,
+            "closed_after_system_under_test_failure",
+        )
 
     def test_thermal_monitor_requires_consecutive_cool_samples_and_stops_high(
         self,
