@@ -16,8 +16,11 @@ outcome-independent schedule audit also found a repeated cross-session order
 relationship in v1. The first v2 formal attempt then stopped on a VLM Qwen
 timeout and failed its required translation-route Gate. G6 v2 is closed without
 a confirmatory claim. A separate residency-order diagnostic validated both
-corrected Qwen paths, and G6 v3 now retains the complete v2 scientific design
-while freezing that execution order for a new collection.
+corrected Qwen paths. G6 v3 retained the complete v2 scientific design while
+freezing that execution order, but its first formal attempt stopped on a
+synchronous VLM Qwen timeout and failed two system-under-test Gates. V3 and
+Phase 1 are closed with a negative result; no confirmatory comparison or
+application slice is authorized.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -30,7 +33,9 @@ while freezing that execution order for a new collection.
 > 随后的结果无关顺序审计发现 v1 的跨 session 顺序关系重复；首次 v2 正式尝试又在第 18
 > 个条目因 VLM 的 Qwen 30 秒超时而停止。v2 已关闭且不支持正式结论；随后完成的描述性
 > Jetson 诊断验证了 `Moondream -> 卸载请求 -> Qwen` 路径。G6 v3 保留 v2 的完整科学
-> 设计，仅冻结修正后的驻留顺序和进程协议，等待评审合并后从 session 1 重新采集。
+> 设计并冻结修正后的顺序，但首次正式尝试又在第 10 个条目因同步 VLM Qwen 30 秒超时
+> 触发两个系统被测对象 Gate 失败。v3 与 Phase 1 均以负结果关闭，不重跑或替换，不支持
+> 正式同步/异步性能结论，也不授权整机应用切片。
 
 ## Current status
 
@@ -61,17 +66,19 @@ while freezing that execution order for a new collection.
 - Deterministic LLM-pilot reconstruction and public descriptive report:
   implemented; LLM component and G5 overall satisfied
 - Machine-validated G6 formal preregistration: v1 and v2 retained as immutable
-  history; v2 closed after a system-under-test failure; v3 generated and frozen
-  for reviewed activation
+  history; v2 and v3 both closed after system-under-test failures
 - Protocol-bound formal session runner and independent analyzer: implemented
   and reviewed; LLM history binding corrected against the frozen adapter
 - Formal Phase 1 evidence: no confirmatory claim permitted; two v1 commissioning
-  collections and the failed v2 attempt are retained without replacement
+  collections plus the failed v2 and v3 attempts are retained without replacement
 - Deterministic v2 failed-attempt reconstruction: implemented; all 42 manifest
   artifacts, 18 run records, the ledger prefix and service log correlation
   independently verified
 - VLM residency-order diagnostic: independently reconstructed; both corrected
   Qwen paths completed inside the retained 30 s timeout with all Gates passing
+- Deterministic v3 failed-attempt reconstruction: implemented; 26 manifest
+  artifacts, 10 run records, the ledger prefix, resource trace and five service
+  requests independently verified; G6 not met and Phase 1 closed negatively
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -561,8 +568,8 @@ python3 -m experiments.phase1.formal_protocol --print-sha256
 
 The expected SHA-256 is
 `070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b`.
-V3 becomes active only through its reviewed merge to `main`; preflight rejects
-collection before that activation.
+V3 became active only through its reviewed merge to `main`; its first formal
+attempt has now closed the protocol, and preflight rejects further collection.
 
 The design fixes five sessions, six paired blocks per workload and session, 30
 pairs per workload and 180 measured runs overall. Every session uses each of the
@@ -679,8 +686,8 @@ The diagnostic is one fixed-order run per lifecycle condition, so it does not
 establish residency causality or performance superiority. It supports retaining
 the existing 30 s timeout and freezing the corrected order for v3. No outcome
 value changed the schedule, hypotheses, sample size, thresholds or analysis.
-V3 restarts formal collection from session 1 only after reviewed activation on
-clean synchronized `main`.
+V3 subsequently started formal collection from session 1 on clean synchronized
+`main`.
 
 Reconstruct the diagnostic privately with:
 
@@ -693,6 +700,47 @@ python3 -m experiments.phase1.analyze_vlm_residency \
   --json-output /tmp/phase1-vlm-residency.json \
   --markdown-output /tmp/phase1-vlm-residency.md
 ```
+
+Collection `20260906T055511Z_phase1_formal_g6_v3` was the first admissible v3
+attempt. It passed the frozen preflight, completed five warm-ups, the
+pre-measurement idle reference and four measured runs, then stopped at measured
+ordinal 10. The synchronous VLM Qwen rewrite ran for 30031.008 ms at its 30 s
+client boundary, used the Argos fallback and failed
+`translation_route_verified` and `residency_contract_verified`. The child
+completed process protocol `0.2.0` and exited normally. All five llama-server
+requests released their slots, no cancellation record was present, all 1,724
+resource samples validated, and maximum Tj was 55.812 C. The deterministic
+[v3 failed-attempt report](results/20260906T055511Z_phase1_formal_g6_v3/)
+records 97 passed and two failed Gates without publishing raw model text, logs
+or private paths.
+
+The failed server request completed in 30117.120 ms, 117.120 ms beyond the
+configured timeout. It had 10 more prompt tokens and 5 more generated tokens
+than the VLM warm-up request, but these two observations cannot establish why
+the boundary was crossed. The unload request returned before Qwen; actual Ollama
+unload completion is not observable. Neither prompt length nor residency is
+assigned as causal. A `multiprocessing.resource_tracker` semaphore warning was
+also observed on the operator console after runner failure. It was not retained
+in either hash-bound archive, did not fail a Gate, and is secondary to the
+recorded normal child-process closure.
+
+Reconstruct the closed v3 attempt from a private collection and service log with:
+
+```bash
+python3 -m experiments.phase1.analyze_formal_v3_failure \
+  /path/to/20260906T055511Z_phase1_formal_g6_v3 \
+  --llama-log /path/to/phase1_formal_g6_v3_llama.log \
+  --source-archive-sha256 601a097e5691264a663e88c07b9ea07e6c5b9bf7c3db4cbf6594ab3a14d41c69 \
+  --llama-log-archive-sha256 a18b253e477a18b5e09bd8fa1e928112e8f4d51f9a951779a00fbd009b308239 \
+  --json-output /tmp/phase1-g6-v3-failure.json \
+  --markdown-output /tmp/phase1-g6-v3-failure.md
+```
+
+Under the frozen rules this is a non-replaceable system-under-test result. V3
+is closed, no later session is collected, and the partial matrix does not enter
+confirmatory analysis. No v4 is implied as an automatic retry. The G6 success
+criterion is not met, Phase 1 closes with a negative result, and the application
+slice is not authorized.
 
 ## Planned implementation order
 
@@ -720,10 +768,11 @@ python3 -m experiments.phase1.analyze_vlm_residency \
 12. implement and review the protocol-bound formal runner and independent
     analyzer — complete;
 13. collect, validate and publish the formal synchronous/asynchronous comparison
-    — v2 stopped on a system-under-test VLM timeout and is closed; the residency-
-    order diagnostic and v3 preregistration are complete, with v3 collection next;
+    — v3 stopped on a non-replaceable system-under-test VLM timeout; the partial
+    matrix supports no performance comparison, so G6 is not met and Phase 1
+    closes with a negative result;
 14. add an opt-in motion-disabled application slice after the research Gates
-    pass.
+    pass — not authorized because G6 did not pass.
 
 Contract changes are reviewed before implementation, and the formal protocol
 is frozen before data collection.

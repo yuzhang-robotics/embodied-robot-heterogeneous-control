@@ -39,6 +39,7 @@ class FormalPreflightTests(unittest.TestCase):
         service_identity: dict[str, object] | None = None,
         services_restarted: bool = True,
         dynamic_dvfs_confirmed: bool = True,
+        collection_status: str = "active",
     ) -> dict[str, object]:
         qwen = [LLM_EXPECTED_SERVED_MODEL_ID]
         base_record = base or passing_base_preflight()
@@ -109,6 +110,10 @@ class FormalPreflightTests(unittest.TestCase):
                     "error_code": None,
                 },
             ),
+            patch(
+                "experiments.phase1.formal_preflight.FORMAL_COLLECTION_STATUS",
+                collection_status,
+            ),
         ):
             return build_formal_preflight(
                 ".",
@@ -140,6 +145,26 @@ class FormalPreflightTests(unittest.TestCase):
         self.assertEqual(
             activated["observed"]["collection_status"],
             "active",
+        )
+
+    def test_closed_v3_protocol_is_ineligible(self) -> None:
+        preflight = self.build(
+            collection_status="closed_after_system_under_test_failure"
+        )
+
+        self.assertFalse(preflight["eligible"])
+        self.assertIn(
+            "formal preflight check failed: protocol_activated",
+            formal_preflight_errors(preflight),
+        )
+        activated = next(
+            check
+            for check in preflight["checks"]
+            if check["name"] == "protocol_activated"
+        )
+        self.assertEqual(
+            activated["observed"]["collection_status"],
+            "closed_after_system_under_test_failure",
         )
 
     def test_confirmation_and_identity_drift_fail_closed(self) -> None:

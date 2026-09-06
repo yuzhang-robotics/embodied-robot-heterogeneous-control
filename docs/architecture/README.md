@@ -142,9 +142,16 @@ verifies the preserved artifact, ledger, lifecycle, telemetry and service-log
 evidence. V2 is closed without a confirmatory claim. The subsequent
 [residency-order diagnostic](../../experiments/phase1/results/20260905T160805Z_phase1_vlm_residency_diag/)
 validated the corrected Qwen path in both lifecycle conditions without
-authorizing a causal or performance claim. G6 v3 retains the v2 design and 30 s
-timeout while binding the corrected order and spawned-process protocol `0.2.0`;
-its reviewed merge activates a new collection from session 1.
+authorizing a causal or performance claim. G6 v3 retained the v2 design and 30 s
+timeout while binding the corrected order and spawned-process protocol `0.2.0`.
+Its first formal attempt stopped at measured ordinal 10 when the synchronous VLM
+Qwen request crossed the client boundary and the fallback route failed two
+system-under-test Gates. The independently reconstructed
+[v3 failed-attempt report](../../experiments/phase1/results/20260906T055511Z_phase1_formal_g6_v3/)
+binds the archive and service-log identities without publishing raw evidence.
+V3 will not be rerun or replaced; its incomplete matrix supports no formal
+sync/async comparison. G6 is not met, Phase 1 closes with a negative result, and
+the application slice is not authorized.
 
 ## Evaluation plan
 

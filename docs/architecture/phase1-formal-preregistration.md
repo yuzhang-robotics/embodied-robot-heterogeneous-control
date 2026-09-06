@@ -4,7 +4,9 @@ This document records the preregistered fixed-input synchronous/asynchronous
 comparison for the Phase 1 runtime under the amended G6 v3 protocol. V2 remains
 closed after its first formal attempt stopped on a system-under-test failure.
 V3 retains the complete v2 scientific design and freezes the corrected VLM
-residency order after a separate descriptive diagnostic.
+residency order after a separate descriptive diagnostic. Its first formal
+attempt also stopped on a system-under-test failure and permanently closes the
+protocol without a confirmatory comparison.
 
 The machine-readable protocol is
 [`phase1-g6-v3-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v3-preregistration.json).
@@ -18,7 +20,8 @@ protocol uses schema `0.2.0`, protocol ID
 > 正式尝试出现系统被测对象失败而永久关闭；独立的描述性诊断随后验证了修正后的 VLM
 > 驻留顺序。v3 保留 v2 的五个 session、交叉平衡条件顺序、样本量、成功阈值、失败处理
 > 和分层配对 bootstrap 方法，仅冻结 `Moondream -> 卸载请求 -> Qwen` 顺序及进程协议。
-> v1、v2、诊断证据及所有修订原因均被完整保留。
+> 首次 v3 正式尝试又因 VLM Qwen 30 秒超时触发两个系统被测对象 Gate 失败；v3 与
+> Phase 1 均以负结果关闭，不重跑、不替换、不进行正式性能比较，也不进入整机应用切片。
 
 ## Protocol amendment history
 
@@ -82,6 +85,34 @@ thresholds or analysis. G6 v3 changes only the VLM residency-order contract,
 binds spawned-process protocol `0.2.0`, records amendment provenance and
 restarts formal collection from session 1. V2 remains immutable and cannot be
 reopened, rerun, replaced or reclassified.
+
+The first v3 collection, `20260906T055511Z_phase1_formal_g6_v3`, passed the
+frozen preflight and completed five warm-ups, the pre-measurement idle reference
+and four measured runs. Measured ordinal 10 then reached the synchronous VLM
+Qwen rewrite's 30 s client timeout, used the Argos fallback and failed
+`translation_route_verified` and `residency_contract_verified`. Independent
+reconstruction verified 26 manifest artifacts, 10 run records, 1,724 resource
+samples, 97 passed Gates and the two failures. The child process exited normally,
+all five llama-server requests released their slots, the server returned to idle,
+and no thermal, sampler or model-service failure was observed. The
+[v3 failed-attempt report](../../experiments/phase1/results/20260906T055511Z_phase1_formal_g6_v3/)
+publishes only hash-bound derived evidence.
+
+The server completed the failed request in 30117.120 ms, 117.120 ms beyond the
+client boundary, without a cancellation record. The warm-up and failed requests
+used 161/32 and 171/37 prompt/generated tokens respectively, but these two
+observations do not establish a timeout cause. The unload request returned before
+Qwen, while actual Ollama unload completion remains unobservable. Neither prompt
+length nor residency is therefore assigned as causal. A separate console-only
+`multiprocessing.resource_tracker` semaphore warning appeared during runner
+shutdown; it is not present in the hash-bound collection or service log, did not
+fail a Gate, and does not override the recorded normal child-process closure.
+
+Under the frozen rules this system-under-test failure is not replaceable. V3 is
+closed, no later session is collected, the partial timings do not enter
+confirmatory analysis, and no v4 is implied as an automatic retry. The G6 success
+criterion is not met. Phase 1 closes with a negative result and its application
+slice is not authorized.
 
 ## Research questions and hypotheses
 
@@ -338,14 +369,17 @@ failure, an unexplained telemetry parse error, identity drift or the thermal
 stop threshold. Performance results cannot override a failed safety or
 correctness Gate.
 
-## Activation and collection boundary
+## Activation and closed-collection boundary
 
-Merging this amendment to `main` supersedes v2 and activates protocol version
+Merging this amendment to `main` superseded v2 and activated protocol version
 `phase1-g6-fixed-input-sync-async-v3`. The exact v1 and v2 JSON artifacts remain
 immutable, and the v2 failure analyzer remains bound to the v2 ID and SHA-256.
 
 The formal session runner and independent analyzer load the exact v3 JSON and
 fail closed on any schedule, identity, VLM process protocol, residency order,
 threshold or analysis-parameter difference. Before the reviewed merge, the
-clean synchronized-`main` preflight prevents formal collection. After
-activation, collection starts at session 1 under a new v3 collection identifier.
+clean synchronized-`main` preflight prevented formal collection. After
+activation, collection started at session 1 under a new v3 collection identifier.
+The first attempt produced the non-replaceable system-under-test failure recorded
+above. The default runner now rejects further v3 collection with status
+`closed_after_system_under_test_failure`.
