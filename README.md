@@ -6,7 +6,7 @@
 
 This repository began with my bachelor's thesis on speech interaction and visual perception for a wheeled robot. The thesis system runs fully local speech and vision pipelines on a Jetson Orin Nano, while an STM32F407 executes motion commands and enforces a communication watchdog. The same platform will now be used to study how long-running perception and inference can coexist with predictable control timing.
 
-> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，并完成 VLM、ASR 与 LLM 的固定输入 Jetson correctness pilot；G6 v2 的首次正式采集在第 18 个条目因 VLM 的 Qwen 翻译路径超时而停止，v2 已关闭且不支持正式结论，当前正在用描述性 Jetson 诊断隔离模型驻留顺序因素，整机应用适配尚未开始。
+> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，并完成 VLM、ASR 与 LLM 的固定输入 Jetson correctness pilot；G6 v2 在第 18 个条目因 VLM 的 Qwen 翻译路径超时而永久关闭，随后完成的描述性 Jetson 诊断验证了修正后的模型驻留顺序，G6 v3 已预注册并等待评审激活，整机应用适配尚未开始。
 
 ## Project status
 
@@ -15,7 +15,7 @@ This repository began with my bachelor's thesis on speech interaction and visual
 | Bachelor's thesis software and firmware | Complete and hardware validated |
 | Custom base-driver PCB | Published and tested on the physical robot |
 | Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
-| Asynchronous inference runtime | Bounded executor, probe and replay validated by Jetson simulation; fixed-input VLM, ASR and LLM correctness pilots complete; G6 v2 formal attempt preserved as a system-under-test failure; v2 closed without a confirmatory claim; VLM residency-order diagnostic pending |
+| Asynchronous inference runtime | Bounded executor, probe and replay validated by Jetson simulation; fixed-input VLM, ASR and LLM correctness pilots complete; G6 v2 failure preserved and closed without a confirmatory claim; VLM residency-order diagnostic complete; G6 v3 preregistered for formal restart |
 
 The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
@@ -99,8 +99,9 @@ records one nominal consumption and one stale rejection with all Gates passing.
 This closes the LLM component and G5 overall. The
 [G6 formal preregistration](docs/architecture/phase1-formal-preregistration.md)
 freezes the numerical thresholds, cross-balanced order, sample size, exclusions
-and statistical methods. Its amended v2 merge to `main` supersedes v1 and makes
-v2 the sole admissible plan. A protocol-bound formal session runner and
+and statistical methods. V1 and the failed v2 attempt remain immutable. The
+amended v3 protocol retains the v2 design and freezes the corrected VLM
+residency order. A protocol-bound formal session runner and
 independent analyzer reject protocol, schedule, environment, artifact or
 statistical-method drift. Jetson commissioning exposed an LLM empty-history
 identity mismatch before measurement and a resource-trace tail race after one
@@ -120,8 +121,14 @@ observed. The recorded implementation requested Moondream unload only after
 the Qwen attempt, leaving a residency-order confound. G6 v2 is closed: the
 attempt will not be rerun or replaced and cannot support a formal claim. The
 isolated correction moves the unload request before Qwen while retaining the
-30 s timeout for a separate descriptive Jetson diagnostic; any later formal
-collection requires a new preregistered protocol version.
+30 s timeout. A separate
+[residency-order diagnostic](experiments/phase1/results/20260905T160805Z_phase1_vlm_residency_diag/)
+then completed both Qwen paths in about 18.4--18.9 s with all slice/process
+Gates passing and no llama-server cancellation record. This single fixed-order
+diagnostic supports implementation readiness, not causality or performance
+superiority. G6 v3 binds that order and process protocol `0.2.0` while retaining
+the v2 schedule, hypotheses, sample size, thresholds and analysis; formal
+collection restarts from session 1 only after reviewed activation on `main`.
 
 All pilot timings are descriptive, not formal performance or cancellation-
 latency data. The broader research stage will investigate:

@@ -12,6 +12,12 @@ from experiments.phase1.analyze_formal_failure import (
     render_markdown,
 )
 from experiments.phase1.analyze_formal_runs import analyze_formal_collection
+from experiments.phase1.formal_protocol import (
+    FORMAL_V2_PROTOCOL_ID,
+    FORMAL_V2_PROTOCOL_PATH,
+    FORMAL_V2_PROTOCOL_SHA256,
+    load_formal_protocol,
+)
 from experiments.phase1.tests.test_formal_analysis import (
     build_collection,
     read_json,
@@ -43,7 +49,12 @@ def _write_llama_log(path: Path) -> None:
 
 
 def _failed_collection(root: Path) -> tuple[Path, Path]:
-    collection = build_collection(root)
+    collection = build_collection(
+        root,
+        protocol_override=load_formal_protocol(FORMAL_V2_PROTOCOL_PATH),
+        protocol_id=FORMAL_V2_PROTOCOL_ID,
+        protocol_sha256_value=FORMAL_V2_PROTOCOL_SHA256,
+    )
     session_dir = collection / "session-01-attempt-01"
     for extra_session in sorted(collection.glob("session-0[2-5]-attempt-01")):
         shutil.rmtree(extra_session)
@@ -138,7 +149,9 @@ class FormalFailureAnalysisTests(unittest.TestCase):
                 source_archive_sha256=SOURCE_ARCHIVE_SHA256,
                 llama_log_archive_sha256=LOG_ARCHIVE_SHA256,
             )
-            with self.assertRaisesRegex(ValueError, "attempt inventory is incomplete"):
+            with self.assertRaisesRegex(
+                ValueError, "protocol does not match activated G6"
+            ):
                 analyze_formal_collection(collection)
 
         self.assertEqual(analysis["integrity"]["completed_run_records_verified"], 17)

@@ -15,8 +15,9 @@ before measurement and a resource-trace tail race after a complete session. An
 outcome-independent schedule audit also found a repeated cross-session order
 relationship in v1. The first v2 formal attempt then stopped on a VLM Qwen
 timeout and failed its required translation-route Gate. G6 v2 is closed without
-a confirmatory claim; a residency-order correction awaits descriptive Jetson
-validation before any new protocol is preregistered.
+a confirmatory claim. A separate residency-order diagnostic validated both
+corrected Qwen paths, and G6 v3 now retains the complete v2 scientific design
+while freezing that execution order for a new collection.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -27,8 +28,9 @@ validation before any new protocol is preregistered.
 > 正式协议冻结交叉平衡顺序，协议绑定的正式 runner 与独立分析器已实现；commissioning
 > 先后发现正式测量前的 LLM 空历史身份不一致、一个完整 session 后的资源轨迹尾部竞态，
 > 随后的结果无关顺序审计发现 v1 的跨 session 顺序关系重复；首次 v2 正式尝试又在第 18
-> 个条目因 VLM 的 Qwen 30 秒超时而停止。v2 已关闭且不支持正式结论，当前先通过描述性
-> Jetson 诊断隔离 Moondream/Qwen 驻留顺序因素，再决定后续协议版本。
+> 个条目因 VLM 的 Qwen 30 秒超时而停止。v2 已关闭且不支持正式结论；随后完成的描述性
+> Jetson 诊断验证了 `Moondream -> 卸载请求 -> Qwen` 路径。G6 v3 保留 v2 的完整科学
+> 设计，仅冻结修正后的驻留顺序和进程协议，等待评审合并后从 session 1 重新采集。
 
 ## Current status
 
@@ -58,9 +60,9 @@ validation before any new protocol is preregistered.
   completed one independently validated Jetson correctness pilot
 - Deterministic LLM-pilot reconstruction and public descriptive report:
   implemented; LLM component and G5 overall satisfied
-- Machine-validated G6 formal preregistration: v1 retained as history; amended
-  v2 activated through its reviewed merge and is now closed after a system-
-  under-test failure
+- Machine-validated G6 formal preregistration: v1 and v2 retained as immutable
+  history; v2 closed after a system-under-test failure; v3 generated and frozen
+  for reviewed activation
 - Protocol-bound formal session runner and independent analyzer: implemented
   and reviewed; LLM history binding corrected against the frozen adapter
 - Formal Phase 1 evidence: no confirmatory claim permitted; two v1 commissioning
@@ -68,8 +70,8 @@ validation before any new protocol is preregistered.
 - Deterministic v2 failed-attempt reconstruction: implemented; all 42 manifest
   artifacts, 18 run records, the ledger prefix and service log correlation
   independently verified
-- VLM residency-order correction: implemented for review; descriptive Jetson
-  validation pending with the existing 30 s Qwen timeout
+- VLM residency-order diagnostic: independently reconstructed; both corrected
+  Qwen paths completed inside the retained 30 s timeout with all Gates passing
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -544,12 +546,13 @@ inference.
 
 ## G6 formal preregistration
 
-The G6 v2 confirmatory Phase 1 comparison is preserved in the amended
+The G6 v3 confirmatory Phase 1 comparison is preserved in the amended
 [human-readable preregistration](../../docs/architecture/phase1-formal-preregistration.md)
 and the tracked
+[`phase1-g6-v3-preregistration.json`](formal/phase1-g6-v3-preregistration.json).
+The superseded v1 and v2 JSON files remain tracked as
+[`phase1-g6-preregistration.json`](formal/phase1-g6-preregistration.json) and
 [`phase1-g6-v2-preregistration.json`](formal/phase1-g6-v2-preregistration.json).
-The superseded v1 JSON remains tracked as
-[`phase1-g6-preregistration.json`](formal/phase1-g6-preregistration.json).
 Validate the machine-readable protocol with:
 
 ```bash
@@ -557,14 +560,14 @@ python3 -m experiments.phase1.formal_protocol --print-sha256
 ```
 
 The expected SHA-256 is
-`5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a`.
-The protocol became active through its reviewed merge to `main`. Its first
-formal attempt subsequently produced a system-under-test failure, closing v2.
+`070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b`.
+V3 becomes active only through its reviewed merge to `main`; preflight rejects
+collection before that activation.
 
 The design fixes five sessions, six paired blocks per workload and session, 30
 pairs per workload and 180 measured runs overall. Every session uses each of the
 six workload orders once and balances sync-first and async-first order three
-times per workload. Its fixed v2 matrix also balances each workload/block across
+times per workload. Its retained v2 matrix also balances each workload/block across
 sessions two/three, each workload/position five/five, and each measured
 preceding-workload context as closely as its even or odd count permits. Every
 session/block contains both pair orders. The asynchronous p95 per-run
@@ -588,7 +591,8 @@ Each measured `formal_sync` call uses the inline same-thread probe; each
 Both VLM conditions retain the same spawned-process adapter. Every run binds
 the adapter record to a separate privacy-preserving result envelope. The Gates
 also enforce the expected ASR transcript identity, the frozen LLM request and
-token/residency facts, and VLM child reaping and per-invocation unload request.
+token/residency facts, and VLM child reaping, spawned-process protocol `0.2.0`
+and the `Moondream -> unload request -> Qwen` execution order.
 
 Collection `20260905T062312Z_phase1_formal_g6` stopped after its three ASR
 warm-ups and before the first LLM request, pre-measurement idle epoch or measured
@@ -662,11 +666,33 @@ python3 -m experiments.phase1.analyze_formal_failure \
 
 The default formal runner refuses further v2 collection. The failed attempt is
 not rerun or replaced, and the incomplete matrix is not used for performance
-estimation. After this correction is reviewed on `main`, a repeated fixed-input
-VLM pilot will test the new residency order descriptively with the 30 s timeout
-unchanged. That diagnostic determines whether a future G6 protocol can retain
-the timeout or needs a separately justified value. Only a newly preregistered
-and reviewed protocol may restart formal collection from session 1.
+estimation. The separate process-isolated fixed-input diagnostic
+`20260905T160805Z_phase1_vlm_residency_diag` completed both corrected Qwen paths
+in 18400.091 ms and 18864.649 ms. Both slice and process Gate sets passed, both
+children exited normally and the bound llama-server log contained no
+cancellation record. Its deterministic
+[residency-order report](results/20260905T160805Z_phase1_vlm_residency_diag/)
+binds both archive hashes while publishing no raw input, model text, log or
+private path.
+
+The diagnostic is one fixed-order run per lifecycle condition, so it does not
+establish residency causality or performance superiority. It supports retaining
+the existing 30 s timeout and freezing the corrected order for v3. No outcome
+value changed the schedule, hypotheses, sample size, thresholds or analysis.
+V3 restarts formal collection from session 1 only after reviewed activation on
+clean synchronized `main`.
+
+Reconstruct the diagnostic privately with:
+
+```bash
+python3 -m experiments.phase1.analyze_vlm_residency \
+  /path/to/20260905T160805Z_phase1_vlm_residency_diag \
+  --llama-log /path/to/phase1_vlm_residency_llama.log \
+  --source-archive-sha256 <collection-archive-sha256> \
+  --llama-log-archive-sha256 <log-archive-sha256> \
+  --json-output /tmp/phase1-vlm-residency.json \
+  --markdown-output /tmp/phase1-vlm-residency.md
+```
 
 ## Planned implementation order
 
@@ -694,8 +720,8 @@ and reviewed protocol may restart formal collection from session 1.
 12. implement and review the protocol-bound formal runner and independent
     analyzer — complete;
 13. collect, validate and publish the formal synchronous/asynchronous comparison
-    — v2 stopped on a system-under-test VLM timeout and is closed; residency-
-    order diagnostic and a new protocol version are required;
+    — v2 stopped on a system-under-test VLM timeout and is closed; the residency-
+    order diagnostic and v3 preregistration are complete, with v3 collection next;
 14. add an opt-in motion-disabled application slice after the research Gates
     pass.
 
@@ -728,6 +754,7 @@ experiments/phase1/
 ├── analyze_asr_pilot.py
 ├── analyze_formal_failure.py
 ├── analyze_formal_runs.py
+├── analyze_vlm_residency.py
 ├── analyze_llm_pilot.py
 ├── analyze_vlm_pilot.py
 ├── asr_adapter.py
@@ -735,7 +762,8 @@ experiments/phase1/
 ├── asr_slice.py
 ├── formal/
 │   ├── phase1-g6-preregistration.json
-│   └── phase1-g6-v2-preregistration.json
+│   ├── phase1-g6-v2-preregistration.json
+│   └── phase1-g6-v3-preregistration.json
 ├── formal_protocol.py
 ├── formal_preflight.py
 ├── formal_run.py

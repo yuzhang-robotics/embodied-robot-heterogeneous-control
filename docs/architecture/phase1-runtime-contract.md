@@ -10,8 +10,7 @@ old-generation rejection on the Jetson. A spawned-process VLM adapter and its
 evidence Gates have since completed one process-isolated Jetson correctness
 pilot. Fixed-input ASR and LLM adapters have since completed independently
 validated and analyzed Jetson correctness pilots. All three real-workload
-correctness components are complete, closing G5. The amended G6 v2 formal
-protocol preregistration is now fixed. The protocol-bound formal session runner
+correctness components are complete, closing G5. The protocol-bound formal session runner
 and independent analyzer are implemented. Jetson commissioning exposed an LLM
 empty-history identity mismatch before measurement and a resource-trace tail
 race after one complete session. An outcome-independent design audit then found
@@ -19,25 +18,28 @@ that v1 repeated the same condition/predecessor relationship across sessions.
 Neither collection is admissible formal evidence; v2 changed only the frozen
 condition-order matrix while retaining the remaining scientific design. The
 first v2 attempt then stopped on a VLM Qwen timeout and failed its required
-translation-route Gate. V2 is closed without a confirmatory claim. The current
-correction isolates Moondream residency order for descriptive Jetson validation
-before any new formal protocol is created.
+translation-route Gate. V2 is closed without a confirmatory claim. A subsequent
+descriptive Jetson diagnostic validated the corrected Moondream-unload-before-
+Qwen order in both lifecycle conditions. G6 v3 retains the v2 scientific design
+and timeout while binding that order and spawned-process protocol `0.2.0`.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
 > Jetson simulation pilot 与固定输入 VLM correctness pilot 已完成并通过独立验证；
 > VLM 进程隔离路径以及固定输入 ASR、LLM 路径均已完成 Jetson correctness pilot，G5 已关闭；
-> 修订后的 G6 v2 正式协议已冻结；协议绑定的正式 runner 与独立分析器已实现；Jetson
+> G6 v2 正式协议及其失败证据已冻结；协议绑定的正式 runner 与独立分析器已实现；Jetson
 > commissioning 先后发现 measured run 开始前的 LLM 空历史身份不一致，以及一个完整
 > session 后的资源轨迹尾部竞态；结果无关设计审计随后发现 v1 的跨 session 条件顺序关系
 > 重复；两次 collection 均不作为正式证据，v2 仅修改冻结的条件顺序矩阵。首次 v2 正式
-> 尝试随后因 VLM 的 Qwen 30 秒超时而停止并关闭；当前先以描述性 Jetson 诊断隔离
-> Moondream 驻留顺序，再决定新的正式协议。
+> 尝试随后因 VLM 的 Qwen 30 秒超时而停止并关闭；随后完成的描述性 Jetson 诊断验证了
+> 修正后的 `Moondream -> 卸载请求 -> Qwen` 路径。G6 v3 保留 v2 的科学设计和超时，
+> 仅冻结该顺序与进程协议，等待评审激活后从 session 1 重新采集。
 
 ## Status
 
 - Phase: Phase 1D correctness pilots complete; G6 v2 closed after a system-
-  under-test failure; VLM residency-order diagnostic pending
+  under-test failure; VLM residency-order diagnostic complete; G6 v3 frozen
+  for reviewed activation
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -51,6 +53,8 @@ before any new formal protocol is created.
   `20260901T143315Z_phase1_llm_pilot`
 - G6 v2 failed attempt: `main@1e5e1c7`, collection
   `20260905T140816Z_phase1_formal_g6_v2`; no formal claim permitted
+- VLM residency-order diagnostic: `main@08e262d`, session
+  `20260905T160805Z_phase1_vlm_residency_diag`; descriptive only
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -112,6 +116,11 @@ The current implementation includes:
 - a VLM adapter residency-order correction that requests Moondream unload before
   Qwen and records bounded stage exception classes while preserving legacy
   schema reconstruction.
+- a deterministic residency-order diagnostic analyzer that binds the collection
+  and service-log archives, verifies the corrected stage/process contract and
+  publishes only claim-bounded derived evidence;
+- a G6 v3 preregistration that preserves the v2 schedule, hypotheses, sample
+  size, thresholds and analysis while binding the corrected VLM order.
 
 The VLM, ASR and LLM pilots include no formal performance data. They validate
 real-model integration, result freshness and workload-specific boundaries. The
@@ -1066,11 +1075,12 @@ defense and must not be used as the Jetson scheduling success target.
 
 ## G6 formal preregistration
 
-The G6 v2 formal comparison is preserved by the amended
+The G6 v3 formal comparison is preserved by the amended
 [G6 preregistration](phase1-formal-preregistration.md) and its machine-readable
-v2 protocol. The amendment became active through its reviewed merge to `main`;
-data collected before that event are not eligible for the confirmatory analysis.
-Its first formal attempt subsequently closed v2 on a system-under-test failure.
+v3 protocol. V1 and v2 remain immutable history, and v2 remains closed after a
+system-under-test failure. V3 becomes active only through its reviewed merge to
+`main`; data collected before that event are not eligible for confirmatory
+analysis.
 
 The design contains five sessions and six paired sync/async blocks per workload
 and session: 30 pairs per workload, 30 measured runs per condition and workload,
@@ -1078,7 +1088,7 @@ and 180 measured runs overall. Every session uses each of the six workload
 orders once. Sync-first and async-first pair order each occur three times per
 workload in every session and 15 times overall. Warm-ups and two 30 s idle
 references per session are retained but excluded by their predeclared roles.
-The v2 matrix additionally balances pair order two/three within every
+The retained v2 matrix additionally balances pair order two/three within every
 workload/block across sessions, five/five within every workload/position, and
 five/five or seven/eight within every measured preceding-workload context. Each
 session/block contains both pair orders.
@@ -1098,7 +1108,7 @@ then six paired blocks within each selected session, using 100,000 resamples,
 all endpoints and workloads. No post-hoc outlier exclusion, imputation,
 failed-run replacement or operator-selected reordering is permitted. The
 tracked protocol SHA-256 is
-`5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a`.
+`070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b`.
 
 The formal runner executes one complete protocol session per invocation. It
 loads the tracked protocol by hash, requires synchronized clean `main`, records
@@ -1114,7 +1124,8 @@ inline absolute-schedule probe exposes the blocking interval. `formal_async`
 uses a one-pending/one-result Phase 1 lane and an independent probe. ASR keeps
 its supervised Whisper subprocess in both conditions; LLM keeps the same
 pre-existing llama-server; VLM keeps the spawned-process adapter and
-per-invocation Moondream unload policy in both conditions. Thus the intended
+per-invocation Moondream-unload-before-Qwen policy and process protocol `0.2.0`
+in both conditions. Thus the intended
 condition difference is the Phase 1 scheduling boundary rather than a model,
 request or residency change. Each run binds the adapter record to a separate
 privacy-preserving result envelope and enforces workload-specific output,
@@ -1175,8 +1186,17 @@ The v2 stage order placed its Moondream unload request after Qwen and the Argos
 fallback. This is a residency-order confound but does not establish the timeout's
 cause. The isolated implementation correction moves unload between Moondream
 inference and Qwen, retains cleanup on earlier failure and leaves the 30 s Qwen
-timeout unchanged. A separate descriptive Jetson pilot must evaluate that
-single change before any timeout amendment or new formal protocol is justified.
+timeout unchanged.
+
+The separate diagnostic `20260905T160805Z_phase1_vlm_residency_diag` executed
+one process-isolated run per lifecycle condition. Both used Qwen after the
+unload request, completed the slice/process Gate sets and exited normally. The
+Qwen stages took 18400.091 ms and 18864.649 ms, and the bound llama-server log
+contained two completed requests with no cancellation record. Its
+[derived report](../../experiments/phase1/results/20260905T160805Z_phase1_vlm_residency_diag/)
+binds the collection and log archive hashes without publishing raw evidence.
+The fixed order and single run per condition prohibit causal or performance
+claims, but support retaining the 30 s boundary for v3.
 
 The independent analyzer does not trust runner summaries. It verifies the
 protocol copy and every artifact hash, reconstructs the session ledger and all
@@ -1188,9 +1208,9 @@ mixed commit, un-restarted service, incomplete thermal gate, lifecycle failure
 or modified artifact invalidates the collection.
 The default runner refuses any further v2 session. The failed measured run is
 not replaced, the collection is not continued, and its partial timing data do
-not enter confirmatory analysis. Formal collection remains prohibited until the
-residency-order diagnostic is complete and a new protocol version is
-preregistered and reviewed on `main`.
+not enter confirmatory analysis. V3 changes no schedule, hypothesis, sample
+size, endpoint, threshold or analysis method. Its reviewed merge activates a
+new formal collection beginning at session 1.
 
 ## Phase 1 completion boundary
 

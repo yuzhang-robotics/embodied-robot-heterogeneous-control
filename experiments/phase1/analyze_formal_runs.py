@@ -377,7 +377,11 @@ def _positive_int(value: object) -> bool:
     return _nonnegative_int(value) and value > 0
 
 
-def _expected_gate_names(workload: str, condition: str) -> set[str]:
+def _expected_gate_names(
+    workload: str,
+    condition: str,
+    workload_contract: Mapping[str, object],
+) -> set[str]:
     names = {
         "adapter_completed",
         "output_private",
@@ -407,6 +411,8 @@ def _expected_gate_names(workload: str, condition: str) -> set[str]:
                 "model_unload_claim_bounded",
             }
         )
+        if "process_protocol_version" in workload_contract:
+            names.add("residency_contract_verified")
     return names
 
 
@@ -571,7 +577,7 @@ def _run_gate_errors(
                     errors.append(f"run gate failed: {name}")
                 else:
                     errors.append(f"expected run gate did not fail: {name}")
-    if names != _expected_gate_names(workload, condition):
+    if names != _expected_gate_names(workload, condition, workload_contract):
         errors.append("run gate set is incomplete or unsupported")
     if not expected_failed_gates.issubset(names):
         errors.append("expected failed Gate set is incomplete or unsupported")
@@ -720,6 +726,14 @@ def _run_gate_errors(
         process_record = process if isinstance(process, Mapping) else {}
         residency = adapter_record.get("model_residency")
         residency_record = residency if isinstance(residency, Mapping) else {}
+        stage_status_value = adapter_record.get("stage_status")
+        stage_status = (
+            stage_status_value if isinstance(stage_status_value, Mapping) else {}
+        )
+        stage_errors_value = adapter_record.get("stage_error_codes")
+        stage_errors = (
+            stage_errors_value if isinstance(stage_errors_value, Mapping) else {}
+        )
         if (
             "translation_route_verified" not in expected_failed_gates
             and adapter_record.get("translation_route") != "qwen"
@@ -738,6 +752,30 @@ def _run_gate_errors(
             or residency_record.get("unload_confirmed") is not None
         ):
             errors.append("VLM model unload claim is invalid")
+        if "process_protocol_version" in workload_contract and (
+            workload_contract.get("process_protocol_version") != "0.2.0"
+            or workload_contract.get("residency_policy")
+            != "moondream_unload_requested_before_qwen_per_invocation"
+            or workload_contract.get("successful_stage_order")
+            != [
+                "input_verify_before",
+                "module_import",
+                "moondream_inference",
+                "model_unload",
+                "qwen_rewrite",
+                "output_normalization",
+                "input_verify_after",
+            ]
+            or workload_contract.get("cleanup_unload_on_failure") is not True
+            or workload_contract.get("unload_confirmation") != "not_available"
+            or process_record.get("protocol_version")
+            != workload_contract.get("process_protocol_version")
+            or set(stage_status)
+            != set(workload_contract.get("successful_stage_order", []))
+            or any(value != "ok" for value in stage_status.values())
+            or bool(stage_errors)
+        ):
+            errors.append("VLM residency-order execution contract is invalid")
     return errors
 
 

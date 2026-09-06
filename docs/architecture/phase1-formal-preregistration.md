@@ -1,23 +1,24 @@
 # Phase 1 G6 Formal Preregistration
 
 This document records the preregistered fixed-input synchronous/asynchronous
-comparison for the Phase 1 runtime under the amended G6 v2 protocol. The
-reviewed merge to `main` activated v2. Its first formal attempt then stopped on
-a system-under-test failure, so v2 is now closed without a confirmatory claim.
+comparison for the Phase 1 runtime under the amended G6 v3 protocol. V2 remains
+closed after its first formal attempt stopped on a system-under-test failure.
+V3 retains the complete v2 scientific design and freezes the corrected VLM
+residency order after a separate descriptive diagnostic.
 
 The machine-readable protocol is
-[`phase1-g6-v2-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v2-preregistration.json).
+[`phase1-g6-v3-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v3-preregistration.json).
 It is generated and validated by
 [`formal_protocol.py`](../../experiments/phase1/formal_protocol.py). The tracked
 protocol uses schema `0.2.0`, protocol ID
-`phase1-g6-fixed-input-sync-async-v2`, and SHA-256
-`5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a`.
+`phase1-g6-fixed-input-sync-async-v3`, and SHA-256
+`070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b`.
 
-> 中文简介：本文记录 Phase 1 固定输入同步/异步正式对照的 G6 v2 修订协议。v2 在评审后
-> 合并到 `main` 时生效，但首次正式尝试随后因系统被测对象失败而停止，因此 v2 已关闭且
-> 不支持验证性结论。正式设计包含五个 session、每种负载每个 session 六个配对 block，
-> 并预先冻结交叉平衡的条件顺序、样本量、成功阈值、失败处理和分层配对 bootstrap 方法。
-> v1、v2 及其修订或关闭原因均被完整保留。
+> 中文简介：本文记录 Phase 1 固定输入同步/异步正式对照的 G6 v3 修订协议。v2 因首次
+> 正式尝试出现系统被测对象失败而永久关闭；独立的描述性诊断随后验证了修正后的 VLM
+> 驻留顺序。v3 保留 v2 的五个 session、交叉平衡条件顺序、样本量、成功阈值、失败处理
+> 和分层配对 bootstrap 方法，仅冻结 `Moondream -> 卸载请求 -> Qwen` 顺序及进程协议。
+> v1、v2、诊断证据及所有修订原因均被完整保留。
 
 ## Protocol amendment history
 
@@ -63,6 +64,24 @@ correction moves the unload request before Qwen while keeping the 30 s timeout
 unchanged for a separate descriptive Jetson diagnostic. Any later formal
 collection requires a newly preregistered protocol version and restarts from
 session 1.
+
+The separate diagnostic,
+`20260905T160805Z_phase1_vlm_residency_diag`, executed one process-isolated
+`vlm_async` run and one `vlm_stale` run from commit `08e262d`. Both independently
+validated, used the Qwen route, requested Moondream unload before Qwen, completed
+the process protocol and exited normally. Qwen took 18400.091 ms and 18864.649
+ms, both inside the retained 30 s request boundary; the bound llama-server log
+contains two completed requests and no cancellation record. The
+[residency-order report](../../experiments/phase1/results/20260905T160805Z_phase1_vlm_residency_diag/)
+publishes only derived evidence and binds both transferred archive hashes.
+
+This single fixed-order run per lifecycle condition establishes implementation
+readiness, not residency causality or performance superiority. No diagnostic
+outcome was used to alter the v2 schedule, hypotheses, sample size, endpoints,
+thresholds or analysis. G6 v3 changes only the VLM residency-order contract,
+binds spawned-process protocol `0.2.0`, records amendment provenance and
+restarts formal collection from session 1. V2 remains immutable and cannot be
+reopened, rerun, replaced or reclassified.
 
 ## Research questions and hypotheses
 
@@ -159,8 +178,12 @@ unexpected inference process stops collection.
 - The Qwen rewrite uses the same GGUF and llama.cpp source as the LLM workload.
   Its system-prompt and user-prefix identities, model alias `qwen`, temperature
   `0.2`, `max_tokens=96`, non-streaming mode and 30 s timeout are fixed.
-- The Qwen translation route and per-invocation Moondream unload request remain
-  unchanged.
+- The successful stage order is fixed as input verification, module import,
+  Moondream inference, Moondream unload request, Qwen rewrite, output
+  normalization and final input verification. Cleanup also requests unload if
+  an earlier stage fails; independent unload confirmation is unavailable.
+- Both conditions bind spawned-process protocol `0.2.0`. The Qwen route and
+  30 s request timeout are unchanged from v2.
 - Both formal conditions use the spawned-process VLM execution path. The only
   intended difference is whether the calling control flow waits synchronously
   or delegates the same operation to the Phase 1 worker.
@@ -317,14 +340,12 @@ correctness Gate.
 
 ## Activation and collection boundary
 
-Merging this amendment to `main` superseded v1 and fixed protocol version
-`phase1-g6-fixed-input-sync-async-v2`. The recorded system-under-test failure
-closed v2. Its exact JSON remains immutable; any subsequent change requires
-another protocol version and restarts formal collection from zero.
+Merging this amendment to `main` supersedes v2 and activates protocol version
+`phase1-g6-fixed-input-sync-async-v3`. The exact v1 and v2 JSON artifacts remain
+immutable, and the v2 failure analyzer remains bound to the v2 ID and SHA-256.
 
-The formal session runner and independent analyzer both load this exact v2 JSON
-and fail closed on any schedule, identity, threshold or analysis-parameter
-difference. The runner now also refuses a new default v2 session because the
-collection is closed. A future protocol cannot become active until its amended
-tools pass host tests, its diagnostic premise is resolved and the new frozen
-protocol is reviewed on `main`.
+The formal session runner and independent analyzer load the exact v3 JSON and
+fail closed on any schedule, identity, VLM process protocol, residency order,
+threshold or analysis-parameter difference. Before the reviewed merge, the
+clean synchronized-`main` preflight prevents formal collection. After
+activation, collection starts at session 1 under a new v3 collection identifier.

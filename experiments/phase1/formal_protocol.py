@@ -33,18 +33,22 @@ from experiments.phase1.vlm_adapter import C100_INPUT_SHA256, C100_INPUT_SIZE_BY
 
 
 FORMAL_PROTOCOL_SCHEMA_VERSION = "0.2.0"
-FORMAL_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v2"
-FORMAL_COLLECTION_STATUS = "closed_after_system_under_test_failure"
+FORMAL_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v3"
+FORMAL_COLLECTION_STATUS = "active"
 DEFAULT_PROTOCOL_PATH = (
-    Path(__file__).resolve().parent / "formal" / "phase1-g6-v2-preregistration.json"
+    Path(__file__).resolve().parent / "formal" / "phase1-g6-v3-preregistration.json"
 )
-SUPERSEDED_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v1"
-SUPERSEDED_PROTOCOL_SHA256 = (
-    "022df6af4bb3236a28b2e47f0edb9afbc6078131441a1c1f9e8730920c660761"
+FORMAL_V2_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v2"
+FORMAL_V2_PROTOCOL_SHA256 = (
+    "5aa995a563234429ae7fca513e89bd64e2f75130e6d0502591dfb427134fab0a"
 )
-SUPERSEDED_PROTOCOL_PATH = DEFAULT_PROTOCOL_PATH.with_name(
-    "phase1-g6-preregistration.json"
+FORMAL_V2_COLLECTION_STATUS = "closed_after_system_under_test_failure"
+FORMAL_V2_PROTOCOL_PATH = DEFAULT_PROTOCOL_PATH.with_name(
+    "phase1-g6-v2-preregistration.json"
 )
+SUPERSEDED_PROTOCOL_ID = FORMAL_V2_PROTOCOL_ID
+SUPERSEDED_PROTOCOL_SHA256 = FORMAL_V2_PROTOCOL_SHA256
+SUPERSEDED_PROTOCOL_PATH = FORMAL_V2_PROTOCOL_PATH
 WORKLOADS = ("asr", "llm", "vlm")
 CONDITIONS = ("formal_sync", "formal_async")
 SESSION_COUNT = 5
@@ -63,6 +67,7 @@ VLM_OLLAMA_BINARY_SHA256 = (
     "6273a99e321b5e69741aa024cc22e0ce2803aa2bdf20185ea19627b4d891c87a"
 )
 VLM_MOONDREAM_MODEL = "moondream"
+VLM_PROCESS_PROTOCOL_VERSION = "0.2.0"
 VLM_MOONDREAM_DIGEST = (
     "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b"
 )
@@ -233,7 +238,21 @@ def _workload_contracts() -> dict[str, object]:
             },
             "translation_route": "qwen",
             "execution_boundary": "spawned_process_for_both_conditions",
-            "residency_policy": "moondream_unload_requested_per_invocation",
+            "process_protocol_version": VLM_PROCESS_PROTOCOL_VERSION,
+            "residency_policy": (
+                "moondream_unload_requested_before_qwen_per_invocation"
+            ),
+            "successful_stage_order": [
+                "input_verify_before",
+                "module_import",
+                "moondream_inference",
+                "model_unload",
+                "qwen_rewrite",
+                "output_normalization",
+                "input_verify_after",
+            ],
+            "cleanup_unload_on_failure": True,
+            "unload_confirmation": "not_available",
         },
     }
 
@@ -258,16 +277,37 @@ def build_formal_protocol() -> dict[str, object]:
             "supersedes_protocol_sha256": SUPERSEDED_PROTOCOL_SHA256,
             "superseded_protocol_artifact": SUPERSEDED_PROTOCOL_PATH.name,
             "reason": (
-                "replace the session-repeating pair-order schedule with a fixed "
-                "cross-balanced schedule identified by an outcome-independent "
-                "design audit before admissible collection"
+                "freeze the corrected VLM residency order after G6 v2 closed on "
+                "a system-under-test failure and a separate descriptive diagnostic "
+                "completed the corrected Qwen route within the retained timeout"
             ),
             "prior_collection_data_eligible": False,
-            "outcome_values_used_to_construct_schedule": False,
+            "superseded_collection_status": FORMAL_V2_COLLECTION_STATUS,
+            "superseded_collection_rerun_or_replacement_permitted": False,
+            "outcome_values_used_to_modify_schedule": False,
+            "outcome_values_used_to_modify_hypotheses_thresholds_or_analysis": False,
+            "diagnostic": {
+                "session_id": "20260905T160805Z_phase1_vlm_residency_diag",
+                "design_role": "descriptive_correctness_diagnostic",
+                "source_archive_sha256": (
+                    "f6c22ce6e396494af4d0dfcc16c30602d1dedd9f95d87ad8a5af22fdf599911e"
+                ),
+                "llama_log_archive_sha256": (
+                    "a9be360fa20036d53f057f2190b74c3ff427f5de8fd5c7cfe2f8861b6fa5a0ad"
+                ),
+                "outcome_used_to_confirm_implementation_readiness": True,
+                "performance_or_causal_claim_permitted": False,
+            },
+            "changed_components": [
+                "vlm_residency_order",
+                "vlm_process_protocol_binding",
+                "amendment_provenance",
+            ],
             "unchanged_components": [
                 "research_questions_and_hypotheses",
                 "sample_size",
-                "workloads_and_fixed_inputs",
+                "condition_schedule_and_pair_order_matrix",
+                "workload_models_fixed_inputs_and_request_parameters",
                 "conditions_and_execution_boundaries",
                 "environment_and_safety_constraints",
                 "confirmatory_endpoints_and_thresholds",

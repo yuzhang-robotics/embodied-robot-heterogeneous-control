@@ -100,6 +100,8 @@ def passing_formal_preflight(
     *,
     commit: str = "1" * 40,
     service_suffix: str = "a",
+    protocol_id: str = FORMAL_PROTOCOL_ID,
+    protocol_sha256: str = FROZEN_PROTOCOL_SHA256,
 ) -> dict[str, object]:
     services = {
         "llama-server": {
@@ -117,8 +119,8 @@ def passing_formal_preflight(
         "formal_preflight_schema_version": "0.1.0",
         "captured_at": "2026-09-02T00:00:00Z",
         "protocol": {
-            "id": FORMAL_PROTOCOL_ID,
-            "sha256": FROZEN_PROTOCOL_SHA256,
+            "id": protocol_id,
+            "sha256": protocol_sha256,
             "protocol_commit": "2" * 40,
             "runner_commit": commit,
             "path_recorded": False,

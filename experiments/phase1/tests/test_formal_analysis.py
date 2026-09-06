@@ -190,13 +190,22 @@ def run_record(
             "backend_stop_confirmed": None,
         }
     else:
-        adapter["stage_durations_ns"] = {"moondream_inference": duration_ns}
+        if "process_protocol_version" in workload_contract:
+            stage_order = workload_contract["successful_stage_order"]
+            adapter["stage_durations_ns"] = {
+                name: duration_ns // len(stage_order) for name in stage_order
+            }
+            adapter["stage_status"] = {name: "ok" for name in stage_order}
+            adapter["stage_error_codes"] = {}
+        else:
+            adapter["stage_durations_ns"] = {"moondream_inference": duration_ns}
         adapter["translation_route"] = "qwen"
         adapter["model_residency"] = {
             "unload_requested": True,
             "unload_confirmed": None,
         }
         process = {
+            "protocol_version": workload_contract.get("process_protocol_version"),
             "start_method": "spawn",
             "protocol_complete": True,
             "exit_code": 0,
@@ -281,6 +290,8 @@ def run_record(
                 "model_unload_claim_bounded",
             }
         )
+        if "process_protocol_version" in workload_contract:
+            gate_names.add("residency_contract_verified")
     gates = [
         {
             "name": name,
@@ -350,8 +361,14 @@ def run_record(
     }
 
 
-def build_collection(root: Path) -> Path:
-    protocol = build_formal_protocol()
+def build_collection(
+    root: Path,
+    *,
+    protocol_override: dict[str, object] | None = None,
+    protocol_id: str = FORMAL_PROTOCOL_ID,
+    protocol_sha256_value: str = FROZEN_PROTOCOL_SHA256,
+) -> Path:
+    protocol = protocol_override or build_formal_protocol()
     collection = root / "20260902T000000Z_phase1_formal_fixture"
     base_time = datetime(2026, 9, 2, tzinfo=timezone.utc)
     for session_index, session_plan in enumerate(protocol["sessions"], start=1):
@@ -360,7 +377,11 @@ def build_collection(root: Path) -> Path:
         (session_dir / "protocol.json").write_text(
             canonical_protocol_text(protocol), encoding="utf-8"
         )
-        preflight = passing_formal_preflight(service_suffix=str(session_index))
+        preflight = passing_formal_preflight(
+            service_suffix=str(session_index),
+            protocol_id=protocol_id,
+            protocol_sha256=protocol_sha256_value,
+        )
         write_json(session_dir / "preflight.json", preflight)
         entries: list[dict[str, object]] = []
         ordinal = 0
@@ -516,8 +537,8 @@ def build_collection(root: Path) -> Path:
             "session_id": session_dir.name,
             "protocol_session": f"session-{session_index:02d}",
             "attempt": 1,
-            "protocol_id": FORMAL_PROTOCOL_ID,
-            "protocol_sha256": FROZEN_PROTOCOL_SHA256,
+            "protocol_id": protocol_id,
+            "protocol_sha256": protocol_sha256_value,
             "status": "completed",
             "failure_class": None,
             "failure_code": None,
