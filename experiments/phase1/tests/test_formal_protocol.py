@@ -15,6 +15,12 @@ from experiments.phase1.formal_protocol import (
     CONDITIONS,
     DEFAULT_PROTOCOL_PATH,
     FORMAL_PROTOCOL_ID,
+    FORMAL_V2_PROTOCOL_ID,
+    FORMAL_V2_PROTOCOL_PATH,
+    FORMAL_V2_PROTOCOL_SHA256,
+    FORMAL_V3_PROTOCOL_ID,
+    FORMAL_V3_PROTOCOL_PATH,
+    FORMAL_V3_PROTOCOL_SHA256,
     NONINFERIORITY_RATIO,
     PAIRS_PER_SESSION,
     SESSION_COUNT,
@@ -31,10 +37,19 @@ from experiments.phase1.formal_protocol import (
     main,
     protocol_sha256,
 )
+from jetson.vlm_request_contract import (
+    MODEL_UNLOAD_POLL_INTERVAL_S,
+    MODEL_UNLOAD_TIMEOUT_S,
+    MOONDREAM_REQUEST_TEMPERATURE,
+    QWEN_REQUEST_TEMPERATURE,
+    QWEN_REQUEST_TIMEOUT_S,
+    VLM_REQUEST_CONTRACT_VERSION,
+    VLM_REQUEST_SEED,
+)
 
 
 EXPECTED_PROTOCOL_SHA256 = (
-    "070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b"
+    "84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054"
 )
 
 EXPECTED_PAIR_ORDER_MATRIX = (
@@ -70,6 +85,24 @@ class FormalProtocolTests(unittest.TestCase):
             build_formal_protocol()["amendment"]["superseded_protocol_artifact"],
             SUPERSEDED_PROTOCOL_PATH.name,
         )
+
+    def test_closed_v2_and_v3_protocols_keep_their_frozen_identities(self) -> None:
+        for path, protocol_id, digest in (
+            (
+                FORMAL_V2_PROTOCOL_PATH,
+                FORMAL_V2_PROTOCOL_ID,
+                FORMAL_V2_PROTOCOL_SHA256,
+            ),
+            (
+                FORMAL_V3_PROTOCOL_PATH,
+                FORMAL_V3_PROTOCOL_ID,
+                FORMAL_V3_PROTOCOL_SHA256,
+            ),
+        ):
+            with self.subTest(protocol_id=protocol_id):
+                protocol = load_formal_protocol(path)
+                self.assertEqual(protocol["protocol_id"], protocol_id)
+                self.assertEqual(protocol_sha256(protocol), digest)
 
     def test_schedule_balances_conditions_pairs_and_workload_orders(self) -> None:
         protocol = build_formal_protocol()
@@ -149,6 +182,9 @@ class FormalProtocolTests(unittest.TestCase):
         vlm = protocol["workloads"]["vlm"]
         self.assertEqual(vlm["process_protocol_version"], VLM_PROCESS_PROTOCOL_VERSION)
         self.assertEqual(
+            vlm["request_contract_version"], VLM_REQUEST_CONTRACT_VERSION
+        )
+        self.assertEqual(
             vlm["successful_stage_order"],
             [
                 "input_verify_before",
@@ -160,16 +196,47 @@ class FormalProtocolTests(unittest.TestCase):
                 "input_verify_after",
             ],
         )
-        self.assertEqual(vlm["qwen"]["request"]["timeout_s"], 30)
+        self.assertEqual(
+            vlm["moondream"]["request"]["temperature"],
+            MOONDREAM_REQUEST_TEMPERATURE,
+        )
+        self.assertEqual(
+            vlm["moondream"]["request"]["seed"], VLM_REQUEST_SEED
+        )
+        self.assertEqual(
+            vlm["qwen"]["request"]["temperature"], QWEN_REQUEST_TEMPERATURE
+        )
+        self.assertEqual(vlm["qwen"]["request"]["seed"], VLM_REQUEST_SEED)
+        self.assertEqual(
+            vlm["qwen"]["request"]["timeout_s"], QWEN_REQUEST_TIMEOUT_S
+        )
         self.assertTrue(vlm["cleanup_unload_on_failure"])
-        self.assertEqual(vlm["unload_confirmation"], "not_available")
+        self.assertEqual(
+            vlm["unload_confirmation"],
+            {
+                "method": "ollama_process_list_absence",
+                "timeout_s": MODEL_UNLOAD_TIMEOUT_S,
+                "poll_interval_ms": int(MODEL_UNLOAD_POLL_INTERVAL_S * 1_000),
+            },
+        )
         amendment = protocol["amendment"]
+        self.assertTrue(
+            amendment[
+                "failure_and_diagnostics_used_to_modify_vlm_workload_contract"
+            ]
+        )
         self.assertFalse(amendment["outcome_values_used_to_modify_schedule"])
         self.assertFalse(
             amendment["outcome_values_used_to_modify_hypotheses_thresholds_or_analysis"]
         )
         self.assertFalse(
-            amendment["diagnostic"]["performance_or_causal_claim_permitted"]
+            amendment["repair_provenance"]["target_validation"][
+                "performance_or_causal_claim_permitted"
+            ]
+        )
+        self.assertNotIn(
+            "workload_models_fixed_inputs_and_request_parameters",
+            amendment["unchanged_components"],
         )
 
     def test_each_session_is_independently_order_balanced(self) -> None:

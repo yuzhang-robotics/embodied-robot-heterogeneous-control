@@ -542,7 +542,7 @@ def _gates(
                 _gate(
                     "model_unload_claim_bounded",
                     residency_record.get("unload_requested") is True
-                    and residency_record.get("unload_confirmed") is None,
+                    and residency_record.get("unload_confirmed") is True,
                     dict(residency_record),
                 ),
                 _gate(

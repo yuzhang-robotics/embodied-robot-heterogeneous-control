@@ -1,0 +1,2441 @@
+{
+  "formal_protocol_schema_version": "0.2.0",
+  "protocol_id": "phase1-g6-fixed-input-sync-async-v4",
+  "design_role": "confirmatory_fixed_input_comparison",
+  "activation": {
+    "event": "reviewed_merge_to_main",
+    "formal_data_before_activation_permitted": false,
+    "changes_after_activation": "create a new protocol version and restart formal collection"
+  },
+  "amendment": {
+    "supersedes_protocol_id": "phase1-g6-fixed-input-sync-async-v3",
+    "supersedes_protocol_sha256": "070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b",
+    "superseded_protocol_artifact": "phase1-g6-v3-preregistration.json",
+    "reason": "freeze the deterministic VLM request and bounded unload-confirmation repair after G6 v3 closed on a system-under-test timeout and the repaired repository path passed separate target validation",
+    "prior_collection_data_eligible": false,
+    "superseded_collection_status": "closed_after_system_under_test_failure",
+    "superseded_collection_rerun_or_replacement_permitted": false,
+    "failure_and_diagnostics_used_to_modify_vlm_workload_contract": true,
+    "outcome_values_used_to_modify_schedule": false,
+    "outcome_values_used_to_modify_hypotheses_thresholds_or_analysis": false,
+    "repair_provenance": {
+      "failed_formal_attempt": {
+        "collection_id": "20260906T055511Z_phase1_formal_g6_v3",
+        "design_role": "closed_formal_system_under_test_failure",
+        "source_archive_sha256": "601a097e5691264a663e88c07b9ea07e6c5b9bf7c3db4cbf6594ab3a14d41c69",
+        "llama_log_archive_sha256": "a18b253e477a18b5e09bd8fa1e928112e8f4d51f9a951779a00fbd009b308239",
+        "performance_or_causal_claim_permitted": false
+      },
+      "timeout_diagnostic": {
+        "diagnostic_id": "20260906T082627Z_phase1_vlm_timeout_diag",
+        "design_role": "descriptive_contract_diagnostic",
+        "source_archive_sha256": "fb76b78c0d54895ddcd44682dbc1fe688451444c9682c976ff9719b7f6740500",
+        "performance_or_causal_claim_permitted": false
+      },
+      "target_validation": {
+        "validation_id": "20260906T101723Z_phase1_vlm_timeout_repair_validation",
+        "design_role": "descriptive_repository_path_validation",
+        "source_archive_sha256": "f8e4df5000f64cc26f18f03b92677b4f3f061433d6bed6ccb2a73ed7efae1b78",
+        "llama_log_archive_sha256": "64792cc3a8aaa32146ca617192390657699af7bf529b65311426270d867f11ea",
+        "outcome_used_to_confirm_implementation_readiness": true,
+        "performance_or_causal_claim_permitted": false
+      }
+    },
+    "changed_components": [
+      "vlm_deterministic_request_parameters",
+      "vlm_qwen_request_timeout",
+      "vlm_unload_confirmation_contract",
+      "amendment_provenance"
+    ],
+    "unchanged_components": [
+      "research_questions_and_hypotheses",
+      "sample_size",
+      "condition_schedule_and_pair_order_matrix",
+      "workload_models_fixed_inputs_prompts_and_output_token_limits",
+      "llama_server_arguments",
+      "conditions_and_execution_boundaries",
+      "environment_and_safety_constraints",
+      "confirmatory_endpoints_and_thresholds",
+      "analysis_and_bootstrap_method",
+      "exclusions_missing_data_and_stopping_rules"
+    ]
+  },
+  "claim_boundary": {
+    "fixed_input_single_device_only": true,
+    "physical_motion_permitted": false,
+    "uart_access_permitted": false,
+    "hard_real_time_claim_permitted": false,
+    "heterogeneous_inference_claim_permitted": false,
+    "resource_attribution_claim_permitted": false
+  },
+  "hypotheses": {
+    "responsiveness": "Moving the same slow workload behind the Phase 1 execution boundary reduces periodic-probe disruption and keeps the asynchronous p95 of per-run maximum gaps within the preregistered practical bound.",
+    "workload_noninferiority": "The asynchronous boundary preserves fixed-input workload performance within the preregistered ten-percent noninferiority margin.",
+    "lifecycle": "All measured runs preserve bounded ownership, complete shutdown and zero stale consumption."
+  },
+  "environment": {
+    "device": "Jetson Orin Nano Super 8GB",
+    "machine": "aarch64",
+    "python_version": "3.10.12",
+    "jetpack_package_version": "6.2.2+b24",
+    "l4t_core_package_version": "36.5.0-20260115194252",
+    "power_mode": {
+      "name": "MAXN_SUPER",
+      "id": 2
+    },
+    "clock_policy": "dynamic_dvfs_jetson_clocks_not_enabled",
+    "motion_environment_value": "0",
+    "resource_interval_ms": 200,
+    "probe_period_ms": 100,
+    "probe_deadline_ms": 100,
+    "session_start_max_tj_c": 55.0,
+    "session_start_consecutive_samples": 10,
+    "measurement_start_max_tj_c": 55.0,
+    "measurement_start_consecutive_samples": 10,
+    "thermal_stop_tj_c": 85.0,
+    "minimum_session_separation_minutes": 30,
+    "service_restart_between_sessions": true,
+    "one_slow_workload_at_a_time": true,
+    "unrelated_inference_processes_permitted": false
+  },
+  "workloads": {
+    "asr": {
+      "input_sha256": "3fffeee1e04250faa483174a423878bf220b95f6706684f6e109ed8f9b731440",
+      "input_size_bytes": 114136,
+      "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "model_size_bytes": 487601967,
+      "source_version": "v1.8.4-326-gafa2ea54",
+      "arguments": [
+        "-l",
+        "zh",
+        "-otxt",
+        "-nt",
+        "-np",
+        "-bs",
+        "1",
+        "-bo",
+        "1"
+      ],
+      "execution_boundary": "supervised_whisper_subprocess",
+      "residency_policy": "loads_model_per_invocation"
+    },
+    "llm": {
+      "input_sha256": "15ee277f4140cb3c2bca3d4762e6462e098787e5b5843245760d9f40da2ea7f2",
+      "input_size_bytes": 124,
+      "model_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+      "model_size_bytes": 1117320736,
+      "served_model_id": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+      "source_version": "b9246-2-g585080d31",
+      "server_arguments": {
+        "host": "127.0.0.1",
+        "port": 8080,
+        "n_gpu_layers": 10,
+        "ctx_size": 1024,
+        "threads": 4,
+        "parallel": 1,
+        "cache_ram": 0
+      },
+      "request": {
+        "model": "qwen",
+        "temperature": 0.4,
+        "max_tokens": 80,
+        "stream": false,
+        "system_prompt": {
+          "sha256": "5e4cd3892f6603935b7c33f0c77c4b47936cdeab9dfc0db67f86c85e35b10081",
+          "length": 123,
+          "raw_text_recorded": false
+        }
+      },
+      "history_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "execution_boundary": "blocking_loopback_http_request",
+      "residency_policy": "external_llama_server_resident"
+    },
+    "vlm": {
+      "input_sha256": "607c9faf3ea03b8b032d8c1d9e86c697d9fb48ca3c2f278e453941da6b871be7",
+      "input_size_bytes": 9009,
+      "moondream": {
+        "service": {
+          "name": "ollama",
+          "version": "0.24.0",
+          "binary_sha256": "6273a99e321b5e69741aa024cc22e0ce2803aa2bdf20185ea19627b4d891c87a"
+        },
+        "model": "moondream",
+        "digest": "55fc3abd386771e5b5d1bbcc732f3c3f4df6e9f9f08f1131f9cc27ba2d1eec5b",
+        "request": {
+          "prompt_identities": [
+            {
+              "sha256": "d760336d0fd143932f194573dd63f6b531e0ffbc2c4f1595e015392a3471c318",
+              "length": 28,
+              "raw_text_recorded": false
+            },
+            {
+              "sha256": "ec277729ae2e219f8efcbd2ea558d183c79beefa639be80c118f2c77b11ef7f6",
+              "length": 22,
+              "raw_text_recorded": false
+            },
+            {
+              "sha256": "ad809847f2b61ef9a8be4d90776afd30b3329a9cb16eff06e950818d86c70ccd",
+              "length": 66,
+              "raw_text_recorded": false
+            }
+          ],
+          "temperature": 0.0,
+          "seed": 20260906,
+          "num_predict": 100,
+          "stream": false,
+          "timeout_s": 180
+        }
+      },
+      "qwen": {
+        "model_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+        "model_size_bytes": 1117320736,
+        "served_model_id": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        "source_version": "b9246-2-g585080d31",
+        "server_arguments": {
+          "host": "127.0.0.1",
+          "port": 8080,
+          "n_gpu_layers": 10,
+          "ctx_size": 1024,
+          "threads": 4,
+          "parallel": 1,
+          "cache_ram": 0
+        },
+        "request": {
+          "model": "qwen",
+          "system_prompt": {
+            "sha256": "d9ee8e3fa369672221d02d193a3a30abac0745d598f630023ffc90994e86537d",
+            "length": 148,
+            "raw_text_recorded": false
+          },
+          "user_prefix": {
+            "sha256": "60278ce5d5b81b3041241a2a2b42a7744b4953552f51783895737683195bd40a",
+            "length": 30,
+            "raw_text_recorded": false
+          },
+          "temperature": 0.0,
+          "seed": 20260906,
+          "max_tokens": 96,
+          "stream": false,
+          "timeout_s": 60
+        }
+      },
+      "request_contract_version": "0.1.0",
+      "translation_route": "qwen",
+      "execution_boundary": "spawned_process_for_both_conditions",
+      "process_protocol_version": "0.2.0",
+      "residency_policy": "moondream_unload_confirmed_before_qwen_per_invocation",
+      "successful_stage_order": [
+        "input_verify_before",
+        "module_import",
+        "moondream_inference",
+        "model_unload",
+        "qwen_rewrite",
+        "output_normalization",
+        "input_verify_after"
+      ],
+      "cleanup_unload_on_failure": true,
+      "unload_confirmation": {
+        "method": "ollama_process_list_absence",
+        "timeout_s": 20,
+        "poll_interval_ms": 100
+      }
+    }
+  },
+  "conditions": {
+    "formal_idle": {
+      "slow_workload": null,
+      "probe": "independent",
+      "purpose": "session-local descriptive timing reference"
+    },
+    "formal_sync": {
+      "slow_workload": "calling_thread",
+      "probe": "inline_same_thread",
+      "runtime_broker": false,
+      "purpose": "blocking synchronous control-flow reference"
+    },
+    "formal_async": {
+      "slow_workload": "phase1_single_worker",
+      "probe": "independent",
+      "runtime_broker": true,
+      "purpose": "bounded asynchronous runtime condition"
+    }
+  },
+  "design": {
+    "session_count": 5,
+    "paired_blocks_per_session_per_workload": 6,
+    "measured_pairs_per_workload": 30,
+    "measured_runs_per_workload_per_condition": 30,
+    "total_measured_runs": 180,
+    "warmups_per_session": {
+      "asr": 3,
+      "llm": 1,
+      "vlm": 1
+    },
+    "idle_epochs_per_session": 2,
+    "idle_epoch_s": 30,
+    "condition_order": "fixed_cross_balanced_by_session_block_and_workload",
+    "workload_order": "each_permutation_once_per_session",
+    "runtime_order_randomization": false,
+    "prelude_s": 1.0,
+    "postlude_s": 1.0
+  },
+  "sessions": [
+    {
+      "session": "session-01",
+      "warmups": [
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 2
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 3
+        },
+        {
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        }
+      ],
+      "pre_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      },
+      "measured_runs": [
+        {
+          "sequence": 1,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s01-b01-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 2,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s01-b01-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 3,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s01-b01-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 4,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s01-b01-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 5,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s01-b01-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 6,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s01-b01-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 7,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s01-b02-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 8,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s01-b02-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 9,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s01-b02-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 10,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s01-b02-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 11,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s01-b02-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 12,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s01-b02-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 13,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s01-b03-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 14,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s01-b03-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 15,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s01-b03-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 16,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s01-b03-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 17,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s01-b03-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 18,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s01-b03-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 19,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s01-b04-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 20,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s01-b04-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 21,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s01-b04-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 22,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s01-b04-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 23,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s01-b04-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 24,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s01-b04-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 25,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s01-b05-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 26,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s01-b05-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 27,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s01-b05-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 28,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s01-b05-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 29,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s01-b05-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 30,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s01-b05-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 31,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s01-b06-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 32,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s01-b06-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 33,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s01-b06-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 34,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s01-b06-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 35,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s01-b06-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 36,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s01-b06-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        }
+      ],
+      "post_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      }
+    },
+    {
+      "session": "session-02",
+      "warmups": [
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 2
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 3
+        },
+        {
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        }
+      ],
+      "pre_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      },
+      "measured_runs": [
+        {
+          "sequence": 1,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s02-b01-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 2,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s02-b01-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 3,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s02-b01-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 4,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s02-b01-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 5,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s02-b01-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 6,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s02-b01-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 7,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s02-b02-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 8,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s02-b02-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 9,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s02-b02-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 10,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s02-b02-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 11,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s02-b02-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 12,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s02-b02-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 13,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s02-b03-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 14,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s02-b03-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 15,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s02-b03-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 16,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s02-b03-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 17,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s02-b03-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 18,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s02-b03-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 19,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s02-b04-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 20,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s02-b04-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 21,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s02-b04-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 22,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s02-b04-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 23,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s02-b04-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 24,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s02-b04-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 25,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s02-b05-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 26,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s02-b05-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 27,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s02-b05-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 28,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s02-b05-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 29,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s02-b05-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 30,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s02-b05-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 31,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s02-b06-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 32,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s02-b06-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 33,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s02-b06-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 34,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s02-b06-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 35,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s02-b06-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 36,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s02-b06-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        }
+      ],
+      "post_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      }
+    },
+    {
+      "session": "session-03",
+      "warmups": [
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 2
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 3
+        },
+        {
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        }
+      ],
+      "pre_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      },
+      "measured_runs": [
+        {
+          "sequence": 1,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s03-b01-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 2,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s03-b01-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 3,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s03-b01-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 4,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s03-b01-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 5,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s03-b01-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 6,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s03-b01-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 7,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s03-b02-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 8,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s03-b02-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 9,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s03-b02-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 10,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s03-b02-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 11,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s03-b02-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 12,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s03-b02-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 13,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s03-b03-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 14,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s03-b03-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 15,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s03-b03-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 16,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s03-b03-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 17,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s03-b03-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 18,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s03-b03-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 19,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s03-b04-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 20,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s03-b04-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 21,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s03-b04-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 22,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s03-b04-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 23,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s03-b04-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 24,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s03-b04-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 25,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s03-b05-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 26,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s03-b05-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 27,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s03-b05-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 28,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s03-b05-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 29,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s03-b05-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 30,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s03-b05-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 31,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s03-b06-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 32,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s03-b06-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 33,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s03-b06-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 34,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s03-b06-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 35,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s03-b06-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 36,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s03-b06-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        }
+      ],
+      "post_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      }
+    },
+    {
+      "session": "session-04",
+      "warmups": [
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 2
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 3
+        },
+        {
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        }
+      ],
+      "pre_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      },
+      "measured_runs": [
+        {
+          "sequence": 1,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s04-b01-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 2,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s04-b01-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 3,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s04-b01-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 4,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s04-b01-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 5,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s04-b01-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 6,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s04-b01-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 7,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s04-b02-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 8,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s04-b02-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 9,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s04-b02-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 10,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s04-b02-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 11,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s04-b02-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 12,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s04-b02-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 13,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s04-b03-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 14,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s04-b03-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 15,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s04-b03-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 16,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s04-b03-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 17,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s04-b03-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 18,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s04-b03-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 19,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s04-b04-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 20,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s04-b04-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 21,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s04-b04-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 22,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s04-b04-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 23,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s04-b04-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 24,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s04-b04-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 25,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s04-b05-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 26,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s04-b05-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 27,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s04-b05-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 28,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s04-b05-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 29,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s04-b05-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 30,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s04-b05-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 31,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s04-b06-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 32,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s04-b06-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 33,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s04-b06-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 34,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s04-b06-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 35,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s04-b06-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 36,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s04-b06-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        }
+      ],
+      "post_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      }
+    },
+    {
+      "session": "session-05",
+      "warmups": [
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 2
+        },
+        {
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 3
+        },
+        {
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        },
+        {
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "warmup",
+          "repetition": 1
+        }
+      ],
+      "pre_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      },
+      "measured_runs": [
+        {
+          "sequence": 1,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s05-b01-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 2,
+          "block": 1,
+          "workload_position": 1,
+          "pair_id": "s05-b01-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 3,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s05-b01-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 4,
+          "block": 1,
+          "workload_position": 2,
+          "pair_id": "s05-b01-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 5,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s05-b01-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 6,
+          "block": 1,
+          "workload_position": 3,
+          "pair_id": "s05-b01-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 7,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s05-b02-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 8,
+          "block": 2,
+          "workload_position": 1,
+          "pair_id": "s05-b02-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 9,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s05-b02-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 10,
+          "block": 2,
+          "workload_position": 2,
+          "pair_id": "s05-b02-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 11,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s05-b02-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 12,
+          "block": 2,
+          "workload_position": 3,
+          "pair_id": "s05-b02-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 13,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s05-b03-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 14,
+          "block": 3,
+          "workload_position": 1,
+          "pair_id": "s05-b03-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 15,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s05-b03-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 16,
+          "block": 3,
+          "workload_position": 2,
+          "pair_id": "s05-b03-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 17,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s05-b03-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 18,
+          "block": 3,
+          "workload_position": 3,
+          "pair_id": "s05-b03-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 19,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s05-b04-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 20,
+          "block": 4,
+          "workload_position": 1,
+          "pair_id": "s05-b04-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 21,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s05-b04-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 22,
+          "block": 4,
+          "workload_position": 2,
+          "pair_id": "s05-b04-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 23,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s05-b04-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 24,
+          "block": 4,
+          "workload_position": 3,
+          "pair_id": "s05-b04-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 25,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s05-b05-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 26,
+          "block": 5,
+          "workload_position": 1,
+          "pair_id": "s05-b05-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 27,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s05-b05-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 28,
+          "block": 5,
+          "workload_position": 2,
+          "pair_id": "s05-b05-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 29,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s05-b05-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 30,
+          "block": 5,
+          "workload_position": 3,
+          "pair_id": "s05-b05-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 31,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s05-b06-asr",
+          "pair_position": 1,
+          "workload": "asr",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 32,
+          "block": 6,
+          "workload_position": 1,
+          "pair_id": "s05-b06-asr",
+          "pair_position": 2,
+          "workload": "asr",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 33,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s05-b06-vlm",
+          "pair_position": 1,
+          "workload": "vlm",
+          "condition": "formal_sync",
+          "role": "measured"
+        },
+        {
+          "sequence": 34,
+          "block": 6,
+          "workload_position": 2,
+          "pair_id": "s05-b06-vlm",
+          "pair_position": 2,
+          "workload": "vlm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 35,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s05-b06-llm",
+          "pair_position": 1,
+          "workload": "llm",
+          "condition": "formal_async",
+          "role": "measured"
+        },
+        {
+          "sequence": 36,
+          "block": 6,
+          "workload_position": 3,
+          "pair_id": "s05-b06-llm",
+          "pair_position": 2,
+          "workload": "llm",
+          "condition": "formal_sync",
+          "role": "measured"
+        }
+      ],
+      "post_measurement_idle": {
+        "condition": "formal_idle",
+        "role": "idle_reference",
+        "duration_s": 30
+      }
+    }
+  ],
+  "confirmatory_endpoints": {
+    "responsiveness": {
+      "metric": "probe.maximum_observed_gap_ms",
+      "workloads": [
+        "asr",
+        "llm",
+        "vlm"
+      ],
+      "criteria": {
+        "formal_async_p95_lte_ms": 300.0,
+        "paired_mean_difference_ci95_high_lt_ms": 0.0
+      }
+    },
+    "workload_noninferiority": {
+      "metrics": {
+        "asr": "adapter_total_ms",
+        "llm": "request_ms_per_completion_token",
+        "vlm": "adapter_total_ms"
+      },
+      "effect": "geometric_mean_of_within_pair_async_sync_ratios",
+      "criterion": {
+        "paired_geometric_mean_ratio_ci95_high_lte": 1.1
+      }
+    },
+    "lifecycle": {
+      "criteria": {
+        "all_run_gates_pass": true,
+        "stale_consumed_count": 0,
+        "capacity_violation_count": 0,
+        "unreaped_process_count": 0,
+        "unjoined_thread_count": 0
+      }
+    },
+    "decision_rule": "all responsiveness, workload-noninferiority and lifecycle criteria must pass for every workload",
+    "multiplicity": "intersection-union decision; no claim passes unless every preregistered workload criterion passes"
+  },
+  "analysis": {
+    "unit": "within_session_workload_block_pair",
+    "pairing_keys": [
+      "session",
+      "block",
+      "workload"
+    ],
+    "p95_method": "nearest_rank",
+    "bootstrap": {
+      "method": "paired_hierarchical_percentile_bootstrap",
+      "confidence_level": 0.95,
+      "resamples": 100000,
+      "seed": 20260902,
+      "procedure": "resample five sessions with replacement, then resample six paired blocks with replacement within each selected session; retain each sync/async pair"
+    },
+    "responsiveness_difference_estimand": "arithmetic_mean_of_within_pair_async_minus_sync_differences",
+    "noninferiority_estimand": "exponential_of_the_arithmetic_mean_of_within_pair_log_async_sync_ratios",
+    "positive_performance_metric_required": true,
+    "effects": [
+      "formal_async_minus_formal_sync",
+      "100_times_formal_async_divided_by_formal_sync_minus_100"
+    ],
+    "descriptive_statistics": [
+      "count",
+      "mean",
+      "median",
+      "sample_stddev",
+      "cv_pct",
+      "nearest_rank_p95",
+      "min",
+      "max"
+    ],
+    "secondary_metrics": [
+      "probe_lateness_ms",
+      "probe_deadline_miss_count",
+      "probe_skipped_releases",
+      "queue_wait_ms",
+      "result_age_ms",
+      "shutdown_join_ms",
+      "llm_completion_tokens_per_second",
+      "vlm_stage_durations_ms",
+      "resource_run_means_and_peaks",
+      "session_and_block_order_diagnostics"
+    ],
+    "resource_metrics_are_descriptive_only": true
+  },
+  "exclusions_and_missing_data": {
+    "post_hoc_outlier_exclusion_permitted": false,
+    "warmups_in_confirmatory_analysis": false,
+    "idle_epochs_in_confirmatory_analysis": false,
+    "failed_measured_run_replacement_permitted": false,
+    "imputation_permitted": false,
+    "planned_attempts_are_denominator": true,
+    "incomplete_pair_result": "confirmatory_analysis_invalid",
+    "aborted_session_policy": {
+      "all_attempts_retained_in_ledger": true,
+      "replacement_permitted_only_for_infrastructure_failure": true,
+      "replacement_must_begin_before_outcome_review": true,
+      "replacement_uses_new_session_identifier": true,
+      "aborted_session_runs_in_confirmatory_timing_analysis": false,
+      "system_under_test_failure_replacement_permitted": false
+    },
+    "infrastructure_failures": [
+      "host_power_loss",
+      "device_reboot",
+      "unrecoverable_model_service_crash",
+      "resource_sampler_failure"
+    ]
+  },
+  "stopping_rules": [
+    "physical_motion_or_uart_access",
+    "stale_result_consumed",
+    "queue_or_lifecycle_invariant_violation",
+    "worker_or_child_cleanup_failure",
+    "unexplained_resource_parse_error",
+    "git_input_model_or_environment_identity_drift",
+    "thermal_stop_threshold_reached"
+  ],
+  "reporting": {
+    "report_all_planned_attempts": true,
+    "report_condition_order": true,
+    "report_failures_and_aborted_sessions": true,
+    "report_confidence_intervals_and_effects": true,
+    "serialize_raw_input_or_model_output": false,
+    "formal_claim_before_complete_validation_permitted": false
+  }
+}

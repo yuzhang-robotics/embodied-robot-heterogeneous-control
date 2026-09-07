@@ -45,7 +45,7 @@ from experiments.phase1.vlm_preflight import (
 
 FORMAL_PREFLIGHT_SCHEMA_VERSION = "0.1.0"
 FROZEN_PROTOCOL_SHA256 = (
-    "070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b"
+    "84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054"
 )
 _REQUIRED_CHECKS = {
     "protocol_identity",

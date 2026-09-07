@@ -1,29 +1,27 @@
 # Phase 1 G6 Formal Preregistration
 
 This document records the preregistered fixed-input synchronous/asynchronous
-comparison for the Phase 1 runtime under the amended G6 v3 protocol. V2 remains
-closed after its first formal attempt stopped on a system-under-test failure.
-V3 retains the complete v2 scientific design and freezes the corrected VLM
-residency order after a separate descriptive diagnostic. Its first formal
-attempt also stopped on a system-under-test failure and permanently closes the
-protocol without a confirmatory comparison.
+comparison for the Phase 1 runtime under the amended G6 v4 protocol. V2 and v3
+remain closed after their first formal attempts stopped on system-under-test
+failures. V4 retains the complete v3 scientific design and freezes the
+deterministic VLM request, 60 s Qwen client boundary and bounded positive unload
+confirmation after separate diagnostic and target validation work.
 
 The machine-readable protocol is
-[`phase1-g6-v3-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v3-preregistration.json).
+[`phase1-g6-v4-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v4-preregistration.json).
 It is generated and validated by
 [`formal_protocol.py`](../../experiments/phase1/formal_protocol.py). The tracked
 protocol uses schema `0.2.0`, protocol ID
-`phase1-g6-fixed-input-sync-async-v3`, and SHA-256
-`070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b`.
+`phase1-g6-fixed-input-sync-async-v4`, and SHA-256
+`84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054`.
 
-> 中文简介：本文记录 Phase 1 固定输入同步/异步正式对照的 G6 v3 修订协议。v2 因首次
-> 正式尝试出现系统被测对象失败而永久关闭；独立的描述性诊断随后验证了修正后的 VLM
-> 驻留顺序。v3 保留 v2 的五个 session、交叉平衡条件顺序、样本量、成功阈值、失败处理
-> 和分层配对 bootstrap 方法，仅冻结 `Moondream -> 卸载请求 -> Qwen` 顺序及进程协议。
-> 首次 v3 正式尝试又因 VLM Qwen 30 秒超时触发两个系统被测对象 Gate 失败；v3 永久
-> 关闭且不重跑或替换。修正后的 VLM 仓库路径已经在 Jetson 上完成协议外直接验证，但
-> Phase 1 尚未完成；后续正式对照仍需单独评审并激活新协议，目前不进行正式性能比较，
-> 也不进入整机应用切片。
+> 中文简介：本文记录 Phase 1 固定输入同步/异步正式对照的 G6 v4 修订协议。v2 和 v3
+> 均因首次正式尝试出现系统被测对象失败而永久关闭，既不重跑也不替换。v4 保留 v3 的
+> 五个 session、交叉平衡条件顺序、样本量、成功阈值、失败处理和分层配对 bootstrap
+> 方法，仅冻结已经在 Jetson 目标机验证的确定性 VLM 请求、60 秒 Qwen 超时以及有界的
+> 模型离驻确认。该协议只有在评审合并到 `main` 后才激活，并从 session 1 使用新的
+> collection ID 开始；v3 的任何数据都不会被复用或重新分类。Phase 1 在正式对照和后续
+> 整机应用切片完成前仍未结束。
 
 ## Protocol amendment history
 
@@ -111,13 +109,14 @@ shutdown; it is not present in the hash-bound collection or service log, did not
 fail a Gate, and does not override the recorded normal child-process closure.
 
 Under the frozen rules this system-under-test failure is not replaceable. V3 is
-closed, no later session is collected, the partial timings do not enter
-confirmatory analysis, and no v4 is implied as an automatic retry. The G6 success
-criterion is not met and its application slice is not authorized.
+closed, no later session is collected, and the partial timings do not enter
+confirmatory analysis. The failure did not itself imply or authorize an automatic
+v4 retry. The G6 success criterion was not met and its application slice was not
+authorized.
 
-This protocol remains immutable while broader Phase 1 corrective work
-continues. A subsequent three-repetition descriptive diagnostic exercised
-temperature `0.0`, seed `20260906`, a 60 s Qwen client timeout and explicit
+The v3 protocol remains immutable. A subsequent three-repetition descriptive
+diagnostic exercised temperature `0.0`, seed `20260906`, a 60 s Qwen client
+timeout and explicit
 Ollama process-list polling after each Moondream stop request. All three Qwen
 calls completed within the former 30 s boundary with a stable 164 + 32 token
 request size, but the inline harness did not directly execute the modified
@@ -128,9 +127,20 @@ therefore supports the candidate repair only. A later
 directly exercised the modified repository adapter. Its nominal and stale
 conditions both confirmed Moondream absence before Qwen, completed through the
 Qwen route, passed every slice/process Gate and closed both child processes.
-This validates the repair path but is not a formal comparison. Phase 1 remains
-incomplete. No successor formal protocol is active; any future version requires
-separate review and a fresh collection from session 1.
+This validates the repair path but is not a formal comparison. These observations
+were used only to establish implementation readiness and freeze the repaired
+contract. They were not used to change the research questions, hypotheses,
+sample size, schedule, endpoints, thresholds, bootstrap analysis, exclusions or
+stopping rules.
+
+G6 v4 supersedes v3 only after this amendment is reviewed and merged. It changes
+the Moondream and Qwen temperatures to `0.0`, fixes seed `20260906`, extends the
+Qwen client timeout from 30 s to 60 s, and requires confirmation through the
+Ollama process list that Moondream is absent before Qwen begins. Confirmation is
+bounded to 20 s with 100 ms polling and fails closed. Model identities, fixed
+inputs, prompts, output-token limits, llama-server arguments, execution
+boundaries and all scientific-design components remain unchanged. V4 begins a
+fresh collection from session 1 and cannot reuse or reclassify any v3 run.
 
 ## Research questions and hypotheses
 
@@ -221,18 +231,20 @@ unexpected inference process stops collection.
 - Ollama version `0.24.0`; executable SHA-256
   `6273a99e321b5e69741aa024cc22e0ce2803aa2bdf20185ea19627b4d891c87a`.
   The executable path is not recorded.
-- The three Moondream prompt identities, temperature `0.1`, `num_predict=100`,
-  non-streaming mode and 180 s timeout are fixed without serializing prompt
-  text.
+- The three Moondream prompt identities, temperature `0.0`, seed `20260906`,
+  `num_predict=100`, non-streaming mode and 180 s timeout are fixed without
+  serializing prompt text.
 - The Qwen rewrite uses the same GGUF and llama.cpp source as the LLM workload.
   Its system-prompt and user-prefix identities, model alias `qwen`, temperature
-  `0.2`, `max_tokens=96`, non-streaming mode and 30 s timeout are fixed.
+  `0.0`, seed `20260906`, `max_tokens=96`, non-streaming mode and 60 s timeout
+  are fixed.
 - The successful stage order is fixed as input verification, module import,
-  Moondream inference, Moondream unload request, Qwen rewrite, output
-  normalization and final input verification. Cleanup also requests unload if
-  an earlier stage fails; independent unload confirmation is unavailable.
-- Both conditions bind spawned-process protocol `0.2.0`. The Qwen route and
-  30 s request timeout are unchanged from v2.
+  Moondream inference, confirmed Moondream unload, Qwen rewrite, output
+  normalization and final input verification. The unload check polls Ollama's
+  process list every 100 ms for at most 20 s and fails closed if absence cannot
+  be confirmed. Cleanup also requests unload if an earlier stage fails.
+- Both conditions bind VLM request contract `0.1.0` and spawned-process protocol
+  `0.2.0`.
 - Both formal conditions use the spawned-process VLM execution path. The only
   intended difference is whether the calling control flow waits synchronously
   or delegates the same operation to the Phase 1 worker.
@@ -389,15 +401,15 @@ correctness Gate.
 
 ## Activation and closed-collection boundary
 
-Merging this amendment to `main` superseded v2 and activated protocol version
-`phase1-g6-fixed-input-sync-async-v3`. The exact v1 and v2 JSON artifacts remain
-immutable, and the v2 failure analyzer remains bound to the v2 ID and SHA-256.
+Merging this amendment to `main` supersedes v3 and activates protocol version
+`phase1-g6-fixed-input-sync-async-v4`. The exact v1, v2 and v3 JSON artifacts
+remain immutable, and the v2 and v3 failure analyzers remain bound to their
+respective IDs and SHA-256 identities.
 
-The formal session runner and independent analyzer load the exact v3 JSON and
-fail closed on any schedule, identity, VLM process protocol, residency order,
-threshold or analysis-parameter difference. Before the reviewed merge, the
-clean synchronized-`main` preflight prevented formal collection. After
-activation, collection started at session 1 under a new v3 collection identifier.
-The first attempt produced the non-replaceable system-under-test failure recorded
-above. The default runner now rejects further v3 collection with status
-`closed_after_system_under_test_failure`.
+The formal session runner and independent analyzer load the exact v4 JSON and
+fail closed on any schedule, identity, VLM request, timeout, process protocol,
+unload confirmation, threshold or analysis-parameter difference. Before the
+reviewed merge, the clean synchronized-`main` preflight prevents formal
+collection. After activation, collection begins at session 1 under a new v4
+collection identifier. The default runner never resumes v3; its dedicated
+identity remains `closed_after_system_under_test_failure`.

@@ -23,9 +23,11 @@ its partial collection are permanently closed. A three-repetition descriptive
 diagnostic now supports a deterministic request contract, explicit unload
 confirmation and a 60 s Qwen boundary. A subsequent nonformal Jetson validation
 directly exercised the modified repository path in both lifecycle conditions;
-both runs confirmed unload, used Qwen and passed all slice/process Gates. The
-repair is ready for review, but Phase 1 is incomplete and no confirmatory
-comparison or application slice is authorized.
+both runs confirmed unload, used Qwen and passed all slice/process Gates. G6 v4
+retains the complete v3 scientific design while freezing the validated
+deterministic request, 60 s Qwen timeout and bounded unload confirmation. Its
+reviewed merge activates a fresh collection from session 1. Phase 1 is
+incomplete until the confirmatory comparison and application slice finish.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -42,8 +44,9 @@ comparison or application slice is authorized.
 > 触发两个系统被测对象 Gate 失败。v3 永久关闭且不重跑或替换。随后完成的三次描述性
 > 诊断支持确定性请求、显式卸载确认和 60 秒 Qwen 边界；之后的非正式 Jetson 验证直接
 > 运行了修改后的仓库路径，两个生命周期条件均确认卸载、使用 Qwen 并通过全部切片与进程
-> Gate。修复已具备评审条件，但 Phase 1 尚未完成，不支持正式同步/异步性能结论，也不
-> 授权整机应用切片。
+> Gate。G6 v4 保留 v3 的完整科学设计，仅冻结已验证的确定性请求、60 秒 Qwen 超时和
+> 有界卸载确认；评审合并后将从 session 1 开始新的正式采集。Phase 1 在正式对照和整机
+> 应用切片完成前仍未结束。
 
 ## Current status
 
@@ -73,8 +76,9 @@ comparison or application slice is authorized.
   completed one independently validated Jetson correctness pilot
 - Deterministic LLM-pilot reconstruction and public descriptive report:
   implemented; LLM component and G5 overall satisfied
-- Machine-validated G6 formal preregistration: v1 and v2 retained as immutable
-  history; v2 and v3 both closed after system-under-test failures
+- Machine-validated G6 formal preregistration: v1, v2 and v3 retained as
+  immutable history; v2 and v3 closed after system-under-test failures; v4
+  freezes the target-validated VLM repair
 - Protocol-bound formal session runner and independent analyzer: implemented
   and reviewed; LLM history binding corrected against the frozen adapter
 - Formal Phase 1 evidence: no confirmatory claim permitted; two v1 commissioning
@@ -91,9 +95,9 @@ comparison or application slice is authorized.
   independently reconstructed; repair design supported
 - VLM timeout-repair target validation: modified repository path directly
   exercised on Jetson; both lifecycle runs valid with confirmed unload and Qwen
-  completion; repair ready for review
-- Phase 1 completion: pending a later reviewed, versioned formal protocol and
-  successful comparison; no successor protocol is active
+  completion
+- Phase 1 completion: pending the fresh G6 v4 formal comparison and subsequent
+  motion-disabled application slice
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -568,13 +572,15 @@ inference.
 
 ## G6 formal preregistration
 
-The G6 v3 confirmatory Phase 1 comparison is preserved in the amended
+The G6 v4 confirmatory Phase 1 comparison is preserved in the amended
 [human-readable preregistration](../../docs/architecture/phase1-formal-preregistration.md)
 and the tracked
-[`phase1-g6-v3-preregistration.json`](formal/phase1-g6-v3-preregistration.json).
-The superseded v1 and v2 JSON files remain tracked as
+[`phase1-g6-v4-preregistration.json`](formal/phase1-g6-v4-preregistration.json).
+The superseded v1, v2 and v3 JSON files remain tracked as
 [`phase1-g6-preregistration.json`](formal/phase1-g6-preregistration.json) and
-[`phase1-g6-v2-preregistration.json`](formal/phase1-g6-v2-preregistration.json).
+[`phase1-g6-v2-preregistration.json`](formal/phase1-g6-v2-preregistration.json),
+and
+[`phase1-g6-v3-preregistration.json`](formal/phase1-g6-v3-preregistration.json).
 Validate the machine-readable protocol with:
 
 ```bash
@@ -582,9 +588,10 @@ python3 -m experiments.phase1.formal_protocol --print-sha256
 ```
 
 The expected SHA-256 is
-`070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b`.
-V3 became active only through its reviewed merge to `main`; its first formal
-attempt has now closed the protocol, and preflight rejects further collection.
+`84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054`.
+V4 becomes active only through its reviewed merge to `main`. Before that event,
+the clean synchronized-`main` preflight rejects formal collection. V3 remains
+closed and its partial collection is not reused or reclassified.
 
 The design fixes five sessions, six paired blocks per workload and session, 30
 pairs per workload and 180 measured runs overall. Every session uses each of the
@@ -614,7 +621,7 @@ Both VLM conditions retain the same spawned-process adapter. Every run binds
 the adapter record to a separate privacy-preserving result envelope. The Gates
 also enforce the expected ASR transcript identity, the frozen LLM request and
 token/residency facts, and VLM child reaping, spawned-process protocol `0.2.0`
-and the `Moondream -> unload request -> Qwen` execution order.
+and the `Moondream -> confirmed unload -> Qwen` execution order.
 
 Collection `20260905T062312Z_phase1_formal_g6` stopped after its three ASR
 warm-ups and before the first LLM request, pre-measurement idle epoch or measured
@@ -792,11 +799,11 @@ or error. The independently reconstructed
 binds the transferred collection, service log and exact 11-file validation
 source bundle without publishing private paths or raw evidence.
 
-This validates the repair path and makes it ready for review. It is one
-fixed-order correctness run per condition, not formal sync/async evidence. G6
-v3 remains closed and immutable, Phase 1 remains incomplete, and any future
-formal comparison requires a separately reviewed and activated protocol rather
-than reuse of any v3 run.
+This validates the repair path but remains one fixed-order correctness run per
+condition, not formal sync/async evidence. G6 v3 remains closed and immutable.
+G6 v4 freezes the repair while retaining the v3 scientific design; its reviewed
+merge activates a fresh collection from session 1 rather than reuse of any v3
+run. Phase 1 remains incomplete.
 
 Reconstruct the target validation privately with:
 
@@ -839,12 +846,12 @@ python3 -m experiments.phase1.analyze_vlm_timeout_repair \
 12. implement and review the protocol-bound formal runner and independent
     analyzer — complete;
 13. collect, validate and publish the formal synchronous/asynchronous comparison
-    — v3 stopped on a non-replaceable system-under-test VLM timeout; the partial
-    matrix supports no performance comparison, so G6 is not met; deterministic
-    request and unload-confirmation repair is target-validated and ready for
-    review; a successor formal protocol is not yet active;
+    — v3 stopped on a non-replaceable system-under-test VLM timeout; its partial
+    matrix supports no performance comparison; the deterministic request and
+    unload-confirmation repair is target-validated and frozen in v4; fresh v4
+    collection is pending;
 14. add an opt-in motion-disabled application slice after the research Gates
-    pass — not authorized because G6 did not pass.
+    pass — not authorized until the G6 v4 comparison passes.
 
 Contract changes are reviewed before implementation, and the formal protocol
 is frozen before data collection.
@@ -886,7 +893,8 @@ experiments/phase1/
 ├── formal/
 │   ├── phase1-g6-preregistration.json
 │   ├── phase1-g6-v2-preregistration.json
-│   └── phase1-g6-v3-preregistration.json
+│   ├── phase1-g6-v3-preregistration.json
+│   └── phase1-g6-v4-preregistration.json
 ├── formal_protocol.py
 ├── formal_preflight.py
 ├── formal_run.py
