@@ -200,9 +200,12 @@ def run_record(
         else:
             adapter["stage_durations_ns"] = {"moondream_inference": duration_ns}
         adapter["translation_route"] = "qwen"
+        unload_confirmation = workload_contract.get("unload_confirmation")
         adapter["model_residency"] = {
             "unload_requested": True,
-            "unload_confirmed": None,
+            "unload_confirmed": (
+                True if isinstance(unload_confirmation, dict) else None
+            ),
         }
         process = {
             "protocol_version": workload_contract.get("process_protocol_version"),
@@ -767,6 +770,25 @@ class FormalAnalysisTests(unittest.TestCase):
             refresh_manifest(session_dir)
 
             with self.assertRaisesRegex(ValueError, "worker did not close cleanly"):
+                analyze_formal_collection(collection)
+
+    def test_unconfirmed_vlm_unload_is_rejected_after_hash_refresh(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            collection = build_collection(Path(temp_dir))
+            session_dir = collection / "session-01-attempt-01"
+            run_path = next(
+                path
+                for path in session_dir.glob("measured/*vlm*/run.json")
+                if read_json(path)["workload"] == "vlm"
+            )
+            run = read_json(run_path)
+            run["adapter"]["model_residency"]["unload_confirmed"] = False
+            write_json(run_path, run)
+            refresh_manifest(session_dir)
+
+            with self.assertRaisesRegex(
+                ValueError, "VLM model unload claim is invalid"
+            ):
                 analyze_formal_collection(collection)
 
     def test_shortened_idle_epoch_is_rejected_after_hash_refresh(self) -> None:

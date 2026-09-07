@@ -29,8 +29,10 @@ diagnostic supports deterministic model requests, explicit unload confirmation
 and a 60 s Qwen client boundary. A subsequent nonformal target validation
 directly exercised the modified repository path in both VLM lifecycle
 conditions; both runs confirmed unload, used the Qwen route and passed their
-slice/process Gates. The repair is ready for review, but Phase 1 is incomplete;
-no formal performance comparison or application slice is authorized.
+slice/process Gates. G6 v4 retains the complete v3 scientific design and freezes
+the target-validated repair. Its reviewed merge activates a fresh formal
+collection from session 1. Phase 1 remains incomplete; no formal performance
+comparison or application slice is authorized yet.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
@@ -45,13 +47,15 @@ no formal performance comparison or application slice is authorized.
 > 仅冻结该顺序与进程协议。首次 v3 正式尝试又因同步 VLM Qwen 超时触发两个系统被测
 > 对象 Gate 失败，v3 永久关闭。随后完成的三次描述性诊断支持确定性请求、显式卸载确认
 > 与 60 秒 Qwen 边界；之后的非正式目标机验证直接运行了修改后的仓库路径，两个 VLM
-> 生命周期条件均确认卸载、使用 Qwen 路径并通过切片与进程 Gate。修复已具备评审条件，
-> 但 Phase 1 尚未完成，不进行正式性能比较或整机应用切片。
+> 生命周期条件均确认卸载、使用 Qwen 路径并通过切片与进程 Gate。G6 v4 保留 v3 的
+> 完整科学设计并冻结目标机验证后的修复，评审合并后从 session 1 开始新的正式采集。
+> Phase 1 尚未完成，v4 对照通过前不进行整机应用切片。
 
 ## Status
 
 - Phase: incomplete after the closed G6 v3 attempt; repaired VLM path validated
-  on target and ready for review; G6 not met; application slice not authorized
+  on target and frozen in G6 v4; fresh formal comparison pending; application
+  slice not authorized
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -74,6 +78,8 @@ no formal performance comparison or application slice is authorized.
 - VLM timeout-repair target validation: base `main@52c041d`, validation
   `20260906T101723Z_phase1_vlm_timeout_repair_validation`; modified repository
   path validated; nonformal correctness evidence only
+- G6 v4 preregistration: retains the v3 scientific design, freezes the VLM
+  request and unload-confirmation repair, and activates only after reviewed merge
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -1098,12 +1104,12 @@ defense and must not be used as the Jetson scheduling success target.
 
 ## G6 formal preregistration
 
-The G6 v3 formal comparison is preserved by the amended
+The G6 v4 formal comparison is preserved by the amended
 [G6 preregistration](phase1-formal-preregistration.md) and its machine-readable
-v3 protocol. V1 and v2 remain immutable history, and v2 remains closed after a
-system-under-test failure. V3 became active only through its reviewed merge to
-`main`; data collected before that event were not eligible for confirmatory
-analysis. Its first attempt has now closed v3 as described below.
+v4 protocol. V1, v2 and v3 remain immutable history; v2 and v3 are closed after
+system-under-test failures. V4 becomes active only through its reviewed merge to
+`main`; data collected before that event are not eligible for confirmatory
+analysis, and no v3 run can be reused or reclassified.
 
 The design contains five sessions and six paired sync/async blocks per workload
 and session: 30 pairs per workload, 30 measured runs per condition and workload,
@@ -1131,7 +1137,7 @@ then six paired blocks within each selected session, using 100,000 resamples,
 all endpoints and workloads. No post-hoc outlier exclusion, imputation,
 failed-run replacement or operator-selected reordering is permitted. The
 tracked protocol SHA-256 is
-`070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b`.
+`84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054`.
 
 The formal runner executes one complete protocol session per invocation. It
 loads the tracked protocol by hash, requires synchronized clean `main`, records
@@ -1146,9 +1152,11 @@ aborted. An append-only ledger fixes all warm-up, idle and measured transitions.
 inline absolute-schedule probe exposes the blocking interval. `formal_async`
 uses a one-pending/one-result Phase 1 lane and an independent probe. ASR keeps
 its supervised Whisper subprocess in both conditions; LLM keeps the same
-pre-existing llama-server; VLM keeps the spawned-process adapter and
-per-invocation Moondream-unload-before-Qwen policy and process protocol `0.2.0`
-in both conditions. Thus the intended
+pre-existing llama-server; VLM keeps the spawned-process adapter, deterministic
+request contract `0.1.0`, 60 s Qwen client boundary, confirmed
+Moondream-unload-before-Qwen policy and process protocol `0.2.0` in both
+conditions. Unload confirmation polls the Ollama process list every 100 ms for
+at most 20 s and fails closed. Thus the intended
 condition difference is the Phase 1 scheduling boundary rather than a model,
 request or residency change. Each run binds the adapter record to a separate
 privacy-preserving result envelope and enforces workload-specific output,
@@ -1251,11 +1259,11 @@ performance metrics, then applies one shared seeded session/block resampling
 stream for 100,000 percentile-bootstrap draws. Any missing run, reordered entry,
 mixed commit, un-restarted service, incomplete thermal gate, lifecycle failure
 or modified artifact invalidates the collection.
-The default runner refuses any further v3 session. The v3 failed measured run is
-not replaced, the collection is not continued, and its partial timing data do
-not enter confirmatory analysis. The incomplete matrix supports no sync/async
-performance conclusion, and no v4 is implied as an automatic retry. G6 is not
-met and the application slice is not authorized.
+The v3 identity refuses any further session. The failed measured run is not
+replaced, the collection is not continued, and its partial timing data do not
+enter confirmatory analysis. The incomplete matrix supports no sync/async
+performance conclusion and did not itself imply an automatic v4 retry. G6 was
+not met and the application slice was not authorized.
 
 The subsequent descriptive timeout-repair diagnostic repeated the fixed input
 three times with temperature `0.0`, seed `20260906`, the existing model and
@@ -1278,9 +1286,11 @@ unloads were confirmed, both rewrites used Qwen, and the service log contained
 two matching request releases with no cancellation, timeout or error record.
 The Qwen stages completed in 23704.782 and 26854.584 ms. This is nonformal
 correctness evidence from one fixed-order run per condition, not a performance
-comparison. V3 remains closed and is not reclassified; Phase 1 remains
-incomplete. Any later formal comparison requires an explicit versioned protocol
-activated after review and cannot reuse the v3 partial collection.
+comparison. V3 remains closed and is not reclassified. G6 v4 is the explicit
+successor protocol: it retains the complete scientific design while freezing
+only the validated deterministic request, 60 s Qwen timeout, bounded positive
+unload confirmation and amendment provenance. Its reviewed merge activates a
+fresh collection from session 1. Phase 1 remains incomplete.
 
 ## Phase 1 completion boundary
 
@@ -1294,9 +1304,8 @@ The original completion boundary required:
 6. at least one opt-in, motion-disabled application slice uses the validated
    runtime while the synchronous baseline remains available.
 
-Items 4 and 6 were not satisfied. The non-replaceable G6 v3 failure prevents the
-formal comparison and therefore blocks the application slice. The VLM repair
-path is validated on the target and ready for review, but that corrective result
-does not complete Phase 1 or authorize an unpreregistered retry. Any successor
-comparison requires a new reviewed protocol and a fresh collection after the
-implementation is fixed on `main`.
+Items 4 and 6 remain unsatisfied. The non-replaceable G6 v3 failure closed that
+protocol and blocked its application slice. The VLM repair path is validated on
+the target, and G6 v4 now preregisters a fresh comparison after reviewed merge to
+`main`. The corrective result alone does not complete Phase 1: v4 must complete
+and pass before the motion-disabled application slice is authorized.

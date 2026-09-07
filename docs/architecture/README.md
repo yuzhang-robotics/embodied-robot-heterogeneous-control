@@ -159,8 +159,11 @@ candidate repair contract, not a formal result. The later
 [target validation](../../experiments/phase1/results/20260906T101723Z_phase1_vlm_timeout_repair_validation/)
 directly executed the modified repository adapter in both lifecycle conditions.
 Both unload confirmations, Qwen routes, slice/process Gate sets and child
-closures passed. The repair is ready for review, but Phase 1 remains incomplete
-and no successor formal protocol is active.
+closures passed. G6 v4 retains the complete v3 scientific design and freezes the
+validated deterministic request, 60 s Qwen timeout and bounded positive unload
+confirmation. Its reviewed merge activates a fresh formal collection from
+session 1; no v3 run is reused or reclassified. Phase 1 remains incomplete until
+the formal comparison and subsequent application slice are completed.
 
 ## Evaluation plan
 

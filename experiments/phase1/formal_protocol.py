@@ -30,13 +30,25 @@ from experiments.phase1.llm_adapter import (
     frozen_llm_request_contract,
 )
 from experiments.phase1.vlm_adapter import C100_INPUT_SHA256, C100_INPUT_SIZE_BYTES
+from jetson.vlm_request_contract import (
+    MODEL_UNLOAD_POLL_INTERVAL_S,
+    MODEL_UNLOAD_TIMEOUT_S,
+    MOONDREAM_REQUEST_NUM_PREDICT,
+    MOONDREAM_REQUEST_TEMPERATURE,
+    MOONDREAM_REQUEST_TIMEOUT_S,
+    QWEN_REQUEST_MAX_TOKENS,
+    QWEN_REQUEST_TEMPERATURE,
+    QWEN_REQUEST_TIMEOUT_S,
+    VLM_REQUEST_CONTRACT_VERSION,
+    VLM_REQUEST_SEED,
+)
 
 
 FORMAL_PROTOCOL_SCHEMA_VERSION = "0.2.0"
-FORMAL_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v3"
-FORMAL_COLLECTION_STATUS = "closed_after_system_under_test_failure"
+FORMAL_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v4"
+FORMAL_COLLECTION_STATUS = "active"
 DEFAULT_PROTOCOL_PATH = (
-    Path(__file__).resolve().parent / "formal" / "phase1-g6-v3-preregistration.json"
+    Path(__file__).resolve().parent / "formal" / "phase1-g6-v4-preregistration.json"
 )
 FORMAL_V2_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v2"
 FORMAL_V2_PROTOCOL_SHA256 = (
@@ -46,9 +58,17 @@ FORMAL_V2_COLLECTION_STATUS = "closed_after_system_under_test_failure"
 FORMAL_V2_PROTOCOL_PATH = DEFAULT_PROTOCOL_PATH.with_name(
     "phase1-g6-v2-preregistration.json"
 )
-SUPERSEDED_PROTOCOL_ID = FORMAL_V2_PROTOCOL_ID
-SUPERSEDED_PROTOCOL_SHA256 = FORMAL_V2_PROTOCOL_SHA256
-SUPERSEDED_PROTOCOL_PATH = FORMAL_V2_PROTOCOL_PATH
+FORMAL_V3_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v3"
+FORMAL_V3_PROTOCOL_SHA256 = (
+    "070ec2d571c957a413567a2d2bd92d3dddd2e9fb07a7b1ef8c0c0c89bcdcfc4b"
+)
+FORMAL_V3_COLLECTION_STATUS = "closed_after_system_under_test_failure"
+FORMAL_V3_PROTOCOL_PATH = DEFAULT_PROTOCOL_PATH.with_name(
+    "phase1-g6-v3-preregistration.json"
+)
+SUPERSEDED_PROTOCOL_ID = FORMAL_V3_PROTOCOL_ID
+SUPERSEDED_PROTOCOL_SHA256 = FORMAL_V3_PROTOCOL_SHA256
+SUPERSEDED_PROTOCOL_PATH = FORMAL_V3_PROTOCOL_PATH
 WORKLOADS = ("asr", "llm", "vlm")
 CONDITIONS = ("formal_sync", "formal_async")
 SESSION_COUNT = 5
@@ -214,10 +234,11 @@ def _workload_contracts() -> dict[str, object]:
                     "prompt_identities": [
                         dict(identity) for identity in VLM_MOONDREAM_PROMPT_IDENTITIES
                     ],
-                    "temperature": 0.1,
-                    "num_predict": 100,
+                    "temperature": MOONDREAM_REQUEST_TEMPERATURE,
+                    "seed": VLM_REQUEST_SEED,
+                    "num_predict": MOONDREAM_REQUEST_NUM_PREDICT,
                     "stream": False,
-                    "timeout_s": 180,
+                    "timeout_s": MOONDREAM_REQUEST_TIMEOUT_S,
                 },
             },
             "qwen": {
@@ -230,17 +251,19 @@ def _workload_contracts() -> dict[str, object]:
                     "model": "qwen",
                     "system_prompt": dict(VLM_QWEN_SYSTEM_PROMPT_IDENTITY),
                     "user_prefix": dict(VLM_QWEN_USER_PREFIX_IDENTITY),
-                    "temperature": 0.2,
-                    "max_tokens": 96,
+                    "temperature": QWEN_REQUEST_TEMPERATURE,
+                    "seed": VLM_REQUEST_SEED,
+                    "max_tokens": QWEN_REQUEST_MAX_TOKENS,
                     "stream": False,
-                    "timeout_s": 30,
+                    "timeout_s": QWEN_REQUEST_TIMEOUT_S,
                 },
             },
+            "request_contract_version": VLM_REQUEST_CONTRACT_VERSION,
             "translation_route": "qwen",
             "execution_boundary": "spawned_process_for_both_conditions",
             "process_protocol_version": VLM_PROCESS_PROTOCOL_VERSION,
             "residency_policy": (
-                "moondream_unload_requested_before_qwen_per_invocation"
+                "moondream_unload_confirmed_before_qwen_per_invocation"
             ),
             "successful_stage_order": [
                 "input_verify_before",
@@ -252,7 +275,11 @@ def _workload_contracts() -> dict[str, object]:
                 "input_verify_after",
             ],
             "cleanup_unload_on_failure": True,
-            "unload_confirmation": "not_available",
+            "unload_confirmation": {
+                "method": "ollama_process_list_absence",
+                "timeout_s": MODEL_UNLOAD_TIMEOUT_S,
+                "poll_interval_ms": int(MODEL_UNLOAD_POLL_INTERVAL_S * 1_000),
+            },
         },
     }
 
@@ -277,37 +304,68 @@ def build_formal_protocol() -> dict[str, object]:
             "supersedes_protocol_sha256": SUPERSEDED_PROTOCOL_SHA256,
             "superseded_protocol_artifact": SUPERSEDED_PROTOCOL_PATH.name,
             "reason": (
-                "freeze the corrected VLM residency order after G6 v2 closed on "
-                "a system-under-test failure and a separate descriptive diagnostic "
-                "completed the corrected Qwen route within the retained timeout"
+                "freeze the deterministic VLM request and bounded unload-confirmation "
+                "repair after G6 v3 closed on a system-under-test timeout and the "
+                "repaired repository path passed separate target validation"
             ),
             "prior_collection_data_eligible": False,
-            "superseded_collection_status": FORMAL_V2_COLLECTION_STATUS,
+            "superseded_collection_status": FORMAL_V3_COLLECTION_STATUS,
             "superseded_collection_rerun_or_replacement_permitted": False,
+            "failure_and_diagnostics_used_to_modify_vlm_workload_contract": True,
             "outcome_values_used_to_modify_schedule": False,
             "outcome_values_used_to_modify_hypotheses_thresholds_or_analysis": False,
-            "diagnostic": {
-                "session_id": "20260905T160805Z_phase1_vlm_residency_diag",
-                "design_role": "descriptive_correctness_diagnostic",
-                "source_archive_sha256": (
-                    "f6c22ce6e396494af4d0dfcc16c30602d1dedd9f95d87ad8a5af22fdf599911e"
-                ),
-                "llama_log_archive_sha256": (
-                    "a9be360fa20036d53f057f2190b74c3ff427f5de8fd5c7cfe2f8861b6fa5a0ad"
-                ),
-                "outcome_used_to_confirm_implementation_readiness": True,
-                "performance_or_causal_claim_permitted": False,
+            "repair_provenance": {
+                "failed_formal_attempt": {
+                    "collection_id": "20260906T055511Z_phase1_formal_g6_v3",
+                    "design_role": "closed_formal_system_under_test_failure",
+                    "source_archive_sha256": (
+                        "601a097e5691264a663e88c07b9ea07e6c5b9bf7c3db4cbf6594ab"
+                        "3a14d41c69"
+                    ),
+                    "llama_log_archive_sha256": (
+                        "a18b253e477a18b5e09bd8fa1e928112e8f4d51f9a951779a00fbd"
+                        "009b308239"
+                    ),
+                    "performance_or_causal_claim_permitted": False,
+                },
+                "timeout_diagnostic": {
+                    "diagnostic_id": "20260906T082627Z_phase1_vlm_timeout_diag",
+                    "design_role": "descriptive_contract_diagnostic",
+                    "source_archive_sha256": (
+                        "fb76b78c0d54895ddcd44682dbc1fe688451444c9682c976ff9719b7"
+                        "f6740500"
+                    ),
+                    "performance_or_causal_claim_permitted": False,
+                },
+                "target_validation": {
+                    "validation_id": (
+                        "20260906T101723Z_phase1_vlm_timeout_repair_validation"
+                    ),
+                    "design_role": "descriptive_repository_path_validation",
+                    "source_archive_sha256": (
+                        "f8e4df5000f64cc26f18f03b92677b4f3f061433d6bed6ccb2a73ed"
+                        "7efae1b78"
+                    ),
+                    "llama_log_archive_sha256": (
+                        "64792cc3a8aaa32146ca617192390657699af7bf529b65311426270d"
+                        "867f11ea"
+                    ),
+                    "outcome_used_to_confirm_implementation_readiness": True,
+                    "performance_or_causal_claim_permitted": False,
+                },
             },
             "changed_components": [
-                "vlm_residency_order",
-                "vlm_process_protocol_binding",
+                "vlm_deterministic_request_parameters",
+                "vlm_qwen_request_timeout",
+                "vlm_unload_confirmation_contract",
                 "amendment_provenance",
             ],
             "unchanged_components": [
                 "research_questions_and_hypotheses",
                 "sample_size",
                 "condition_schedule_and_pair_order_matrix",
-                "workload_models_fixed_inputs_and_request_parameters",
+                "workload_models_fixed_inputs_prompts_and_output_token_limits",
+                "llama_server_arguments",
                 "conditions_and_execution_boundaries",
                 "environment_and_safety_constraints",
                 "confirmatory_endpoints_and_thresholds",

@@ -131,7 +131,7 @@ class FormalPreflightTests(unittest.TestCase):
                 service_identity=service_identity_record,
             )
 
-    def test_active_v3_protocol_is_eligible(self) -> None:
+    def test_active_v4_protocol_is_eligible(self) -> None:
         preflight = self.build()
 
         self.assertTrue(preflight["eligible"])
@@ -147,7 +147,7 @@ class FormalPreflightTests(unittest.TestCase):
             "active",
         )
 
-    def test_closed_v3_protocol_is_ineligible(self) -> None:
+    def test_closed_v4_protocol_is_ineligible(self) -> None:
         preflight = self.build(
             collection_status="closed_after_system_under_test_failure"
         )

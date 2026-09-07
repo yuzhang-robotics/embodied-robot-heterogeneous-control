@@ -46,7 +46,7 @@ class FakeRecord:
         residency = (
             {
                 "unload_requested": True,
-                "unload_confirmed": None,
+                "unload_confirmed": True,
             }
             if self.workload == "vlm"
             else {

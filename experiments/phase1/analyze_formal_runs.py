@@ -49,6 +49,10 @@ from experiments.phase1.llm_adapter import (
 from experiments.phase1.manifest import sha256_file, write_json_atomic
 from experiments.phase1.telemetry import SCHEMA_VERSION
 from experiments.phase1.vlm_adapter import C100_INPUT_MEDIA_TYPE
+from jetson.vlm_request_contract import (
+    MODEL_UNLOAD_POLL_INTERVAL_S,
+    MODEL_UNLOAD_TIMEOUT_S,
+)
 
 
 FORMAL_ANALYSIS_SCHEMA_VERSION = "0.1.0"
@@ -734,6 +738,10 @@ def _run_gate_errors(
         stage_errors = (
             stage_errors_value if isinstance(stage_errors_value, Mapping) else {}
         )
+        unload_confirmation = workload_contract.get("unload_confirmation")
+        unload_confirmation_required = isinstance(unload_confirmation, Mapping)
+        expected_unload_confirmed = True if unload_confirmation_required else None
+        observed_unload_confirmed = residency_record.get("unload_confirmed")
         if (
             "translation_route_verified" not in expected_failed_gates
             and adapter_record.get("translation_route") != "qwen"
@@ -749,13 +757,28 @@ def _run_gate_errors(
             errors.append("VLM child process did not close normally")
         if (
             residency_record.get("unload_requested") is not True
-            or residency_record.get("unload_confirmed") is not None
+            or observed_unload_confirmed is not expected_unload_confirmed
         ):
             errors.append("VLM model unload claim is invalid")
+        expected_residency_policy = (
+            "moondream_unload_confirmed_before_qwen_per_invocation"
+            if unload_confirmation_required
+            else "moondream_unload_requested_before_qwen_per_invocation"
+        )
+        unload_contract_valid = (
+            dict(unload_confirmation)
+            == {
+                "method": "ollama_process_list_absence",
+                "timeout_s": MODEL_UNLOAD_TIMEOUT_S,
+                "poll_interval_ms": int(MODEL_UNLOAD_POLL_INTERVAL_S * 1_000),
+            }
+            if unload_confirmation_required
+            else unload_confirmation == "not_available"
+        )
         if "process_protocol_version" in workload_contract and (
             workload_contract.get("process_protocol_version") != "0.2.0"
             or workload_contract.get("residency_policy")
-            != "moondream_unload_requested_before_qwen_per_invocation"
+            != expected_residency_policy
             or workload_contract.get("successful_stage_order")
             != [
                 "input_verify_before",
@@ -767,7 +790,7 @@ def _run_gate_errors(
                 "input_verify_after",
             ]
             or workload_contract.get("cleanup_unload_on_failure") is not True
-            or workload_contract.get("unload_confirmation") != "not_available"
+            or not unload_contract_valid
             or process_record.get("protocol_version")
             != workload_contract.get("process_protocol_version")
             or set(stage_status)
