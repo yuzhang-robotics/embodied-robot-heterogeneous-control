@@ -29,10 +29,12 @@ diagnostic supports deterministic model requests, explicit unload confirmation
 and a 60 s Qwen client boundary. A subsequent nonformal target validation
 directly exercised the modified repository path in both VLM lifecycle
 conditions; both runs confirmed unload, used the Qwen route and passed their
-slice/process Gates. G6 v4 retains the complete v3 scientific design and freezes
-the target-validated repair. Its reviewed merge activates a fresh formal
-collection from session 1. Phase 1 remains incomplete; no formal performance
-comparison or application slice is authorized yet.
+slice/process Gates. G6 v4 retained the complete v3 scientific design and froze
+the target-validated repair. Its fresh five-session formal collection completed
+all 180 planned measured runs. All run, lifecycle and responsiveness criteria
+passed, but the frozen workload-performance noninferiority criterion failed for
+ASR, LLM and VLM. The overall G6 decision failed. V4 is closed, Phase 1 has not
+met its success Gate, and the application slice remains unauthorized.
 
 > 中文简介：本文冻结 Phase 1 异步运行时的任务模型、生命周期、队列、取消、结果新鲜度、
 > 快速周期代理和安全边界。host-only worker、周期探针、trace replay 和模拟实验运行器已实现；
@@ -48,14 +50,15 @@ comparison or application slice is authorized yet.
 > 对象 Gate 失败，v3 永久关闭。随后完成的三次描述性诊断支持确定性请求、显式卸载确认
 > 与 60 秒 Qwen 边界；之后的非正式目标机验证直接运行了修改后的仓库路径，两个 VLM
 > 生命周期条件均确认卸载、使用 Qwen 路径并通过切片与进程 Gate。G6 v4 保留 v3 的
-> 完整科学设计并冻结目标机验证后的修复，评审合并后从 session 1 开始新的正式采集。
-> Phase 1 尚未完成，v4 对照通过前不进行整机应用切片。
+> 完整科学设计并冻结目标机验证后的修复，随后完成了全新 5 个 session 和 180 次正式
+> 测量。运行、生命周期与响应性判据均通过，但 ASR、LLM、VLM 都未证明冻结的 10%
+> 工作负载性能非劣效界限，因此整体 G6 判定失败。v4 已关闭，Phase 1 尚未满足成功
+> Gate，整机应用切片仍未获授权。
 
 ## Status
 
-- Phase: incomplete after the closed G6 v3 attempt; repaired VLM path validated
-  on target and frozen in G6 v4; fresh formal comparison pending; application
-  slice not authorized
+- Phase: incomplete after the valid negative G6 v4 result; formal comparison
+  complete but success Gate not met; application slice not authorized
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -78,8 +81,10 @@ comparison or application slice is authorized yet.
 - VLM timeout-repair target validation: base `main@52c041d`, validation
   `20260906T101723Z_phase1_vlm_timeout_repair_validation`; modified repository
   path validated; nonformal correctness evidence only
-- G6 v4 preregistration: retains the v3 scientific design, freezes the VLM
-  request and unload-confirmation repair, and activates only after reviewed merge
+- G6 v4 formal result: `main@6904e5f`, collection
+  `20260907T051448Z_phase1_formal_g6_v4`; 180/180 measured runs valid;
+  responsiveness and lifecycle passed, workload noninferiority and overall G6
+  failed; collection closed
 - Jetson-pilot result: `main@77138f2`, session `20260828T121142Z_phase1_jetson_pilot`
 - Jetson-pilot harness starting point: `main@844b633`
 - Simulation-runner starting point: `main@4514d97`
@@ -1286,11 +1291,18 @@ unloads were confirmed, both rewrites used Qwen, and the service log contained
 two matching request releases with no cancellation, timeout or error record.
 The Qwen stages completed in 23704.782 and 26854.584 ms. This is nonformal
 correctness evidence from one fixed-order run per condition, not a performance
-comparison. V3 remains closed and is not reclassified. G6 v4 is the explicit
-successor protocol: it retains the complete scientific design while freezing
+comparison. V3 remains closed and is not reclassified. G6 v4 was the explicit
+successor protocol: it retained the complete scientific design while freezing
 only the validated deterministic request, 60 s Qwen timeout, bounded positive
-unload confirmation and amendment provenance. Its reviewed merge activates a
-fresh collection from session 1. Phase 1 remains incomplete.
+unload confirmation and amendment provenance. Its fresh collection
+`20260907T051448Z_phase1_formal_g6_v4` completed all five sessions and all 180
+planned measured runs. Every run Gate and lifecycle criterion passed. All three
+workloads passed the responsiveness endpoints but failed the frozen 10%
+workload-performance noninferiority criterion, so the intersection-union G6
+decision failed. The independently reconstructed
+[formal report](../../experiments/phase1/results/20260907T051448Z_phase1_formal_g6_v4/)
+binds the complete collection and analysis identities. V4 is closed without
+rerun, extension, reclassification or post-hoc threshold change.
 
 ## Phase 1 completion boundary
 
@@ -1304,8 +1316,10 @@ The original completion boundary required:
 6. at least one opt-in, motion-disabled application slice uses the validated
    runtime while the synchronous baseline remains available.
 
-Items 4 and 6 remain unsatisfied. The non-replaceable G6 v3 failure closed that
-protocol and blocked its application slice. The VLM repair path is validated on
-the target, and G6 v4 now preregisters a fresh comparison after reviewed merge to
-`main`. The corrective result alone does not complete Phase 1: v4 must complete
-and pass before the motion-disabled application slice is authorized.
+Items 1 through 5 are complete. Item 6 remains unsatisfied and unauthorized
+because its G6 prerequisite did not pass. The complete v4 comparison is valid
+negative evidence: it passed responsiveness and lifecycle criteria but did not
+establish workload noninferiority for any workload. The closed result is not an
+automatic-retry trigger. Phase 1 therefore has a completed formal experiment
+but has not met its success Gate, and the motion-disabled application slice must
+not begin.

@@ -6,7 +6,7 @@
 
 This repository began with my bachelor's thesis on speech interaction and visual perception for a wheeled robot. The thesis system runs fully local speech and vision pipelines on a Jetson Orin Nano, while an STM32F407 executes motion commands and enforces a communication watchdog. The same platform will now be used to study how long-running perception and inference can coexist with predictable control timing.
 
-> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，并完成 VLM、ASR 与 LLM 的固定输入 Jetson correctness pilot。G6 v3 的首次正式尝试在第 10 个条目因 VLM Qwen 30 秒超时而触发两个系统被测对象 Gate 失败；该协议永久关闭且不重跑或替换。修正后的 VLM 仓库路径已在 Jetson 上完成直接验证，G6 v4 现冻结该修复并在评审合并后从 session 1 开始全新正式采集。Phase 1 仍未完成，在 v4 对照通过前不进入整机应用切片。
+> 中文简介：本仓库记录“章鱼号”轮式机器人的本科毕设基线，并在同一平台上继续研究异构计算架构下的异步推理、实时控制与系统评测。当前版本已经完成 Jetson、STM32 和自制底层驱动板的整机验证；Phase 1 已建立有界运行时、可观测 worker、周期探针和模拟实验运行器，并完成 VLM、ASR 与 LLM 的固定输入 Jetson correctness pilot。G6 v4 正式对照已完成全部 5 个 session 和 180 次测量，所有运行 Gate、生命周期判据和响应性判据均通过，但 ASR、LLM、VLM 都未能证明冻结的 10% 工作负载性能非劣效界限，因此整体 G6 判定失败。该正式结果已关闭且不重跑、扩充或改变判据；Phase 1 尚未满足成功 Gate，整机应用切片仍未获授权。
 
 ## Project status
 
@@ -15,7 +15,7 @@ This repository began with my bachelor's thesis on speech interaction and visual
 | Bachelor's thesis software and firmware | Complete and hardware validated |
 | Custom base-driver PCB | Published and tested on the physical robot |
 | Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
-| Asynchronous inference runtime | Runtime and fixed-input correctness Gates complete; G6 v3 closed after a system-under-test VLM failure; repaired VLM path validated and frozen in G6 v4; formal comparison and application slice pending |
+| Asynchronous inference runtime | Runtime and fixed-input correctness Gates complete; G6 v4 completed all 180 measured runs and passed responsiveness/lifecycle criteria, but failed the frozen workload-performance noninferiority criterion for all three workloads; application slice not authorized |
 
 The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
@@ -149,10 +149,16 @@ an inline harness. A subsequent
 directly exercised the modified repository path in both VLM lifecycle
 conditions. Both unloads were confirmed, both Qwen rewrites completed in
 23.7--26.9 s, and all slice and process Gates passed. This single fixed-order
-correctness validation is not a formal performance result. G6 v4 freezes the
-reviewed repair without reusing or reclassifying any v3 run; its merge activates
-a fresh collection from session 1. Phase 1 remains incomplete until that formal
-comparison and the subsequent application slice are completed.
+correctness validation is not a formal performance result. G6 v4 then froze the
+reviewed repair without reusing or reclassifying any v3 run. Its completed
+[formal result](experiments/phase1/results/20260907T051448Z_phase1_formal_g6_v4/)
+contains all 180 planned measured runs across five sessions. Every run Gate,
+lifecycle criterion and responsiveness endpoint passed, but the upper 95%
+confidence bound for the paired workload-performance ratio exceeded the frozen
+`1.10` margin for ASR, LLM and VLM. The intersection-union decision therefore
+failed. G6 v4 is closed without rerun, extension or post-hoc threshold change;
+Phase 1 has not met its success Gate and the application slice remains
+unauthorized.
 
 All pilot timings are descriptive, not formal performance or cancellation-
 latency data. Future research stages may investigate:

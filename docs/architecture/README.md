@@ -159,11 +159,16 @@ candidate repair contract, not a formal result. The later
 [target validation](../../experiments/phase1/results/20260906T101723Z_phase1_vlm_timeout_repair_validation/)
 directly executed the modified repository adapter in both lifecycle conditions.
 Both unload confirmations, Qwen routes, slice/process Gate sets and child
-closures passed. G6 v4 retains the complete v3 scientific design and freezes the
+closures passed. G6 v4 retained the complete v3 scientific design and froze the
 validated deterministic request, 60 s Qwen timeout and bounded positive unload
-confirmation. Its reviewed merge activates a fresh formal collection from
-session 1; no v3 run is reused or reclassified. Phase 1 remains incomplete until
-the formal comparison and subsequent application slice are completed.
+confirmation. Its completed
+[formal comparison](../../experiments/phase1/results/20260907T051448Z_phase1_formal_g6_v4/)
+contains all 180 planned measured runs from a fresh five-session collection;
+no v3 run was reused or reclassified. All run, lifecycle and responsiveness
+criteria passed, but ASR, LLM and VLM each failed the frozen 10%
+workload-performance noninferiority criterion. The overall G6 decision failed.
+V4 is closed without rerun or post-hoc threshold change, Phase 1 has not met its
+success Gate, and the application slice remains unauthorized.
 
 ## Evaluation plan
 
