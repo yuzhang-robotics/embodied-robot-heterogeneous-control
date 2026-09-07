@@ -578,6 +578,16 @@ def _monitor_cancellation(
             return
 
 
+def _wait_until_monotonic_ns(target_ns: int) -> None:
+    """Wait until an absolute monotonic boundary without returning early."""
+
+    while True:
+        remaining_ns = target_ns - time.monotonic_ns()
+        if remaining_ns <= 0:
+            return
+        time.sleep(remaining_ns / 1_000_000_000)
+
+
 def _run_sync(
     spec: FormalRunSpec,
     payload: PayloadRef,
@@ -603,6 +613,7 @@ def _run_sync(
         if not_before_monotonic_ns is not None:
             prelude_boundary = max(prelude_boundary, not_before_monotonic_ns)
         probe.run_until(prelude_boundary)
+        _wait_until_monotonic_ns(prelude_boundary)
         if thermal_stop.is_set():
             raise RuntimeError("thermal stop was requested before workload execution")
         task = _make_task(
@@ -691,9 +702,7 @@ def _run_async(
         prelude_boundary = time.monotonic_ns() + int(spec.prelude_s * 1_000_000_000)
         if not_before_monotonic_ns is not None:
             prelude_boundary = max(prelude_boundary, not_before_monotonic_ns)
-        threading.Event().wait(
-            max(0.0, (prelude_boundary - time.monotonic_ns()) / 1_000_000_000)
-        )
+        _wait_until_monotonic_ns(prelude_boundary)
         if thermal_stop.is_set():
             raise RuntimeError("thermal stop was requested before workload execution")
         task = _make_task(

@@ -236,11 +236,11 @@ class CarryoverAnalysisTests(unittest.TestCase):
         self.assertIn("do not emit a formal pass/fail decision", report)
 
     def test_rejects_formal_claim_in_a_diagnostic_run(self) -> None:
-        run_path = next(self.collection.rglob("run.json"))
+        session_dir = self.collection / "session-01-attempt-01"
+        run_path = next(session_dir.rglob("run.json"))
         run = json.loads(run_path.read_text(encoding="utf-8"))
         run["formal_claim_permitted"] = True
         run_path.write_text(json.dumps(run), encoding="utf-8")
-        session_dir = next(self.collection.glob("session-01-attempt-01"))
         manifest_path = session_dir / "manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         manifest["artifacts"] = _artifact_inventory(session_dir)
