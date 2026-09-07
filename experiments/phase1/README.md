@@ -3,50 +3,30 @@
 This directory contains the host tests, simulated-condition runner, trace
 recorder, event schema, independent lifecycle replay, run validation, Jetson
 pilot orchestration, deterministic analysis, fixed-input VLM/ASR/LLM integration
-and descriptive summaries for the Phase 1 asynchronous runtime study. The first
-Jetson simulation pilot and fixed-input VLM correctness pilot are complete.
-A spawned-process VLM adapter and the fixed-input ASR subprocess slice have also
-completed independently validated Jetson correctness pilots. The fixed-input
-LLM HTTP slice has now completed its independently validated Jetson correctness
-pilot, closing G5. The amended G6 v2 protocol preregistered the formal paired
-comparison. Its protocol-bound session runner and independent analyzer are
-implemented. Commissioning exposed an LLM empty-history identity mismatch
-before measurement and a resource-trace tail race after a complete session. An
-outcome-independent schedule audit also found a repeated cross-session order
-relationship in v1. The first v2 formal attempt then stopped on a VLM Qwen
-timeout and failed its required translation-route Gate. G6 v2 is closed without
-a confirmatory claim. A separate residency-order diagnostic validated both
-corrected Qwen paths. G6 v3 retained the complete v2 scientific design while
-freezing that execution order, but its first formal attempt stopped on a
-synchronous VLM Qwen timeout and failed two system-under-test Gates. V3 and
-its partial collection are permanently closed. A three-repetition descriptive
-diagnostic now supports a deterministic request contract, explicit unload
-confirmation and a 60 s Qwen boundary. A subsequent nonformal Jetson validation
-directly exercised the modified repository path in both lifecycle conditions;
-both runs confirmed unload, used Qwen and passed all slice/process Gates. G6 v4
-retains the complete v3 scientific design while freezing the validated
-deterministic request, 60 s Qwen timeout and bounded unload confirmation. Its
-reviewed merge activates a fresh collection from session 1. Phase 1 is
-incomplete until the confirmatory comparison and application slice finish.
+and descriptive summaries for the Phase 1 asynchronous runtime study. The
+motion-disabled Jetson simulation pilot and the fixed-input VLM, ASR and LLM
+correctness pilots are complete, closing G5. The protocol-bound formal runner
+and independent analyzer were then commissioned through two diagnostic v1
+collections. G6 v2 and v3 each closed after a non-replaceable VLM Qwen timeout,
+followed by separate residency-order, timeout-contract and repository-path
+validation. G6 v4 retained the complete v3 scientific design while freezing
+the validated deterministic request, 60 s Qwen boundary and bounded unload
+confirmation. Its formal collection has now completed all five sessions and
+180 planned measured runs. Every run Gate, lifecycle criterion and
+responsiveness endpoint passed, but none of the three workloads established the
+frozen 10% workload-performance noninferiority margin. The intersection-union
+decision is therefore `FAIL`. G6 v4 is closed, Phase 1 has not met its success
+Gate, and the application slice remains unauthorized.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
-> pilot 证据链，并完成 Jetson simulation pilot 与固定输入 VLM correctness pilot；
-> 当前已验证真实 VLM 接入、陈旧结果拒绝与子进程正常回收，VLM 进程隔离路径已完成
-> Jetson correctness pilot；固定输入 ASR 子进程切片也已完成 Jetson correctness pilot；
-> 固定输入 LLM HTTP 切片也已完成 Jetson correctness pilot，G5 已关闭；修订后的 G6 v2
-> 正式协议冻结交叉平衡顺序，协议绑定的正式 runner 与独立分析器已实现；commissioning
-> 先后发现正式测量前的 LLM 空历史身份不一致、一个完整 session 后的资源轨迹尾部竞态，
-> 随后的结果无关顺序审计发现 v1 的跨 session 顺序关系重复；首次 v2 正式尝试又在第 18
-> 个条目因 VLM 的 Qwen 30 秒超时而停止。v2 已关闭且不支持正式结论；随后完成的描述性
-> Jetson 诊断验证了 `Moondream -> 卸载请求 -> Qwen` 路径。G6 v3 保留 v2 的完整科学
-> 设计并冻结修正后的顺序，但首次正式尝试又在第 10 个条目因同步 VLM Qwen 30 秒超时
-> 触发两个系统被测对象 Gate 失败。v3 永久关闭且不重跑或替换。随后完成的三次描述性
-> 诊断支持确定性请求、显式卸载确认和 60 秒 Qwen 边界；之后的非正式 Jetson 验证直接
-> 运行了修改后的仓库路径，两个生命周期条件均确认卸载、使用 Qwen 并通过全部切片与进程
-> Gate。G6 v4 保留 v3 的完整科学设计，仅冻结已验证的确定性请求、60 秒 Qwen 超时和
-> 有界卸载确认；评审合并后将从 session 1 开始新的正式采集。Phase 1 在正式对照和整机
-> 应用切片完成前仍未结束。
+> pilot 证据链；固定输入 VLM、ASR、LLM correctness pilot 均已完成，G5 已关闭。
+> 协议绑定的正式 runner 与独立分析器经过两次 v1 commissioning、v2/v3 失败分析以及
+> 独立修复验证后，在 G6 v4 下完成了 5 个 session、180 次正式测量。全部运行 Gate、
+> 生命周期判据和响应性判据通过，但三个工作负载的性能比置信区间上界都超过冻结的
+> `1.10` 非劣效界限，因此交并式整体判定为失败。这是有效的阴性正式结果，而不是运行
+> 故障。v4 已关闭且不重跑、扩充、重新分类或事后修改阈值；Phase 1 尚未满足成功 Gate，
+> 整机应用切片仍未获授权。
 
 ## Current status
 
@@ -76,13 +56,15 @@ incomplete until the confirmatory comparison and application slice finish.
   completed one independently validated Jetson correctness pilot
 - Deterministic LLM-pilot reconstruction and public descriptive report:
   implemented; LLM component and G5 overall satisfied
-- Machine-validated G6 formal preregistration: v1, v2 and v3 retained as
+- Machine-validated G6 formal preregistration: v1 through v4 retained as
   immutable history; v2 and v3 closed after system-under-test failures; v4
-  freezes the target-validated VLM repair
+  froze the target-validated VLM repair and is closed after its formal result
 - Protocol-bound formal session runner and independent analyzer: implemented
   and reviewed; LLM history binding corrected against the frozen adapter
-- Formal Phase 1 evidence: no confirmatory claim permitted; two v1 commissioning
-  collections plus the failed v2 and v3 attempts are retained without replacement
+- Formal Phase 1 evidence: G6 v4 completed 180/180 measured runs with all run,
+  lifecycle and responsiveness Gates passing; workload noninferiority not
+  established for ASR, LLM or VLM; overall decision failed and no formal claim
+  is permitted
 - Deterministic v2 failed-attempt reconstruction: implemented; all 42 manifest
   artifacts, 18 run records, the ledger prefix and service log correlation
   independently verified
@@ -96,8 +78,10 @@ incomplete until the confirmatory comparison and application slice finish.
 - VLM timeout-repair target validation: modified repository path directly
   exercised on Jetson; both lifecycle runs valid with confirmed unload and Qwen
   completion
-- Phase 1 completion: pending the fresh G6 v4 formal comparison and subsequent
-  motion-disabled application slice
+- G6 v4 formal reconstruction: exact recorded commit reproduced the reference
+  JSON and Markdown byte-for-byte on Jetson Python 3.10.12 and NumPy 1.26.4
+- Phase 1 completion: success Gate not met; motion-disabled application slice
+  remains unauthorized
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -589,9 +573,9 @@ python3 -m experiments.phase1.formal_protocol --print-sha256
 
 The expected SHA-256 is
 `84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054`.
-V4 becomes active only through its reviewed merge to `main`. Before that event,
-the clean synchronized-`main` preflight rejects formal collection. V3 remains
-closed and its partial collection is not reused or reclassified.
+V4 was activated by the reviewed merge at `main@6904e5f`. The clean
+synchronized-`main` preflight rejected collection before that event. V3 remains
+closed and its partial collection was not reused or reclassified.
 
 The design fixes five sessions, six paired blocks per workload and session, 30
 pairs per workload and 180 measured runs overall. Every session uses each of the
@@ -801,9 +785,8 @@ source bundle without publishing private paths or raw evidence.
 
 This validates the repair path but remains one fixed-order correctness run per
 condition, not formal sync/async evidence. G6 v3 remains closed and immutable.
-G6 v4 freezes the repair while retaining the v3 scientific design; its reviewed
-merge activates a fresh collection from session 1 rather than reuse of any v3
-run. Phase 1 remains incomplete.
+G6 v4 subsequently froze the repair while retaining the v3 scientific design
+and began a fresh collection from session 1 rather than reusing any v3 run.
 
 Reconstruct the target validation privately with:
 
@@ -818,6 +801,45 @@ python3 -m experiments.phase1.analyze_vlm_timeout_repair \
   --source-bundle-sha256 e344b0461ac9f96d70f56f1561d8b5cd214487f5f75cd5a080b432bb8b5132e5 \
   --json-output /tmp/phase1-vlm-timeout-repair.json \
   --markdown-output /tmp/phase1-vlm-timeout-repair.md
+```
+
+## G6 v4 formal result
+
+Collection `20260907T051448Z_phase1_formal_g6_v4` completed all five planned
+sessions on `main@6904e5f`. Each session contained five warm-ups, two idle
+references and 36 measured runs, with more than 30 minutes and new Ollama and
+llama-server process identities between sessions. The analyzer validated all
+180 planned measured runs, 30 paired units per workload, 36,348 resource
+samples and every run Gate. There were no replacement attempts, stale-result
+consumptions, capacity violations, unreaped processes or unjoined threads.
+Maximum observed Tj was 57.406 C; physical motion remained disabled and UART
+was not accessed.
+
+All three workloads passed both responsiveness criteria. Their asynchronous
+p95 maximum gaps were 100.511 ms for ASR, 100.396 ms for LLM and 100.664 ms for
+VLM. The paired async-minus-sync gap confidence intervals were entirely below
+zero. However, the upper 95% confidence bounds for the paired geometric-mean
+workload-performance ratios were 2.8935, 1.1617 and 1.1841 respectively, all
+above the frozen `1.10` noninferiority margin. Under the preregistered
+intersection-union rule, every workload therefore failed and the overall G6
+decision is `FAIL`.
+
+The independently reconstructed
+[formal report](results/20260907T051448Z_phase1_formal_g6_v4/) binds the full
+collection, protocol and analysis hashes. A clean checkout of the recorded
+commit reproduced both analyzer outputs byte-for-byte on the target Python
+3.10.12 and NumPy 1.26.4 environment. This is valid negative evidence rather
+than an execution failure. V4 will not be rerun, extended, replaced,
+reclassified or evaluated with a post-hoc margin. G6 is not met, Phase 1 has not
+met its success Gate, and the application slice remains unauthorized.
+
+Reconstruct a private copy of the collection with:
+
+```bash
+python3 -m experiments.phase1.analyze_formal_runs \
+  /path/to/20260907T051448Z_phase1_formal_g6_v4 \
+  --json-output /tmp/phase1-g6-v4-analysis.json \
+  --markdown-output /tmp/phase1-g6-v4-analysis.md
 ```
 
 ## Planned implementation order
@@ -846,12 +868,10 @@ python3 -m experiments.phase1.analyze_vlm_timeout_repair \
 12. implement and review the protocol-bound formal runner and independent
     analyzer — complete;
 13. collect, validate and publish the formal synchronous/asynchronous comparison
-    — v3 stopped on a non-replaceable system-under-test VLM timeout; its partial
-    matrix supports no performance comparison; the deterministic request and
-    unload-confirmation repair is target-validated and frozen in v4; fresh v4
-    collection is pending;
+    — complete; v4 produced a valid negative result: responsiveness and
+    lifecycle passed, workload noninferiority and overall G6 failed;
 14. add an opt-in motion-disabled application slice after the research Gates
-    pass — not authorized until the G6 v4 comparison passes.
+    pass — not authorized because G6 v4 is closed with a failed decision.
 
 Contract changes are reviewed before implementation, and the formal protocol
 is frozen before data collection.

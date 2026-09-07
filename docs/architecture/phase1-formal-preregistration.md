@@ -5,7 +5,9 @@ comparison for the Phase 1 runtime under the amended G6 v4 protocol. V2 and v3
 remain closed after their first formal attempts stopped on system-under-test
 failures. V4 retains the complete v3 scientific design and freezes the
 deterministic VLM request, 60 s Qwen client boundary and bounded positive unload
-confirmation after separate diagnostic and target validation work.
+confirmation after separate diagnostic and target validation work. V4 has now
+completed and is closed with the negative formal result recorded below; this
+post-collection status does not alter the frozen design.
 
 The machine-readable protocol is
 [`phase1-g6-v4-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v4-preregistration.json).
@@ -19,9 +21,11 @@ protocol uses schema `0.2.0`, protocol ID
 > 均因首次正式尝试出现系统被测对象失败而永久关闭，既不重跑也不替换。v4 保留 v3 的
 > 五个 session、交叉平衡条件顺序、样本量、成功阈值、失败处理和分层配对 bootstrap
 > 方法，仅冻结已经在 Jetson 目标机验证的确定性 VLM 请求、60 秒 Qwen 超时以及有界的
-> 模型离驻确认。该协议只有在评审合并到 `main` 后才激活，并从 session 1 使用新的
-> collection ID 开始；v3 的任何数据都不会被复用或重新分类。Phase 1 在正式对照和后续
-> 整机应用切片完成前仍未结束。
+> 模型离驻确认。该协议在评审合并到 `main` 后从 session 1 使用新的 collection ID 开始，
+> 且未复用或重新分类任何 v3 数据。v4 已完成 5 个 session 和 180 次正式测量；运行、
+> 生命周期与响应性判据通过，但三个工作负载均未证明冻结的 10% 性能非劣效界限，因此
+> G6 整体判定失败。v4 已关闭且不重跑或修改阈值，Phase 1 尚未满足成功 Gate，整机应用
+> 切片仍未获授权。
 
 ## Protocol amendment history
 
@@ -413,3 +417,28 @@ reviewed merge, the clean synchronized-`main` preflight prevents formal
 collection. After activation, collection begins at session 1 under a new v4
 collection identifier. The default runner never resumes v3; its dedicated
 identity remains `closed_after_system_under_test_failure`.
+
+## Recorded outcome
+
+Reviewed merge `6904e5f3c366ac2847ee4eb58196a04125c5cce5` activated v4.
+Collection `20260907T051448Z_phase1_formal_g6_v4` then completed all five
+sessions and all 180 planned measured runs, with 30 paired units per workload.
+Every run Gate passed, all lifecycle violation totals were zero, sessions met
+the separation and service-restart requirements, and no replacement attempt or
+post-hoc exclusion occurred. The independently reconstructed
+[formal result](../../experiments/phase1/results/20260907T051448Z_phase1_formal_g6_v4/)
+reproduced the analyzer JSON and Markdown byte-for-byte on the recorded Jetson
+Python 3.10.12 and NumPy 1.26.4 environment.
+
+ASR, LLM and VLM each met the 300 ms asynchronous p95 bound and each paired
+async-minus-sync gap-difference confidence interval was entirely below zero.
+They did not meet the separate noninferiority criterion: the upper 95%
+confidence bounds for their paired geometric-mean workload-performance ratios
+were 2.8935, 1.1617 and 1.1841, respectively, all above the frozen `1.10`
+margin. The preregistered intersection-union decision is therefore `FAIL`,
+`formal_claim_permitted` is `false`, and G6 is not met.
+
+V4 is closed and immutable. It will not be rerun, extended, replaced,
+reclassified or evaluated with a changed margin. The application slice remains
+unauthorized, so Phase 1 has a completed formal comparison but has not met its
+success Gate.
