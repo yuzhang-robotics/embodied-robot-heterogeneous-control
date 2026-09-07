@@ -20,6 +20,7 @@ from experiments.phase1.run_formal_session import (
     ThermalMonitor,
     _check_collection_order,
     _services_changed,
+    build_parser,
     run_session,
 )
 from experiments.phase1.tests.formal_fixture import passing_formal_preflight
@@ -60,8 +61,13 @@ def payload(media_type: str) -> PayloadRef:
 
 
 class FormalRunnerTests(unittest.TestCase):
-    def test_default_formal_collection_is_active_for_v4(self) -> None:
-        self.assertEqual(FORMAL_COLLECTION_STATUS, "active")
+    def test_default_formal_collection_is_closed_after_v4_result(self) -> None:
+        self.assertEqual(FORMAL_COLLECTION_STATUS, "closed_after_negative_result")
+
+        args = build_parser().parse_args(["--session-index", "1"])
+        repository = Path(__file__).resolve().parents[3]
+        with self.assertRaisesRegex(FormalSessionError, "closed"):
+            run_session(args, repo_root=repository)
 
     def test_thermal_monitor_requires_consecutive_cool_samples_and_stops_high(
         self,

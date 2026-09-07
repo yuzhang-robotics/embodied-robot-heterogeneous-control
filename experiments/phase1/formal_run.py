@@ -136,6 +136,7 @@ def _make_task(
     *,
     task_id: str,
     state_token: StateToken,
+    task_protocol: str,
 ) -> TaskEnvelope:
     now = time.monotonic_ns()
     return TaskEnvelope(
@@ -147,7 +148,7 @@ def _make_task(
         state_token=state_token,
         payload=payload,
         metadata={
-            "protocol": "phase1_g6_formal",
+            "protocol": task_protocol,
             "fixed_input": True,
             "history_sha256": (
                 LLM_EMPTY_HISTORY_SHA256 if spec.workload == "llm" else None
@@ -585,6 +586,9 @@ def _run_sync(
     *,
     task_id: str,
     thermal_stop: threading.Event,
+    task_protocol: str,
+    state_scope_id: str,
+    not_before_monotonic_ns: int | None,
 ) -> tuple[ResultEnvelope, dict[str, object], dict[str, object]]:
     probe = InlineProbe(
         period_ns=spec.probe_period_ns,
@@ -595,14 +599,18 @@ def _run_sync(
     result: ResultEnvelope | None = None
     probe_report = None
     try:
-        probe.run_until(time.monotonic_ns() + int(spec.prelude_s * 1_000_000_000))
+        prelude_boundary = time.monotonic_ns() + int(spec.prelude_s * 1_000_000_000)
+        if not_before_monotonic_ns is not None:
+            prelude_boundary = max(prelude_boundary, not_before_monotonic_ns)
+        probe.run_until(prelude_boundary)
         if thermal_stop.is_set():
             raise RuntimeError("thermal stop was requested before workload execution")
         task = _make_task(
             spec,
             payload,
             task_id=task_id,
-            state_token=StateToken("phase1-formal", 0),
+            state_token=StateToken(state_scope_id, 0),
+            task_protocol=task_protocol,
         )
         token = CancellationToken()
         finished = threading.Event()
@@ -651,6 +659,9 @@ def _run_async(
     *,
     task_id: str,
     thermal_stop: threading.Event,
+    task_protocol: str,
+    state_scope_id: str,
+    not_before_monotonic_ns: int | None,
 ) -> tuple[ResultEnvelope, dict[str, object], dict[str, object]]:
     broker = BoundedTaskBroker(
         LaneConfig(
@@ -677,14 +688,20 @@ def _run_async(
     shutdown = None
     result: ResultEnvelope | None = None
     try:
-        threading.Event().wait(spec.prelude_s)
+        prelude_boundary = time.monotonic_ns() + int(spec.prelude_s * 1_000_000_000)
+        if not_before_monotonic_ns is not None:
+            prelude_boundary = max(prelude_boundary, not_before_monotonic_ns)
+        threading.Event().wait(
+            max(0.0, (prelude_boundary - time.monotonic_ns()) / 1_000_000_000)
+        )
         if thermal_stop.is_set():
             raise RuntimeError("thermal stop was requested before workload execution")
         task = _make_task(
             spec,
             payload,
             task_id=task_id,
-            state_token=broker.current_state_token("phase1-formal"),
+            state_token=broker.current_state_token(state_scope_id),
+            task_protocol=task_protocol,
         )
         submission = executor.submit(task)
         if not submission.admitted:
@@ -748,6 +765,9 @@ def run_formal_workload(
     *,
     task_id: str,
     thermal_stop: threading.Event | None = None,
+    task_protocol: str = "phase1_g6_formal",
+    state_scope_id: str = "phase1-formal",
+    not_before_monotonic_ns: int | None = None,
 ) -> dict[str, object]:
     """Run one workload and return closed facts without payload or output text."""
 
@@ -759,6 +779,18 @@ def run_formal_workload(
         raise TypeError("event_sink must provide emit(event)")
     if not callable(adapter):
         raise TypeError("adapter must be callable")
+    for value, name in (
+        (task_protocol, "task_protocol"),
+        (state_scope_id, "state_scope_id"),
+    ):
+        if not isinstance(value, str) or not value or len(value) > 64:
+            raise ValueError(f"{name} must be a non-empty string of at most 64 chars")
+    if not_before_monotonic_ns is not None and (
+        isinstance(not_before_monotonic_ns, bool)
+        or not isinstance(not_before_monotonic_ns, int)
+        or not_before_monotonic_ns <= 0
+    ):
+        raise ValueError("not_before_monotonic_ns must be a positive integer or None")
     stop = thermal_stop or threading.Event()
     started_ns = time.monotonic_ns()
     if spec.condition is FormalCondition.SYNC:
@@ -769,6 +801,9 @@ def run_formal_workload(
             adapter,
             task_id=task_id,
             thermal_stop=stop,
+            task_protocol=task_protocol,
+            state_scope_id=state_scope_id,
+            not_before_monotonic_ns=not_before_monotonic_ns,
         )
     else:
         result, probe, runtime = _run_async(
@@ -778,6 +813,9 @@ def run_formal_workload(
             adapter,
             task_id=task_id,
             thermal_stop=stop,
+            task_protocol=task_protocol,
+            state_scope_id=state_scope_id,
+            not_before_monotonic_ns=not_before_monotonic_ns,
         )
     finished_ns = time.monotonic_ns()
     adapter_record = _adapter_record(adapter, task_id)

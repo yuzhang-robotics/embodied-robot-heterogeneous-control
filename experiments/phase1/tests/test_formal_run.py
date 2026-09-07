@@ -146,8 +146,12 @@ class FakeAdapter:
         self.delay_s = delay_s
         self.last_record: FakeRecord | None = None
         self.last_process_report = FakeProcessReport() if process_isolated else None
+        self.last_task_metadata: dict[str, object] | None = None
+        self.last_scope_id: str | None = None
 
     def __call__(self, claimed: ClaimedTask) -> ResultEnvelope:
+        self.last_task_metadata = dict(claimed.task.metadata)
+        self.last_scope_id = claimed.task.state_token.scope_id
         started = claimed.started_monotonic_ns
         time.sleep(self.delay_s)
         finished = time.monotonic_ns()
@@ -214,6 +218,27 @@ class FormalRunTests(unittest.TestCase):
             FakeAdapter(),
             task_id=f"formal-{condition.value}",
         )
+
+    def test_nonformal_caller_can_bind_context_and_not_before_boundary(self) -> None:
+        adapter = FakeAdapter()
+        boundary = time.monotonic_ns() + 50_000_000
+        report = run_formal_workload(
+            self.llm_spec(FormalCondition.SYNC),
+            payload(),
+            NullEventSink(),
+            adapter,
+            task_id="carryover-context",
+            task_protocol="phase1_carryover_diagnostic",
+            state_scope_id="phase1-carryover",
+            not_before_monotonic_ns=boundary,
+        )
+
+        self.assertTrue(report["valid"])
+        self.assertGreaterEqual(report["adapter"]["started_monotonic_ns"], boundary)
+        self.assertEqual(
+            adapter.last_task_metadata["protocol"], "phase1_carryover_diagnostic"
+        )
+        self.assertEqual(adapter.last_scope_id, "phase1-carryover")
 
     def test_llm_paths_bind_the_frozen_empty_history_identity(self) -> None:
         input_path = (
