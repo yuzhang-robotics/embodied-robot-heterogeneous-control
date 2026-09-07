@@ -17,6 +17,11 @@ This repository began with my bachelor's thesis on speech interaction and visual
 | Jetson–STM32 command link | Validated with ACK/error responses and a 1.2 s command watchdog |
 | Asynchronous inference runtime | Runtime and fixed-input correctness Gates complete; G6 v4 completed all 180 measured runs and passed responsiveness/lifecycle criteria, but failed the frozen workload-performance noninferiority criterion for all three workloads; application slice not authorized |
 
+The closed v4 data are now being followed by a separate
+[ASR/VLM carryover diagnostic](docs/architecture/phase1-asr-vlm-carryover-diagnostic.md).
+It tests whether VLM work evicts the warmed Whisper working set relative to
+duration-matched idle and LLM controls; it cannot change the v4 decision.
+
 The validated Jetson–STM32 code is preserved at [`v0.1.0-thesis-baseline`](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline). The current `main` branch also includes the reviewed hardware documentation and editable PCB export.
 
 ## System at a glance

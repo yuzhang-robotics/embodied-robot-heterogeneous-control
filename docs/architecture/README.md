@@ -170,6 +170,13 @@ workload-performance noninferiority criterion. The overall G6 decision failed.
 V4 is closed without rerun or post-hoc threshold change, Phase 1 has not met its
 success Gate, and the application slice remains unauthorized.
 
+The follow-up
+[ASR/VLM carryover diagnostic](phase1-asr-vlm-carryover-diagnostic.md) freezes a
+new exploratory experiment around the observed pair-position warm-state effect.
+It duration-matches idle, LLM and VLM interposers and directly records Whisper
+page residency plus ASR process faults. This diagnostic is outside G6 v4 and
+cannot alter its decision.
+
 ## Evaluation plan
 
 Future experiments should record at least:

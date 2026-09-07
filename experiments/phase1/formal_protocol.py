@@ -46,7 +46,7 @@ from jetson.vlm_request_contract import (
 
 FORMAL_PROTOCOL_SCHEMA_VERSION = "0.2.0"
 FORMAL_PROTOCOL_ID = "phase1-g6-fixed-input-sync-async-v4"
-FORMAL_COLLECTION_STATUS = "active"
+FORMAL_COLLECTION_STATUS = "closed_after_negative_result"
 DEFAULT_PROTOCOL_PATH = (
     Path(__file__).resolve().parent / "formal" / "phase1-g6-v4-preregistration.json"
 )

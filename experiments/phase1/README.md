@@ -18,6 +18,14 @@ frozen 10% workload-performance noninferiority margin. The intersection-union
 decision is therefore `FAIL`. G6 v4 is closed, Phase 1 has not met its success
 Gate, and the application slice remains unauthorized.
 
+Exploratory reanalysis of the closed v4 evidence found a strong pair-position
+warm-state effect, especially an association between intervening VLM work and
+the next cold ASR invocation. A separately versioned, non-formal
+[ASR/VLM carryover diagnostic](../../docs/architecture/phase1-asr-vlm-carryover-diagnostic.md)
+now freezes a six-session, duration-matched `idle`/`llm`/`vlm` experiment with
+Whisper page-residency and ASR process-fault observations. It does not reopen
+v4 or authorize Phase 2.
+
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
 > pilot 证据链；固定输入 VLM、ASR、LLM correctness pilot 均已完成，G5 已关闭。
@@ -82,6 +90,9 @@ Gate, and the application slice remains unauthorized.
   JSON and Markdown byte-for-byte on Jetson Python 3.10.12 and NumPy 1.26.4
 - Phase 1 completion: success Gate not met; motion-disabled application slice
   remains unauthorized
+- ASR/VLM carryover diagnostic: runner, Linux residency/process observations,
+  six-permutation protocol and independent descriptive analyzer implemented;
+  target collection pending
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -840,6 +851,26 @@ python3 -m experiments.phase1.analyze_formal_runs \
   /path/to/20260907T051448Z_phase1_formal_g6_v4 \
   --json-output /tmp/phase1-g6-v4-analysis.json \
   --markdown-output /tmp/phase1-g6-v4-analysis.md
+```
+
+## ASR/VLM carryover diagnostic
+
+The closed G6 v4 data show that position within each adjacent pair dominated
+the nominal sync/async condition. The next experiment therefore isolates one
+mechanism instead of changing the formal margin: after two ASR primers, run one
+`idle`, `llm` or `vlm` interposer and start measured ASR exactly 150 seconds
+after primer 2. Six sessions cover every condition order.
+
+The runner records continuous resources, four non-touching Whisper model-file
+residency snapshots per unit and sampled `/proc` counters for every ASR child.
+The analyzer reports within-session VLM-minus-idle and LLM-minus-idle contrasts
+without any formal pass/fail field. See the
+[frozen design](../../docs/architecture/phase1-asr-vlm-carryover-diagnostic.md).
+
+Print and validate the tracked protocol with:
+
+```bash
+python3 -m experiments.phase1.carryover_protocol
 ```
 
 ## Planned implementation order
