@@ -9,16 +9,16 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.jetson_preflight import build_jetson_preflight
-from experiments.phase1.jetson_telemetry import TegrastatsSampler
-from experiments.phase1.llm_adapter import FixedInputLLMAdapter, llm_request_contract
-from experiments.phase1.llm_preflight import build_llm_preflight
-from experiments.phase1.llm_slice import LLMSliceCondition
-from experiments.phase1.manifest import sha256_file
+from experiments.phase1.common.preflight import build_jetson_preflight
+from experiments.phase1.common.telemetry_jetson import TegrastatsSampler
+from experiments.phase1.workloads.llm.adapter import FixedInputLLMAdapter, llm_request_contract
+from experiments.phase1.workloads.llm.preflight import build_llm_preflight
+from experiments.phase1.workloads.llm.slice import LLMSliceCondition
+from experiments.phase1.common.manifest import sha256_file
 from experiments.phase1.run_llm_slice import build_parser, run_once
 from experiments.phase1.tests.test_jetson_pilot import clean_environment
 from experiments.phase1.tests.test_jetson_telemetry import sampler_command
-from experiments.phase1.validate_llm_slice import validate_llm_slice_dir
+from experiments.phase1.workloads.llm.validation import validate_llm_slice_dir
 
 
 SESSION_ID = "20260901T020000Z_phase1_llm_test"
@@ -56,11 +56,11 @@ class LLMRunnerTests(unittest.TestCase):
         }
         self.constants = [
             patch.multiple(
-                "experiments.phase1.llm_adapter",
+                "experiments.phase1.workloads.llm.adapter",
                 LLM_INPUT_SHA256=self.input_hash,
                 LLM_INPUT_SIZE_BYTES=len(self.input_bytes),
             ),
-            patch.multiple("experiments.phase1.llm_preflight", **shared),
+            patch.multiple("experiments.phase1.workloads.llm.preflight", **shared),
             patch.multiple(
                 "experiments.phase1.run_llm_slice",
                 LLM_MODEL_SHA256=self.model_hash,
@@ -68,11 +68,11 @@ class LLMRunnerTests(unittest.TestCase):
                 LLM_EXPECTED_SERVED_MODEL_ID="qwen-test.gguf",
             ),
             patch.multiple(
-                "experiments.phase1.summarize_llm_slice",
+                "experiments.phase1.workloads.llm.summary",
                 LLM_INPUT_SHA256=self.input_hash,
                 LLM_INPUT_SIZE_BYTES=len(self.input_bytes),
             ),
-            patch.multiple("experiments.phase1.validate_llm_slice", **shared),
+            patch.multiple("experiments.phase1.workloads.llm.validation", **shared),
         ]
         for value in self.constants:
             value.start()

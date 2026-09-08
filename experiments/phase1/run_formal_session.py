@@ -15,13 +15,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
-from experiments.phase1.asr_adapter import FixedInputASRAdapter, fixed_asr_payload
-from experiments.phase1.formal_preflight import (
+from experiments.phase1.workloads.asr.adapter import FixedInputASRAdapter, fixed_asr_payload
+from experiments.phase1.formal.preflight import (
     FROZEN_PROTOCOL_SHA256,
     build_formal_preflight,
     formal_preflight_errors,
 )
-from experiments.phase1.formal_protocol import (
+from experiments.phase1.formal.protocol import (
     DEFAULT_PROTOCOL_PATH,
     FORMAL_COLLECTION_STATUS,
     FORMAL_PROTOCOL_ID,
@@ -30,27 +30,27 @@ from experiments.phase1.formal_protocol import (
     load_formal_protocol,
     protocol_sha256,
 )
-from experiments.phase1.formal_run import (
+from experiments.phase1.formal.run import (
     FORMAL_RUN_SCHEMA_VERSION,
     FormalCondition,
     FormalRunSpec,
     run_formal_workload,
 )
-from experiments.phase1.jetson_telemetry import (
+from experiments.phase1.common.telemetry_jetson import (
     TegrastatsSampler,
     load_resource_samples,
     validate_resource_samples,
 )
-from experiments.phase1.llm_adapter import FixedInputLLMAdapter, fixed_llm_payload
-from experiments.phase1.manifest import (
+from experiments.phase1.workloads.llm.adapter import FixedInputLLMAdapter, fixed_llm_payload
+from experiments.phase1.common.manifest import (
     MANIFEST_SCHEMA_VERSION,
     sha256_file,
     utc_now_iso,
     write_json_atomic,
 )
-from experiments.phase1.telemetry import EventRecorder, SCHEMA_VERSION
-from experiments.phase1.vlm_adapter import fixed_c100_payload
-from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
+from experiments.phase1.common.telemetry import EventRecorder, SCHEMA_VERSION
+from experiments.phase1.workloads.vlm.adapter import fixed_c100_payload
+from experiments.phase1.workloads.vlm.process_adapter import ProcessIsolatedVLMAdapter
 from jetson.phase1_runtime import EventStatus, PeriodicProbe, RuntimeEvent
 
 

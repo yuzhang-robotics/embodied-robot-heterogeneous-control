@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.manifest import (
+from experiments.phase1.common.manifest import (
     SafetyError,
     require_motion_disabled,
     sha256_file,
@@ -20,8 +20,8 @@ from experiments.phase1.run_simulation import (
     make_run_id,
     run_once,
 )
-from experiments.phase1.simulation import SimulationCondition
-from experiments.phase1.validate_run import validate_run_dir
+from experiments.phase1.simulation.runtime import SimulationCondition
+from experiments.phase1.simulation.validation import validate_run_dir
 
 
 SESSION_ID = "20260827T020000Z_phase1_simulation_test"

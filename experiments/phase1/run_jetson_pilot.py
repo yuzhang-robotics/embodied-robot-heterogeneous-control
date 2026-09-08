@@ -8,20 +8,20 @@ import threading
 from pathlib import Path
 from typing import Callable
 
-from experiments.phase1.jetson_preflight import (
+from experiments.phase1.common.preflight import (
     build_jetson_preflight,
     preflight_errors,
 )
-from experiments.phase1.jetson_telemetry import (
+from experiments.phase1.common.telemetry_jetson import (
     TegrastatsSampler,
     load_resource_samples,
 )
-from experiments.phase1.manifest import (
+from experiments.phase1.common.manifest import (
     sha256_file,
     utc_now_iso,
     write_json_atomic,
 )
-from experiments.phase1.pilot import (
+from experiments.phase1.simulation.pilot import (
     PILOT_MANIFEST_SCHEMA_VERSION,
     PilotError,
     build_pilot_plan,

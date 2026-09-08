@@ -8,13 +8,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.asr_adapter import ASRRuntime, fixed_asr_payload
-from experiments.phase1.asr_preflight import (
+from experiments.phase1.workloads.asr.adapter import ASRRuntime, fixed_asr_payload
+from experiments.phase1.workloads.asr.preflight import (
     asr_preflight_errors,
     build_asr_preflight,
     probe_asr_runtime,
 )
-from experiments.phase1.jetson_preflight import build_jetson_preflight
+from experiments.phase1.common.preflight import build_jetson_preflight
 from experiments.phase1.tests.test_jetson_pilot import clean_environment
 
 
@@ -26,7 +26,7 @@ def base_preflight() -> dict[str, object]:
         REPO_ROOT,
         environment=clean_environment(),
         tegrastats_available=True,
-        loaded_modules={"experiments.phase1.asr_preflight"},
+        loaded_modules={"experiments.phase1.workloads.asr.preflight"},
     )
 
 
@@ -50,12 +50,12 @@ class ASRPreflightTests(unittest.TestCase):
         )
         self.patches = [
             patch.multiple(
-                "experiments.phase1.asr_adapter",
+                "experiments.phase1.workloads.asr.adapter",
                 ASR_INPUT_SHA256=self.input_hash,
                 ASR_INPUT_SIZE_BYTES=len(self.input_bytes),
             ),
             patch.multiple(
-                "experiments.phase1.asr_preflight",
+                "experiments.phase1.workloads.asr.preflight",
                 ASR_INPUT_SHA256=self.input_hash,
                 ASR_INPUT_SIZE_BYTES=len(self.input_bytes),
                 ASR_MODEL_SHA256=self.model_hash,

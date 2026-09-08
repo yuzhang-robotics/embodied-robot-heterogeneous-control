@@ -8,7 +8,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from experiments.phase1.manifest import (
+from experiments.phase1.common.manifest import (
     MANIFEST_SCHEMA_VERSION,
     collect_environment,
     require_motion_disabled,
@@ -16,14 +16,14 @@ from experiments.phase1.manifest import (
     utc_now_iso,
     write_json_atomic,
 )
-from experiments.phase1.simulation import (
+from experiments.phase1.simulation.runtime import (
     ScenarioSpec,
     SimulationCondition,
     run_simulation,
 )
-from experiments.phase1.summarize_run import build_summary
-from experiments.phase1.telemetry import EventRecorder, SCHEMA_VERSION
-from experiments.phase1.validate_run import validate_run_dir
+from experiments.phase1.simulation.summary import build_summary
+from experiments.phase1.common.telemetry import EventRecorder, SCHEMA_VERSION
+from experiments.phase1.simulation.validation import validate_run_dir
 
 
 _SESSION_ID_RE = re.compile(r"^[0-9]{8}T[0-9]{6}Z_phase1_[a-z][a-z0-9_-]{0,47}$")

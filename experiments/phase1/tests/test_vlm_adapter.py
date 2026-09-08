@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.vlm_adapter import (
+from experiments.phase1.workloads.vlm.adapter import (
     FixedInputVLMAdapter,
     VLMPipeline,
     fixed_c100_payload,
@@ -74,7 +74,7 @@ class FixedInputVLMAdapterTests(unittest.TestCase):
         self.input_path.write_bytes(self.input_bytes)
         self.digest = hashlib.sha256(self.input_bytes).hexdigest()
         self.constants = patch.multiple(
-            "experiments.phase1.vlm_adapter",
+            "experiments.phase1.workloads.vlm.adapter",
             C100_INPUT_SHA256=self.digest,
             C100_INPUT_SIZE_BYTES=len(self.input_bytes),
         )
@@ -102,7 +102,7 @@ class FixedInputVLMAdapterTests(unittest.TestCase):
     def test_module_import_does_not_load_the_device_pipeline(self) -> None:
         code = (
             "import sys\n"
-            "import experiments.phase1.vlm_adapter\n"
+            "import experiments.phase1.workloads.vlm.adapter\n"
             "assert 'jetson.vision_vlm' not in sys.modules\n"
             "assert 'jetson.app' not in sys.modules\n"
             "assert 'jetson.robot_comm' not in sys.modules\n"

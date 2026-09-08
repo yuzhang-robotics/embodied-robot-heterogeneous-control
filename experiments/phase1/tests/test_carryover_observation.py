@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from experiments.phase1.carryover_observation import (
+from experiments.phase1.carryover.observation import (
     OBSERVATION_SCHEMA_VERSION,
     ObservationError,
     memory_observation,

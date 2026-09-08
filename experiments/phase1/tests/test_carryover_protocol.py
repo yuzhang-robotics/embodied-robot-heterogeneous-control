@@ -4,7 +4,7 @@ import copy
 import json
 import unittest
 
-from experiments.phase1.carryover_protocol import (
+from experiments.phase1.carryover.protocol import (
     CARRYOVER_PROTOCOL_ID,
     CARRYOVER_PROTOCOL_SHA256,
     CARRYOVER_V1_PROTOCOL_ID,

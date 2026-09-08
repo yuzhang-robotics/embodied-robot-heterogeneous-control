@@ -6,13 +6,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from experiments.phase1.analyze_formal_runs import analyze_formal_collection
-from experiments.phase1.analyze_formal_v3_failure import (
+from experiments.phase1.formal.analysis import analyze_formal_collection
+from experiments.phase1.formal.v3_failure_analysis import (
     analyze_v3_failed_formal_attempt,
     main,
     render_markdown,
 )
-from experiments.phase1.formal_protocol import (
+from experiments.phase1.formal.protocol import (
     FORMAL_V3_PROTOCOL_ID,
     FORMAL_V3_PROTOCOL_PATH,
     FORMAL_V3_PROTOCOL_SHA256,

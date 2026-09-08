@@ -8,14 +8,14 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.analyze_llm_pilot import (
+from experiments.phase1.workloads.llm.analysis import (
     ANALYSIS_KIND,
     _EXPECTED_GATES,
     analyze_llm_pilot_dir,
     main,
     render_markdown,
 )
-from experiments.phase1.llm_adapter import (
+from experiments.phase1.workloads.llm.adapter import (
     LLM_EMPTY_HISTORY_SHA256,
     LLM_EXPECTED_SERVED_MODEL_ID,
     LLM_INPUT_MEDIA_TYPE,
@@ -213,7 +213,7 @@ class LLMPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             session = make_session(Path(temp_dir))
             with patch(
-                "experiments.phase1.analyze_llm_pilot.validate_llm_slice_dir",
+                "experiments.phase1.workloads.llm.analysis.validate_llm_slice_dir",
                 return_value=[],
             ):
                 analysis = analyze_llm_pilot_dir(
@@ -251,7 +251,7 @@ class LLMPilotAnalysisTests(unittest.TestCase):
                 str(markdown_path),
             ]
             with patch(
-                "experiments.phase1.analyze_llm_pilot.validate_llm_slice_dir",
+                "experiments.phase1.workloads.llm.analysis.validate_llm_slice_dir",
                 return_value=[],
             ):
                 first_result = main(arguments)
@@ -287,7 +287,7 @@ class LLMPilotAnalysisTests(unittest.TestCase):
             manifest["environment"]["git"]["commit"] = "c" * 40
             manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_llm_pilot.validate_llm_slice_dir",
+                "experiments.phase1.workloads.llm.analysis.validate_llm_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "runs disagree"):
@@ -311,7 +311,7 @@ class LLMPilotAnalysisTests(unittest.TestCase):
             session = make_session(root / "extra")
             (session / "notes.txt").write_text("unexpected\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_llm_pilot.validate_llm_slice_dir",
+                "experiments.phase1.workloads.llm.analysis.validate_llm_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "exactly the two"):
@@ -324,7 +324,7 @@ class LLMPilotAnalysisTests(unittest.TestCase):
             summary["gates"].pop()
             summary_path.write_text(json.dumps(summary) + "\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_llm_pilot.validate_llm_slice_dir",
+                "experiments.phase1.workloads.llm.analysis.validate_llm_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "gate set"):
@@ -334,7 +334,7 @@ class LLMPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             session = make_session(Path(temp_dir))
             with patch(
-                "experiments.phase1.analyze_llm_pilot.validate_llm_slice_dir",
+                "experiments.phase1.workloads.llm.analysis.validate_llm_slice_dir",
                 return_value=[],
             ):
                 analysis = analyze_llm_pilot_dir(session)

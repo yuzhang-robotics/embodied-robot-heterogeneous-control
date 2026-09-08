@@ -11,19 +11,19 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.asr_adapter import (
+from experiments.phase1.workloads.asr.adapter import (
     ASRRuntime,
     FixedInputASRAdapter,
 )
-from experiments.phase1.asr_preflight import build_asr_preflight
-from experiments.phase1.asr_slice import ASRSliceCondition
-from experiments.phase1.jetson_preflight import build_jetson_preflight
-from experiments.phase1.jetson_telemetry import TegrastatsSampler
-from experiments.phase1.manifest import sha256_file
+from experiments.phase1.workloads.asr.preflight import build_asr_preflight
+from experiments.phase1.workloads.asr.slice import ASRSliceCondition
+from experiments.phase1.common.preflight import build_jetson_preflight
+from experiments.phase1.common.telemetry_jetson import TegrastatsSampler
+from experiments.phase1.common.manifest import sha256_file
 from experiments.phase1.run_asr_slice import build_parser, run_once
 from experiments.phase1.tests.test_jetson_pilot import clean_environment
 from experiments.phase1.tests.test_jetson_telemetry import sampler_command
-from experiments.phase1.validate_asr_slice import validate_asr_slice_dir
+from experiments.phase1.workloads.asr.validation import validate_asr_slice_dir
 
 
 SESSION_ID = "20260831T020000Z_phase1_asr_test"
@@ -70,9 +70,9 @@ class ASRRunnerTests(unittest.TestCase):
             "ASR_EXPECTED_OUTPUT_LENGTH": len(self.transcript),
         }
         self.constants = [
-            patch.multiple("experiments.phase1.asr_adapter", **shared),
+            patch.multiple("experiments.phase1.workloads.asr.adapter", **shared),
             patch.multiple(
-                "experiments.phase1.asr_preflight",
+                "experiments.phase1.workloads.asr.preflight",
                 ASR_INPUT_SHA256=self.input_hash,
                 ASR_INPUT_SIZE_BYTES=len(self.input_bytes),
                 ASR_MODEL_SHA256=self.model_hash,
@@ -86,13 +86,13 @@ class ASRRunnerTests(unittest.TestCase):
                 ASR_EXPECTED_OUTPUT_LENGTH=len(self.transcript),
             ),
             patch.multiple(
-                "experiments.phase1.summarize_asr_slice",
+                "experiments.phase1.workloads.asr.summary",
                 ASR_INPUT_SHA256=self.input_hash,
                 ASR_INPUT_SIZE_BYTES=len(self.input_bytes),
                 ASR_EXPECTED_OUTPUT_SHA256=self.transcript_hash,
                 ASR_EXPECTED_OUTPUT_LENGTH=len(self.transcript),
             ),
-            patch.multiple("experiments.phase1.validate_asr_slice", **shared),
+            patch.multiple("experiments.phase1.workloads.asr.validation", **shared),
         ]
         for value in self.constants:
             value.start()

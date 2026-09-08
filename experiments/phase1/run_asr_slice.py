@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import argparse
 import math
-import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
-from experiments.phase1.asr_adapter import (
+from experiments.phase1.workloads.asr.adapter import (
     ASR_EXPECTED_OUTPUT_LENGTH,
     ASR_EXPECTED_OUTPUT_SHA256,
     ASR_MODEL_SHA256,
@@ -20,29 +19,37 @@ from experiments.phase1.asr_adapter import (
     FixedInputASRAdapter,
     fixed_asr_payload,
 )
-from experiments.phase1.asr_preflight import (
+from experiments.phase1.workloads.asr.preflight import (
     asr_preflight_errors,
     build_asr_preflight,
 )
-from experiments.phase1.asr_slice import (
+from experiments.phase1.workloads.asr.slice import (
     ASRSliceCondition,
     ASRSliceSpec,
     run_asr_slice,
 )
-from experiments.phase1.jetson_telemetry import (
+from experiments.phase1.common.telemetry_jetson import (
     TegrastatsSampler,
     load_resource_samples,
 )
-from experiments.phase1.manifest import (
+from experiments.phase1.common.manifest import (
     MANIFEST_SCHEMA_VERSION,
     collect_environment,
     require_motion_disabled,
-    sha256_file,
     utc_now_iso,
     write_json_atomic,
 )
-from experiments.phase1.summarize_asr_slice import build_asr_summary
-from experiments.phase1.telemetry import EventRecorder, SCHEMA_VERSION
+from experiments.phase1.workloads.asr.summary import build_asr_summary
+from experiments.phase1.common.telemetry import EventRecorder, SCHEMA_VERSION
+from experiments.phase1.workloads._runner import (
+    artifact_identity as _artifact_identity,
+    completed_artifact_identities,
+    make_run_id,
+    make_session_id,
+    reproducibility_record as _reproducibility,
+    resolve_output_root,
+    validate_session_id,
+)
 
 
 DEFAULT_INPUT = (
@@ -53,7 +60,6 @@ DEFAULT_INPUT = (
     / "asr_piper_clean_16k.wav"
 )
 DEFAULT_OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "runs" / "phase1-asr-slice"
-_SESSION_ID_RE = re.compile(r"^[0-9]{8}T[0-9]{6}Z_phase1_asr_[a-z][a-z0-9_-]{0,31}$")
 
 
 class ASRRunError(RuntimeError):
@@ -68,63 +74,24 @@ def make_asr_run_id(
 ) -> str:
     if not isinstance(condition, ASRSliceCondition):
         raise TypeError("condition must be an ASRSliceCondition")
-    if (
-        isinstance(repetition, bool)
-        or not isinstance(repetition, int)
-        or not 0 <= repetition <= 999
-    ):
-        raise ValueError("repetition must be an integer from 0 to 999")
-    current = now or datetime.now(timezone.utc)
-    if current.tzinfo is None:
-        raise ValueError("now must be timezone-aware")
-    stamp = current.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    return f"{stamp}_phase1_{condition.value}_asr_{repetition:03d}"
+    return make_run_id(condition.value, "asr", repetition, now=now)
 
 
 def make_asr_session_id(now: datetime | None = None) -> str:
-    current = now or datetime.now(timezone.utc)
-    if current.tzinfo is None:
-        raise ValueError("now must be timezone-aware")
-    stamp = current.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    return f"{stamp}_phase1_asr_slice"
+    return make_session_id("asr", now=now)
 
 
 def _validate_session_id(value: str) -> str:
-    if not isinstance(value, str) or not _SESSION_ID_RE.fullmatch(value):
-        raise ValueError(
-            "session_id must use YYYYMMDDTHHMMSSZ_phase1_asr_<lowercase-label>"
-        )
-    return value
-
-
-def _is_relative_to(path: Path, parent: Path) -> bool:
-    try:
-        path.relative_to(parent)
-    except ValueError:
-        return False
-    return True
+    return validate_session_id(value, "asr")
 
 
 def _resolve_output_root(output_root: Path, repo_root: Path) -> Path:
-    expanded = output_root.expanduser()
-    resolved = (expanded if expanded.is_absolute() else repo_root / expanded).resolve()
-    phase0_source = (repo_root / "experiments" / "phase0").resolve()
-    if _is_relative_to(resolved, phase0_source):
-        raise ASRRunError("Phase 1 ASR output must not be inside experiments/phase0")
-    if _is_relative_to(resolved, repo_root):
-        ignored_root = (repo_root / "experiments" / "runs").resolve()
-        if not _is_relative_to(resolved, ignored_root):
-            raise ASRRunError(
-                "repository-local ASR output must be inside experiments/runs"
-            )
-    return resolved
-
-
-def _artifact_identity(path: Path) -> dict[str, object]:
-    return {
-        "size_bytes": path.stat().st_size,
-        "sha256": sha256_file(path),
-    }
+    return resolve_output_root(
+        output_root,
+        repo_root,
+        workload="asr",
+        error_type=ASRRunError,
+    )
 
 
 def _completed_artifact_identities(
@@ -138,41 +105,7 @@ def _completed_artifact_identities(
         "scenario.json",
         "summary.json",
     )
-    return {
-        name: _artifact_identity(run_dir / name)
-        for name in names
-        if name in completed_names
-    }
-
-
-def _reproducibility(
-    environment: dict[str, object],
-    *,
-    injected_components: list[str],
-) -> dict[str, object]:
-    git = environment.get("git")
-    record = git if isinstance(git, dict) else {}
-    identity_complete = (
-        not record.get("error_codes")
-        and bool(record.get("commit"))
-        and bool(record.get("branch"))
-    )
-    git_clean = identity_complete and record.get("dirty") is False
-    synchronized_main = (
-        git_clean
-        and record.get("branch") == "main"
-        and record.get("upstream") == "origin/main"
-        and record.get("upstream_commit") == record.get("commit")
-        and str(record.get("ahead_behind", "")).split() == ["0", "0"]
-    )
-    return {
-        "git_identity_complete": identity_complete,
-        "git_clean": git_clean,
-        "synchronized_main": synchronized_main,
-        "development_injection": bool(injected_components),
-        "injected_components": injected_components,
-        "formal_evidence_eligible": False,
-    }
+    return completed_artifact_identities(run_dir, completed_names, names)
 
 
 def run_once(
@@ -374,7 +307,7 @@ def run_once(
         manifest["completed_at"] = utc_now_iso()
         write_json_atomic(manifest_path, manifest)
 
-        from experiments.phase1.validate_asr_slice import validate_asr_slice_dir
+        from experiments.phase1.workloads.asr.validation import validate_asr_slice_dir
 
         validation_errors = validate_asr_slice_dir(run_dir)
         if validation_errors:

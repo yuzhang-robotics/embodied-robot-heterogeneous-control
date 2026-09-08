@@ -8,7 +8,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.analyze_asr_pilot import (
+from experiments.phase1.workloads.asr.analysis import (
     ANALYSIS_KIND,
     _EXPECTED_GATES,
     analyze_asr_pilot_dir,
@@ -180,7 +180,7 @@ class ASRPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             session = make_session(Path(temp_dir))
             with patch(
-                "experiments.phase1.analyze_asr_pilot.validate_asr_slice_dir",
+                "experiments.phase1.workloads.asr.analysis.validate_asr_slice_dir",
                 return_value=[],
             ):
                 analysis = analyze_asr_pilot_dir(
@@ -217,7 +217,7 @@ class ASRPilotAnalysisTests(unittest.TestCase):
                 str(markdown_path),
             ]
             with patch(
-                "experiments.phase1.analyze_asr_pilot.validate_asr_slice_dir",
+                "experiments.phase1.workloads.asr.analysis.validate_asr_slice_dir",
                 return_value=[],
             ):
                 first_result = main(arguments)
@@ -253,7 +253,7 @@ class ASRPilotAnalysisTests(unittest.TestCase):
             manifest["environment"]["git"]["commit"] = "c" * 40
             manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_asr_pilot.validate_asr_slice_dir",
+                "experiments.phase1.workloads.asr.analysis.validate_asr_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "runs disagree"):
@@ -277,7 +277,7 @@ class ASRPilotAnalysisTests(unittest.TestCase):
             session = make_session(root / "extra")
             (session / "notes.txt").write_text("unexpected\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_asr_pilot.validate_asr_slice_dir",
+                "experiments.phase1.workloads.asr.analysis.validate_asr_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "exactly the two"):
@@ -290,7 +290,7 @@ class ASRPilotAnalysisTests(unittest.TestCase):
             summary["gates"].pop()
             summary_path.write_text(json.dumps(summary) + "\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_asr_pilot.validate_asr_slice_dir",
+                "experiments.phase1.workloads.asr.analysis.validate_asr_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "gate set"):
@@ -300,7 +300,7 @@ class ASRPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             session = make_session(Path(temp_dir))
             with patch(
-                "experiments.phase1.analyze_asr_pilot.validate_asr_slice_dir",
+                "experiments.phase1.workloads.asr.analysis.validate_asr_slice_dir",
                 return_value=[],
             ):
                 analysis = analyze_asr_pilot_dir(session)

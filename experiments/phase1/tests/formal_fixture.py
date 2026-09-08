@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from experiments.phase1.formal_preflight import FROZEN_PROTOCOL_SHA256
-from experiments.phase1.formal_protocol import FORMAL_PROTOCOL_ID
+from experiments.phase1.formal.preflight import FROZEN_PROTOCOL_SHA256
+from experiments.phase1.formal.protocol import FORMAL_PROTOCOL_ID
 
 
 BASE_CHECKS = (

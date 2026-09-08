@@ -8,18 +8,18 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.replay_lifecycle import (
+from experiments.phase1.common.replay import (
     TraceProfile,
     load_events,
     replay_events,
 )
-from experiments.phase1.telemetry import EventRecorder
-from experiments.phase1.vlm_adapter import (
+from experiments.phase1.common.telemetry import EventRecorder
+from experiments.phase1.workloads.vlm.adapter import (
     FixedInputVLMAdapter,
     VLMPipeline,
     fixed_c100_payload,
 )
-from experiments.phase1.vlm_slice import (
+from experiments.phase1.workloads.vlm.slice import (
     VLMSliceCondition,
     VLMSliceSpec,
     run_vlm_slice,
@@ -57,7 +57,7 @@ class VLMSliceTests(unittest.TestCase):
                 probe_deadline_ns=2_000_000,
             )
             with patch.multiple(
-                "experiments.phase1.vlm_adapter",
+                "experiments.phase1.workloads.vlm.adapter",
                 C100_INPUT_SHA256=digest,
                 C100_INPUT_SIZE_BYTES=len(content),
             ):

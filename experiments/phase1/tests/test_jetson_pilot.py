@@ -9,10 +9,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.jetson_preflight import build_jetson_preflight
-from experiments.phase1.jetson_telemetry import TegrastatsSampler
-from experiments.phase1.manifest import sha256_file
-from experiments.phase1.pilot import (
+from experiments.phase1.common.preflight import build_jetson_preflight
+from experiments.phase1.common.telemetry_jetson import TegrastatsSampler
+from experiments.phase1.common.manifest import sha256_file
+from experiments.phase1.simulation.pilot import (
     PilotError,
     build_pilot_plan,
     make_pilot_session_id,

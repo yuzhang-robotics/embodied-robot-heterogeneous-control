@@ -7,7 +7,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from experiments.phase1.analyze_formal_runs import (
+from experiments.phase1.formal.analysis import (
     _refuse_output_inside_collection,
     _require_distinct_outputs,
     analyze_formal_collection,
@@ -15,27 +15,27 @@ from experiments.phase1.analyze_formal_runs import (
     nearest_rank,
     paired_hierarchical_bootstrap,
 )
-from experiments.phase1.asr_adapter import (
+from experiments.phase1.workloads.asr.adapter import (
     ASR_EXPECTED_OUTPUT_LENGTH,
     ASR_EXPECTED_OUTPUT_SHA256,
     ASR_INPUT_MEDIA_TYPE,
 )
-from experiments.phase1.formal_preflight import FROZEN_PROTOCOL_SHA256
-from experiments.phase1.formal_protocol import (
+from experiments.phase1.formal.preflight import FROZEN_PROTOCOL_SHA256
+from experiments.phase1.formal.protocol import (
     FORMAL_PROTOCOL_ID,
     WORKLOADS,
     build_formal_protocol,
     canonical_protocol_text,
 )
-from experiments.phase1.jetson_telemetry import parse_tegrastats_line
-from experiments.phase1.llm_adapter import (
+from experiments.phase1.common.telemetry_jetson import parse_tegrastats_line
+from experiments.phase1.workloads.llm.adapter import (
     LLM_EXPECTED_SERVED_MODEL_ID,
     LLM_INPUT_MEDIA_TYPE,
     frozen_llm_request_contract,
 )
-from experiments.phase1.manifest import sha256_file
+from experiments.phase1.common.manifest import sha256_file
 from experiments.phase1.tests.formal_fixture import passing_formal_preflight
-from experiments.phase1.vlm_adapter import C100_INPUT_MEDIA_TYPE
+from experiments.phase1.workloads.vlm.adapter import C100_INPUT_MEDIA_TYPE
 
 
 TEGRASTATS_SAMPLE = (

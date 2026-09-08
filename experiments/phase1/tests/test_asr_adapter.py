@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.asr_adapter import (
+from experiments.phase1.workloads.asr.adapter import (
     ASRRuntime,
     FixedInputASRAdapter,
     build_whisper_command,
@@ -49,7 +49,7 @@ class FixedInputASRAdapterTests(unittest.TestCase):
             whisper_model=self.model_path,
         )
         self.constants = patch.multiple(
-            "experiments.phase1.asr_adapter",
+            "experiments.phase1.workloads.asr.adapter",
             ASR_INPUT_SHA256=hashlib.sha256(self.input_bytes).hexdigest(),
             ASR_INPUT_SIZE_BYTES=len(self.input_bytes),
             ASR_MODEL_SIZE_BYTES=len(self.model_bytes),
@@ -114,7 +114,7 @@ class FixedInputASRAdapterTests(unittest.TestCase):
     def test_module_import_does_not_load_robot_application_or_config(self) -> None:
         code = (
             "import sys\n"
-            "import experiments.phase1.asr_adapter\n"
+            "import experiments.phase1.workloads.asr.adapter\n"
             "assert 'jetson.config' not in sys.modules\n"
             "assert 'jetson.app' not in sys.modules\n"
             "assert 'jetson.robot_comm' not in sys.modules\n"

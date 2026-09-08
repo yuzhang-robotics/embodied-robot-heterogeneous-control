@@ -8,7 +8,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.analyze_vlm_pilot import (
+from experiments.phase1.workloads.vlm.analysis import (
     analyze_vlm_pilot_dir,
     main,
     render_markdown,
@@ -175,7 +175,7 @@ class VLMPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             session = make_session(Path(temp_dir))
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 analysis = analyze_vlm_pilot_dir(
@@ -212,7 +212,7 @@ class VLMPilotAnalysisTests(unittest.TestCase):
                 str(markdown_path),
             ]
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 first_result = main(arguments)
@@ -245,7 +245,7 @@ class VLMPilotAnalysisTests(unittest.TestCase):
             manifest["environment"]["git"]["commit"] = "b" * 40
             manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "runs disagree"):
@@ -268,7 +268,7 @@ class VLMPilotAnalysisTests(unittest.TestCase):
             session = make_session(Path(temp_dir))
             (session / "notes.txt").write_text("unexpected\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "must contain exactly"):
@@ -278,7 +278,7 @@ class VLMPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             session = make_session(Path(temp_dir))
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 analysis = analyze_vlm_pilot_dir(session)

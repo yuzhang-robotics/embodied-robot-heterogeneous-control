@@ -8,16 +8,16 @@ import unittest
 from dataclasses import dataclass
 from pathlib import Path
 
-from experiments.phase1.asr_adapter import (
+from experiments.phase1.workloads.asr.adapter import (
     ASR_EXPECTED_OUTPUT_LENGTH,
     ASR_EXPECTED_OUTPUT_SHA256,
 )
-from experiments.phase1.formal_run import (
+from experiments.phase1.formal.run import (
     FormalCondition,
     FormalRunSpec,
     run_formal_workload,
 )
-from experiments.phase1.llm_adapter import (
+from experiments.phase1.workloads.llm.adapter import (
     FixedInputLLMAdapter,
     LLM_EXPECTED_SERVED_MODEL_ID,
     fixed_llm_payload,
