@@ -22,9 +22,10 @@ Exploratory reanalysis of the closed v4 evidence found a strong pair-position
 warm-state effect, especially an association between intervening VLM work and
 the next cold ASR invocation. A separately versioned, non-formal
 [ASR/VLM carryover diagnostic](../../docs/architecture/phase1-asr-vlm-carryover-diagnostic.md)
-now freezes a six-session, duration-matched `idle`/`llm`/`vlm` experiment with
-Whisper page-residency and ASR process-fault observations. It does not reopen
-v4 or authorize Phase 2.
+completed a six-session, duration-matched `idle`/`llm`/`vlm` experiment with
+Whisper page-residency and ASR process-fault observations. Its
+[derived result](results/20260908T072640Z_phase1_asr_vlm_carryover_v2/) is
+exploratory and does not reopen v4 or authorize Phase 2.
 
 > 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
 > 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
@@ -34,7 +35,8 @@ v4 or authorize Phase 2.
 > 生命周期判据和响应性判据通过，但三个工作负载的性能比置信区间上界都超过冻结的
 > `1.10` 非劣效界限，因此交并式整体判定为失败。这是有效的阴性正式结果，而不是运行
 > 故障。v4 已关闭且不重跑、扩充、重新分类或事后修改阈值；Phase 1 尚未满足成功 Gate，
-> 整机应用切片仍未获授权。
+> 整机应用切片仍未获授权。独立的 ASR/VLM carryover 诊断已完成六种顺序并发布派生
+> 结果；该探索性结果用于定位机制，不改变 v4 的正式结论。
 
 ## Current status
 
@@ -90,9 +92,8 @@ v4 or authorize Phase 2.
   JSON and Markdown byte-for-byte on Jetson Python 3.10.12 and NumPy 1.26.4
 - Phase 1 completion: success Gate not met; motion-disabled application slice
   remains unauthorized
-- ASR/VLM carryover diagnostic: runner, Linux residency/process observations,
-  six-permutation protocol and independent descriptive analyzer implemented;
-  target collection pending
+- ASR/VLM carryover diagnostic: completed all six interposer orders and 18
+  valid units; derived report published with the formal claim boundary intact
 - Physical motion and UART: excluded
 
 The detailed contract is documented in
@@ -868,6 +869,16 @@ without any formal pass/fail field. Protocol v2 excludes per-process filesystem
 input because the target kernel does not expose `/proc/<pid>/io`; both v1
 commissioning collections closed with zero completed units. See the
 [frozen design](../../docs/architecture/phase1-asr-vlm-carryover-diagnostic.md).
+
+Collection `20260908T072640Z_phase1_asr_vlm_carryover_v2` completed all six
+sessions and 18 units. Every invocation Gate and fixed interval passed, both
+model services changed identity between sessions, and 14,272 resource samples
+covered the run windows. The
+[derived report](results/20260908T072640Z_phase1_asr_vlm_carryover_v2/) records
+a 7.3440 geometric-mean VLM/idle ASR duration ratio, near-complete post-VLM
+Whisper page eviction and a +904.2 mean major-fault difference. The LLM active
+control did not show the same pattern. This is exploratory mechanism evidence;
+G6 v4 remains closed and Phase 2 remains unauthorized.
 
 Print and validate the tracked protocol with:
 

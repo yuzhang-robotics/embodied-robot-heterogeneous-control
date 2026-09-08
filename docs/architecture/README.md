@@ -171,11 +171,11 @@ V4 is closed without rerun or post-hoc threshold change, Phase 1 has not met its
 success Gate, and the application slice remains unauthorized.
 
 The follow-up
-[ASR/VLM carryover diagnostic](phase1-asr-vlm-carryover-diagnostic.md) freezes a
-new exploratory experiment around the observed pair-position warm-state effect.
-It duration-matches idle, LLM and VLM interposers and directly records Whisper
-page residency plus ASR process faults. This diagnostic is outside G6 v4 and
-cannot alter its decision.
+[ASR/VLM carryover diagnostic](phase1-asr-vlm-carryover-diagnostic.md) completed
+all six orders of a duration-matched idle, LLM and VLM experiment. Its
+[derived result](../../experiments/phase1/results/20260908T072640Z_phase1_asr_vlm_carryover_v2/)
+isolates post-VLM Whisper page eviction and the next ASR cold-start cost. This
+exploratory diagnostic remains outside G6 v4 and cannot alter its decision.
 
 ## Evaluation plan
 

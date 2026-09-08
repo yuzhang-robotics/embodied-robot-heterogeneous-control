@@ -4,12 +4,16 @@ This document freezes an exploratory diagnostic prompted by the closed G6 v4
 negative result. It does not reopen, extend, replace, reclassify or change that
 formal result. It also does not authorize the application slice or Phase 2.
 
+The six-session collection is complete. Its validated derived
+[result](../../experiments/phase1/results/20260908T072640Z_phase1_asr_vlm_carryover_v2/)
+is reported separately from G6 v4.
+
 > 中文简介：G6 v4 的 180 次正式测量全部有效，运行时生命周期与 100 ms 周期探针
 > 判据均通过，但同步/异步工作负载性能比受到强烈的成对位置效应影响，三个工作负载
 > 都未能证明冻结的 10% 非劣效界限。本诊断用于验证 ASR 与 VLM 之间的模型驻留干扰，
 > 不修改或重开 v4，也不产生新的正式通过/失败判定。
 
-The active machine-readable contract is
+The machine-readable contract used for the completed collection is
 [`phase1-asr-vlm-carryover-v2.json`](../../experiments/phase1/diagnostic/phase1-asr-vlm-carryover-v2.json),
 protocol ID `phase1-asr-vlm-carryover-diagnostic-v2`, SHA-256
 `7382293989c684c2c796f5e9243247efd1c56fd7a66193fb6d020aabe554cd12`.
@@ -85,6 +89,23 @@ lifecycle Gates remain enforced.
 
 Raw audio, images, prompts, model responses, private paths, service logs and run
 archives remain outside Git.
+
+## Completed observation
+
+All six sessions and 18 units passed the frozen invocation, timing and
+lifecycle Gates. The geometric mean of the six within-session measured-ASR
+duration ratios was 7.3440 for VLM versus idle and 0.9033 for LLM versus idle.
+The VLM-minus-idle post-interposer Whisper resident-fraction difference averaged
+-0.997861, and its measured-ASR major-fault difference averaged +904.2. VLM
+produced the same direction of duration, residency and major-fault change in
+every interposer order. The immediate recovery ASR returned to the warm latency
+range.
+
+These observations are consistent with VLM-induced eviction of the warmed
+Whisper model file followed by storage-backed page faults on the next ASR
+invocation. The duration-matched idle condition and LLM active control did not
+reproduce that sequence. The complete per-session observations, provenance and
+integrity hashes are published in the linked result.
 
 ## Analysis and claim boundary
 

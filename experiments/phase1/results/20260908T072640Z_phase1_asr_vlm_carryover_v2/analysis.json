@@ -1,0 +1,1298 @@
+{
+  "analysis_kind": "phase1_asr_vlm_carryover_diagnostic",
+  "carryover_analysis_schema_version": "0.2.0",
+  "claim_boundary": {
+    "exploratory_only": true,
+    "formal_evidence": false,
+    "formal_pass_fail_emitted": false,
+    "g6_v4_reopened": false,
+    "phase2_authorized": false
+  },
+  "contrasts": {
+    "llm_vs_idle": {
+      "condition_vs_idle": "llm",
+      "duration_ratio": {
+        "geometric_mean": 0.9032708355333813,
+        "maximum": 1.0310087395336698,
+        "median": 0.9842012874495893,
+        "minimum": 0.5643726810867276
+      },
+      "major_fault_difference": {
+        "mean": -10.5,
+        "median": 0.0
+      },
+      "minor_fault_difference": {
+        "mean": -3148.6666666666665,
+        "median": -771.5
+      },
+      "per_session": [
+        {
+          "duration_ratio": 1.0279033752643434,
+          "major_fault_difference": 0,
+          "minor_fault_difference": -6162,
+          "resident_fraction_difference": 0.0,
+          "session": "session-01"
+        },
+        {
+          "duration_ratio": 0.5643726810867276,
+          "major_fault_difference": -63,
+          "minor_fault_difference": -26539,
+          "resident_fraction_difference": 0.012835590201942138,
+          "session": "session-02"
+        },
+        {
+          "duration_ratio": 1.0310087395336698,
+          "major_fault_difference": 0,
+          "minor_fault_difference": 8182,
+          "resident_fraction_difference": 0.0,
+          "session": "session-03"
+        },
+        {
+          "duration_ratio": 0.9685545198155756,
+          "major_fault_difference": 0,
+          "minor_fault_difference": 7170,
+          "resident_fraction_difference": 0.0,
+          "session": "session-04"
+        },
+        {
+          "duration_ratio": 0.999848055083603,
+          "major_fault_difference": 0,
+          "minor_fault_difference": -1023,
+          "resident_fraction_difference": 0.0,
+          "session": "session-05"
+        },
+        {
+          "duration_ratio": 0.937711470329116,
+          "major_fault_difference": 0,
+          "minor_fault_difference": -520,
+          "resident_fraction_difference": 0.0,
+          "session": "session-06"
+        }
+      ],
+      "resident_fraction_difference": {
+        "maximum": 0.012835590201942138,
+        "mean": 0.002139265033657023,
+        "median": 0.0,
+        "minimum": 0.0
+      },
+      "session_count": 6
+    },
+    "vlm_vs_idle": {
+      "condition_vs_idle": "vlm",
+      "duration_ratio": {
+        "geometric_mean": 7.343973422060315,
+        "maximum": 8.517844331302712,
+        "median": 8.046434342140788,
+        "minimum": 4.34602160984049
+      },
+      "major_fault_difference": {
+        "mean": 904.1666666666666,
+        "median": 866.5
+      },
+      "minor_fault_difference": {
+        "mean": -11116.0,
+        "median": -5675.0
+      },
+      "per_session": [
+        {
+          "duration_ratio": 8.517844331302712,
+          "major_fault_difference": 1315,
+          "minor_fault_difference": -27677,
+          "resident_fraction_difference": -1.0,
+          "session": "session-01"
+        },
+        {
+          "duration_ratio": 4.34602160984049,
+          "major_fault_difference": 398,
+          "minor_fault_difference": -27793,
+          "resident_fraction_difference": -0.9871644097980579,
+          "session": "session-02"
+        },
+        {
+          "duration_ratio": 8.460438812610265,
+          "major_fault_difference": 1235,
+          "minor_fault_difference": -10333,
+          "resident_fraction_difference": -1.0,
+          "session": "session-03"
+        },
+        {
+          "duration_ratio": 7.859650649895918,
+          "major_fault_difference": 856,
+          "minor_fault_difference": -518,
+          "resident_fraction_difference": -1.0,
+          "session": "session-04"
+        },
+        {
+          "duration_ratio": 8.233218034385658,
+          "major_fault_difference": 877,
+          "minor_fault_difference": -1017,
+          "resident_fraction_difference": -1.0,
+          "session": "session-05"
+        },
+        {
+          "duration_ratio": 7.741038907930814,
+          "major_fault_difference": 744,
+          "minor_fault_difference": 642,
+          "resident_fraction_difference": -1.0,
+          "session": "session-06"
+        }
+      ],
+      "resident_fraction_difference": {
+        "maximum": -0.9871644097980579,
+        "mean": -0.997860734966343,
+        "median": -1.0,
+        "minimum": -1.0
+      },
+      "session_count": 6
+    }
+  },
+  "protocol": {
+    "id": "phase1-asr-vlm-carryover-diagnostic-v2",
+    "sha256": "7382293989c684c2c796f5e9243247efd1c56fd7a66193fb6d020aabe554cd12"
+  },
+  "sessions": [
+    {
+      "interposer_order": [
+        "idle",
+        "llm",
+        "vlm"
+      ],
+      "runner_commit": "5fc8c4ef9572e6934095c45f0f8b499e462a5591",
+      "session": "session-01",
+      "units": {
+        "idle": {
+          "condition": "idle",
+          "measured_asr_duration_ms": 1662.531058,
+          "measured_asr_process": {
+            "involuntary_context_switches": 193,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1111703552,
+            "minor_faults": 61313,
+            "read_error_count": 9,
+            "sample_count": 148,
+            "system_time_s": 0.54,
+            "user_time_s": 0.43,
+            "voluntary_context_switches": 478
+          },
+          "primer_2_duration_ms": 1758.235164,
+          "recovery_asr_duration_ms": 1808.743141,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2754031616,
+              "MemAvailable_bytes": 2924482560,
+              "SReclaimable_bytes": 95727616,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2713550848,
+              "MemAvailable_bytes": 2951409664,
+              "SReclaimable_bytes": 95719424,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2753748992,
+              "MemAvailable_bytes": 2924474368,
+              "SReclaimable_bytes": 95727616,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3230355456,
+              "MemAvailable_bytes": 3308544000,
+              "SReclaimable_bytes": 96854016,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.798148,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.798148,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 1
+        },
+        "llm": {
+          "condition": "llm",
+          "measured_asr_duration_ms": 1708.921286,
+          "measured_asr_process": {
+            "involuntary_context_switches": 66,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1113489408,
+            "minor_faults": 55151,
+            "read_error_count": 8,
+            "sample_count": 153,
+            "system_time_s": 0.54,
+            "user_time_s": 0.43,
+            "voluntary_context_switches": 588
+          },
+          "primer_2_duration_ms": 1708.621438,
+          "recovery_asr_duration_ms": 1708.933122,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2626306048,
+              "MemAvailable_bytes": 2866765824,
+              "SReclaimable_bytes": 95698944,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2543042560,
+              "MemAvailable_bytes": 2887307264,
+              "SReclaimable_bytes": 95506432,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2577465344,
+              "MemAvailable_bytes": 2882936832,
+              "SReclaimable_bytes": 95678464,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2670444544,
+              "MemAvailable_bytes": 2904567808,
+              "SReclaimable_bytes": 95707136,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.887778,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.887778,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 2
+        },
+        "vlm": {
+          "condition": "vlm",
+          "measured_asr_duration_ms": 14161.180748,
+          "measured_asr_process": {
+            "involuntary_context_switches": 235,
+            "major_faults": 1315,
+            "maximum_rss_bytes": 1117241344,
+            "minor_faults": 33636,
+            "read_error_count": 8,
+            "sample_count": 1325,
+            "system_time_s": 0.99,
+            "user_time_s": 0.56,
+            "voluntary_context_switches": 3236
+          },
+          "primer_2_duration_ms": 3062.264527,
+          "recovery_asr_duration_ms": 1608.271279,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 1826754560,
+              "MemAvailable_bytes": 4318478336,
+              "SReclaimable_bytes": 79839232,
+              "resident_fraction": 0.0,
+              "resident_pages": 0,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2433789952,
+              "MemAvailable_bytes": 3481190400,
+              "SReclaimable_bytes": 81002496,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2404413440,
+              "MemAvailable_bytes": 2844110848,
+              "SReclaimable_bytes": 95297536,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2462101504,
+              "MemAvailable_bytes": 2897588224,
+              "SReclaimable_bytes": 95395840,
+              "resident_fraction": 0.9870048049460703,
+              "resident_pages": 117497,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150001.077265,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 1.077265,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 3
+        }
+      }
+    },
+    {
+      "interposer_order": [
+        "idle",
+        "vlm",
+        "llm"
+      ],
+      "runner_commit": "5fc8c4ef9572e6934095c45f0f8b499e462a5591",
+      "session": "session-02",
+      "units": {
+        "idle": {
+          "condition": "idle",
+          "measured_asr_duration_ms": 2762.009559,
+          "measured_asr_process": {
+            "involuntary_context_switches": 63,
+            "major_faults": 63,
+            "maximum_rss_bytes": 1108783104,
+            "minor_faults": 60227,
+            "read_error_count": 8,
+            "sample_count": 248,
+            "system_time_s": 0.52,
+            "user_time_s": 0.53,
+            "voluntary_context_switches": 1447
+          },
+          "primer_2_duration_ms": 1910.107051,
+          "recovery_asr_duration_ms": 1708.657235,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 3014328320,
+              "MemAvailable_bytes": 3393462272,
+              "SReclaimable_bytes": 79929344,
+              "resident_fraction": 0.9871644097980579,
+              "resident_pages": 117516,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2932170752,
+              "MemAvailable_bytes": 3345276928,
+              "SReclaimable_bytes": 79912960,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 3014328320,
+              "MemAvailable_bytes": 3393462272,
+              "SReclaimable_bytes": 79929344,
+              "resident_fraction": 0.9871644097980579,
+              "resident_pages": 117516,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3262742528,
+              "MemAvailable_bytes": 4205449216,
+              "SReclaimable_bytes": 81170432,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.951652,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.951652,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 1
+        },
+        "llm": {
+          "condition": "llm",
+          "measured_asr_duration_ms": 1558.80274,
+          "measured_asr_process": {
+            "involuntary_context_switches": 67,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1112498176,
+            "minor_faults": 33688,
+            "read_error_count": 7,
+            "sample_count": 137,
+            "system_time_s": 0.37,
+            "user_time_s": 0.47,
+            "voluntary_context_switches": 583
+          },
+          "primer_2_duration_ms": 1608.61644,
+          "recovery_asr_duration_ms": 1608.753168,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2743345152,
+              "MemAvailable_bytes": 3735220224,
+              "SReclaimable_bytes": 77717504,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2747912192,
+              "MemAvailable_bytes": 3720511488,
+              "SReclaimable_bytes": 77717504,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2711724032,
+              "MemAvailable_bytes": 3733254144,
+              "SReclaimable_bytes": 77717504,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2711064576,
+              "MemAvailable_bytes": 3774709760,
+              "SReclaimable_bytes": 77717504,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.653891,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.653891,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 3
+        },
+        "vlm": {
+          "condition": "vlm",
+          "measured_asr_duration_ms": 12003.75323,
+          "measured_asr_process": {
+            "involuntary_context_switches": 211,
+            "major_faults": 461,
+            "maximum_rss_bytes": 1112027136,
+            "minor_faults": 32434,
+            "read_error_count": 9,
+            "sample_count": 1125,
+            "system_time_s": 0.9,
+            "user_time_s": 0.62,
+            "voluntary_context_switches": 2622
+          },
+          "primer_2_duration_ms": 1608.772649,
+          "recovery_asr_duration_ms": 1658.632967,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2191151104,
+              "MemAvailable_bytes": 4625510400,
+              "SReclaimable_bytes": 76541952,
+              "resident_fraction": 0.0,
+              "resident_pages": 0,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2710945792,
+              "MemAvailable_bytes": 3798237184,
+              "SReclaimable_bytes": 77688832,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2828410880,
+              "MemAvailable_bytes": 3250749440,
+              "SReclaimable_bytes": 79900672,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2828333056,
+              "MemAvailable_bytes": 3304415232,
+              "SReclaimable_bytes": 79900672,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.733657,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.733657,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 2
+        }
+      }
+    },
+    {
+      "interposer_order": [
+        "llm",
+        "idle",
+        "vlm"
+      ],
+      "runner_commit": "5fc8c4ef9572e6934095c45f0f8b499e462a5591",
+      "session": "session-03",
+      "units": {
+        "idle": {
+          "condition": "idle",
+          "measured_asr_duration_ms": 1609.012967,
+          "measured_asr_process": {
+            "involuntary_context_switches": 82,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1106317312,
+            "minor_faults": 42911,
+            "read_error_count": 7,
+            "sample_count": 144,
+            "system_time_s": 0.39,
+            "user_time_s": 0.49,
+            "voluntary_context_switches": 573
+          },
+          "primer_2_duration_ms": 1608.247624,
+          "recovery_asr_duration_ms": 1608.373823,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 3116265472,
+              "MemAvailable_bytes": 3574661120,
+              "SReclaimable_bytes": 78462976,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 3118129152,
+              "MemAvailable_bytes": 3560058880,
+              "SReclaimable_bytes": 78462976,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 3116265472,
+              "MemAvailable_bytes": 3574661120,
+              "SReclaimable_bytes": 78462976,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3116191744,
+              "MemAvailable_bytes": 3660468224,
+              "SReclaimable_bytes": 78462976,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.726172,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.726172,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 2
+        },
+        "llm": {
+          "condition": "llm",
+          "measured_asr_duration_ms": 1658.906431,
+          "measured_asr_process": {
+            "involuntary_context_switches": 74,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1106432000,
+            "minor_faults": 51093,
+            "read_error_count": 7,
+            "sample_count": 145,
+            "system_time_s": 0.42,
+            "user_time_s": 0.48,
+            "voluntary_context_switches": 567
+          },
+          "primer_2_duration_ms": 1809.067277,
+          "recovery_asr_duration_ms": 1558.653538,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 3201421312,
+              "MemAvailable_bytes": 3694403584,
+              "SReclaimable_bytes": 78462976,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 3203227648,
+              "MemAvailable_bytes": 3650797568,
+              "SReclaimable_bytes": 78462976,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 3190259712,
+              "MemAvailable_bytes": 3715948544,
+              "SReclaimable_bytes": 78458880,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3532955648,
+              "MemAvailable_bytes": 4578009088,
+              "SReclaimable_bytes": 78450688,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.843399,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.843399,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 1
+        },
+        "vlm": {
+          "condition": "vlm",
+          "measured_asr_duration_ms": 13612.955756,
+          "measured_asr_process": {
+            "involuntary_context_switches": 250,
+            "major_faults": 1235,
+            "maximum_rss_bytes": 1116057600,
+            "minor_faults": 32578,
+            "read_error_count": 9,
+            "sample_count": 1275,
+            "system_time_s": 0.98,
+            "user_time_s": 0.57,
+            "voluntary_context_switches": 3239
+          },
+          "primer_2_duration_ms": 1609.221024,
+          "recovery_asr_duration_ms": 1608.267208,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2057900032,
+              "MemAvailable_bytes": 4686491648,
+              "SReclaimable_bytes": 81530880,
+              "resident_fraction": 0.0,
+              "resident_pages": 0,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2664448000,
+              "MemAvailable_bytes": 3849633792,
+              "SReclaimable_bytes": 82743296,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 3022729216,
+              "MemAvailable_bytes": 3598278656,
+              "SReclaimable_bytes": 78446592,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3118170112,
+              "MemAvailable_bytes": 3515879424,
+              "SReclaimable_bytes": 78462976,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.646549,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.646549,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 3
+        }
+      }
+    },
+    {
+      "interposer_order": [
+        "llm",
+        "vlm",
+        "idle"
+      ],
+      "runner_commit": "5fc8c4ef9572e6934095c45f0f8b499e462a5591",
+      "session": "session-04",
+      "units": {
+        "idle": {
+          "condition": "idle",
+          "measured_asr_duration_ms": 1609.391706,
+          "measured_asr_process": {
+            "involuntary_context_switches": 116,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1115832320,
+            "minor_faults": 33157,
+            "read_error_count": 8,
+            "sample_count": 143,
+            "system_time_s": 0.38,
+            "user_time_s": 0.49,
+            "voluntary_context_switches": 588
+          },
+          "primer_2_duration_ms": 1558.212497,
+          "recovery_asr_duration_ms": 1607.856257,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2841104384,
+              "MemAvailable_bytes": 3889782784,
+              "SReclaimable_bytes": 78782464,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2855485440,
+              "MemAvailable_bytes": 3871272960,
+              "SReclaimable_bytes": 78778368,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2841104384,
+              "MemAvailable_bytes": 3889782784,
+              "SReclaimable_bytes": 78782464,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2839642112,
+              "MemAvailable_bytes": 3937742848,
+              "SReclaimable_bytes": 78782464,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.874421,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.874421,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 3
+        },
+        "llm": {
+          "condition": "llm",
+          "measured_asr_duration_ms": 1558.783611,
+          "measured_asr_process": {
+            "involuntary_context_switches": 81,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1106890752,
+            "minor_faults": 40327,
+            "read_error_count": 7,
+            "sample_count": 139,
+            "system_time_s": 0.4,
+            "user_time_s": 0.48,
+            "voluntary_context_switches": 590
+          },
+          "primer_2_duration_ms": 1708.529066,
+          "recovery_asr_duration_ms": 1608.189962,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 3139510272,
+              "MemAvailable_bytes": 3801620480,
+              "SReclaimable_bytes": 82796544,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 3063889920,
+              "MemAvailable_bytes": 3782856704,
+              "SReclaimable_bytes": 82780160,
+              "resident_fraction": 0.9998907966802191,
+              "resident_pages": 119031,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 3135148032,
+              "MemAvailable_bytes": 3815788544,
+              "SReclaimable_bytes": 82796544,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3337814016,
+              "MemAvailable_bytes": 4658655232,
+              "SReclaimable_bytes": 82804736,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.861896,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.861896,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 1
+        },
+        "vlm": {
+          "condition": "vlm",
+          "measured_asr_duration_ms": 12649.256568,
+          "measured_asr_process": {
+            "involuntary_context_switches": 369,
+            "major_faults": 856,
+            "maximum_rss_bytes": 1115222016,
+            "minor_faults": 32639,
+            "read_error_count": 9,
+            "sample_count": 1183,
+            "system_time_s": 0.92,
+            "user_time_s": 0.6,
+            "voluntary_context_switches": 2982
+          },
+          "primer_2_duration_ms": 1608.357798,
+          "recovery_asr_duration_ms": 1658.299702,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2280255488,
+              "MemAvailable_bytes": 4822355968,
+              "SReclaimable_bytes": 77701120,
+              "resident_fraction": 0.0,
+              "resident_pages": 0,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2839339008,
+              "MemAvailable_bytes": 3959398400,
+              "SReclaimable_bytes": 78782464,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 3064045568,
+              "MemAvailable_bytes": 3726766080,
+              "SReclaimable_bytes": 82763776,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3063971840,
+              "MemAvailable_bytes": 3759726592,
+              "SReclaimable_bytes": 82780160,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.660581,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.660581,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 2
+        }
+      }
+    },
+    {
+      "interposer_order": [
+        "vlm",
+        "idle",
+        "llm"
+      ],
+      "runner_commit": "5fc8c4ef9572e6934095c45f0f8b499e462a5591",
+      "session": "session-05",
+      "units": {
+        "idle": {
+          "condition": "idle",
+          "measured_asr_duration_ms": 1609.438511,
+          "measured_asr_process": {
+            "involuntary_context_switches": 78,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1116717056,
+            "minor_faults": 33675,
+            "read_error_count": 7,
+            "sample_count": 145,
+            "system_time_s": 0.43,
+            "user_time_s": 0.46,
+            "voluntary_context_switches": 573
+          },
+          "primer_2_duration_ms": 1558.738613,
+          "recovery_asr_duration_ms": 1609.899005,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2918387712,
+              "MemAvailable_bytes": 4000800768,
+              "SReclaimable_bytes": 78528512,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2919219200,
+              "MemAvailable_bytes": 3995828224,
+              "SReclaimable_bytes": 78495744,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2918387712,
+              "MemAvailable_bytes": 4000800768,
+              "SReclaimable_bytes": 78528512,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2917482496,
+              "MemAvailable_bytes": 4040278016,
+              "SReclaimable_bytes": 78512128,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.833949,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.833949,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 2
+        },
+        "llm": {
+          "condition": "llm",
+          "measured_asr_duration_ms": 1609.193965,
+          "measured_asr_process": {
+            "involuntary_context_switches": 65,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1116696576,
+            "minor_faults": 32652,
+            "read_error_count": 7,
+            "sample_count": 145,
+            "system_time_s": 0.37,
+            "user_time_s": 0.51,
+            "voluntary_context_switches": 578
+          },
+          "primer_2_duration_ms": 1610.063457,
+          "recovery_asr_duration_ms": 1558.360808,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2923294720,
+              "MemAvailable_bytes": 3933745152,
+              "SReclaimable_bytes": 78479360,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2927218688,
+              "MemAvailable_bytes": 3913981952,
+              "SReclaimable_bytes": 78479360,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2920812544,
+              "MemAvailable_bytes": 3934089216,
+              "SReclaimable_bytes": 78479360,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2919321600,
+              "MemAvailable_bytes": 3976536064,
+              "SReclaimable_bytes": 78495744,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.702134,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.702134,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 3
+        },
+        "vlm": {
+          "condition": "vlm",
+          "measured_asr_duration_ms": 13250.858174,
+          "measured_asr_process": {
+            "involuntary_context_switches": 272,
+            "major_faults": 877,
+            "maximum_rss_bytes": 1116160000,
+            "minor_faults": 32658,
+            "read_error_count": 8,
+            "sample_count": 1246,
+            "system_time_s": 1.0,
+            "user_time_s": 0.55,
+            "voluntary_context_switches": 2928
+          },
+          "primer_2_duration_ms": 1608.412294,
+          "recovery_asr_duration_ms": 1559.335819,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2352197632,
+              "MemAvailable_bytes": 4901318656,
+              "SReclaimable_bytes": 77709312,
+              "resident_fraction": 0.0,
+              "resident_pages": 0,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2917449728,
+              "MemAvailable_bytes": 4063940608,
+              "SReclaimable_bytes": 78512128,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 3241328640,
+              "MemAvailable_bytes": 3841527808,
+              "SReclaimable_bytes": 79126528,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3413471232,
+              "MemAvailable_bytes": 4657688576,
+              "SReclaimable_bytes": 79126528,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150001.486441,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 1.486441,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 1
+        }
+      }
+    },
+    {
+      "interposer_order": [
+        "vlm",
+        "llm",
+        "idle"
+      ],
+      "runner_commit": "5fc8c4ef9572e6934095c45f0f8b499e462a5591",
+      "session": "session-06",
+      "units": {
+        "idle": {
+          "condition": "idle",
+          "measured_asr_duration_ms": 1608.777997,
+          "measured_asr_process": {
+            "involuntary_context_switches": 50,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1115877376,
+            "minor_faults": 33179,
+            "read_error_count": 7,
+            "sample_count": 142,
+            "system_time_s": 0.36,
+            "user_time_s": 0.5,
+            "voluntary_context_switches": 587
+          },
+          "primer_2_duration_ms": 1557.742675,
+          "recovery_asr_duration_ms": 1558.170995,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2900762624,
+              "MemAvailable_bytes": 3942043648,
+              "SReclaimable_bytes": 80670720,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2903031808,
+              "MemAvailable_bytes": 3924701184,
+              "SReclaimable_bytes": 80687104,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2900762624,
+              "MemAvailable_bytes": 3942301696,
+              "SReclaimable_bytes": 80670720,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2900668416,
+              "MemAvailable_bytes": 3976269824,
+              "SReclaimable_bytes": 80670720,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.665523,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.665523,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 3
+        },
+        "llm": {
+          "condition": "llm",
+          "measured_asr_duration_ms": 1508.569581,
+          "measured_asr_process": {
+            "involuntary_context_switches": 95,
+            "major_faults": 0,
+            "maximum_rss_bytes": 1116000256,
+            "minor_faults": 32659,
+            "read_error_count": 7,
+            "sample_count": 135,
+            "system_time_s": 0.33,
+            "user_time_s": 0.5,
+            "voluntary_context_switches": 512
+          },
+          "primer_2_duration_ms": 1557.650597,
+          "recovery_asr_duration_ms": 1457.849615,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2899513344,
+              "MemAvailable_bytes": 4027588608,
+              "SReclaimable_bytes": 80654336,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2900656128,
+              "MemAvailable_bytes": 4004814848,
+              "SReclaimable_bytes": 80670720,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 2894344192,
+              "MemAvailable_bytes": 4024786944,
+              "SReclaimable_bytes": 80654336,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 2894270464,
+              "MemAvailable_bytes": 4072398848,
+              "SReclaimable_bytes": 80637952,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.866471,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.866471,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 2
+        },
+        "vlm": {
+          "condition": "vlm",
+          "measured_asr_duration_ms": 12453.613069,
+          "measured_asr_process": {
+            "involuntary_context_switches": 256,
+            "major_faults": 744,
+            "maximum_rss_bytes": 1113395200,
+            "minor_faults": 33821,
+            "read_error_count": 9,
+            "sample_count": 1163,
+            "system_time_s": 0.89,
+            "user_time_s": 0.57,
+            "voluntary_context_switches": 2917
+          },
+          "primer_2_duration_ms": 3011.802241,
+          "recovery_asr_duration_ms": 1609.887064,
+          "residency": {
+            "after_interposer": {
+              "Cached_bytes": 2451755008,
+              "MemAvailable_bytes": 4919746560,
+              "SReclaimable_bytes": 80093184,
+              "resident_fraction": 0.0,
+              "resident_pages": 0,
+              "total_pages": 119044
+            },
+            "after_measured_asr": {
+              "Cached_bytes": 2974736384,
+              "MemAvailable_bytes": 4106919936,
+              "SReclaimable_bytes": 80650240,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "after_primer_2": {
+              "Cached_bytes": 3151429632,
+              "MemAvailable_bytes": 3937873920,
+              "SReclaimable_bytes": 78954496,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            },
+            "before_primers": {
+              "Cached_bytes": 3374915584,
+              "MemAvailable_bytes": 4743536640,
+              "SReclaimable_bytes": 78954496,
+              "resident_fraction": 1.0,
+              "resident_pages": 119044,
+              "total_pages": 119044
+            }
+          },
+          "timing": {
+            "interposer_overrun": false,
+            "observed_interval_ms": 150000.915199,
+            "start_lateness_max_ms": 250.0,
+            "start_lateness_ms": 0.915199,
+            "target_interval_s": 150.0
+          },
+          "unit_index": 1
+        }
+      }
+    }
+  ],
+  "source": {
+    "collection_id": "20260908T072640Z_phase1_asr_vlm_carryover_v2",
+    "runner_commit": "5fc8c4ef9572e6934095c45f0f8b499e462a5591",
+    "source_paths_recorded": false
+  },
+  "validation": {
+    "all_invocation_gates_pass": true,
+    "all_units_valid": true,
+    "fixed_intervals_valid": true,
+    "maximum_tj_c": 54.125,
+    "resource_sample_count": 14272,
+    "service_restarts_valid": true,
+    "session_count": 6,
+    "unit_count": 18
+  }
+}
