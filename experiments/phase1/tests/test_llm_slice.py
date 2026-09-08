@@ -8,18 +8,18 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.llm_adapter import FixedInputLLMAdapter, fixed_llm_payload
-from experiments.phase1.llm_slice import (
+from experiments.phase1.workloads.llm.adapter import FixedInputLLMAdapter, fixed_llm_payload
+from experiments.phase1.workloads.llm.slice import (
     LLMSliceCondition,
     LLMSliceSpec,
     run_llm_slice,
 )
-from experiments.phase1.replay_lifecycle import (
+from experiments.phase1.common.replay import (
     TraceProfile,
     load_events,
     replay_events,
 )
-from experiments.phase1.telemetry import EventRecorder
+from experiments.phase1.common.telemetry import EventRecorder
 
 
 class LLMSliceTests(unittest.TestCase):
@@ -72,7 +72,7 @@ class LLMSliceTests(unittest.TestCase):
                 probe_deadline_ns=2_000_000,
             )
             with patch.multiple(
-                "experiments.phase1.llm_adapter",
+                "experiments.phase1.workloads.llm.adapter",
                 LLM_INPUT_SHA256=digest,
                 LLM_INPUT_SIZE_BYTES=len(prompt),
             ):

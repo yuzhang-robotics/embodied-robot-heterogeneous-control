@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.analyze_vlm_timeout_repair import (
+from experiments.phase1.workloads.vlm.timeout_repair_analysis import (
     EXPECTED_SOURCE_FILES,
     VALIDATION_COMMIT,
     VALIDATION_SESSION_ID,
@@ -120,7 +120,7 @@ class VLMTimeoutRepairAnalysisTests(unittest.TestCase):
 
     def analyze(self) -> dict[str, object]:
         with patch(
-            "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+            "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
             return_value=[],
         ):
             return analyze_vlm_timeout_repair(
@@ -208,7 +208,7 @@ class VLMTimeoutRepairAnalysisTests(unittest.TestCase):
             str(output / "README.md"),
         ]
         with patch(
-            "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+            "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
             return_value=[],
         ):
             first = main(arguments)

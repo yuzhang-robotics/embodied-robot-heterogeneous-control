@@ -4,16 +4,16 @@ import copy
 import unittest
 from unittest.mock import patch
 
-from experiments.phase1.formal_preflight import (
+from experiments.phase1.formal.preflight import (
     build_formal_preflight,
     formal_preflight_errors,
 )
-from experiments.phase1.formal_protocol import (
+from experiments.phase1.formal.protocol import (
     LLAMA_SOURCE_VERSION,
     VLM_MOONDREAM_DIGEST,
     build_formal_protocol,
 )
-from experiments.phase1.llm_adapter import LLM_EXPECTED_SERVED_MODEL_ID
+from experiments.phase1.workloads.llm.adapter import LLM_EXPECTED_SERVED_MODEL_ID
 from experiments.phase1.tests.formal_fixture import passing_base_preflight
 from jetson.phase1_runtime import PayloadRef
 
@@ -79,31 +79,31 @@ class FormalPreflightTests(unittest.TestCase):
         }
         with (
             patch(
-                "experiments.phase1.formal_preflight.fixed_asr_payload",
+                "experiments.phase1.formal.preflight.fixed_asr_payload",
                 return_value=fixture_payload("audio/wav"),
             ),
             patch(
-                "experiments.phase1.formal_preflight.fixed_llm_payload",
+                "experiments.phase1.formal.preflight.fixed_llm_payload",
                 return_value=fixture_payload("text/plain"),
             ),
             patch(
-                "experiments.phase1.formal_preflight.fixed_c100_payload",
+                "experiments.phase1.formal.preflight.fixed_c100_payload",
                 return_value=fixture_payload("image/jpeg"),
             ),
             patch(
-                "experiments.phase1.formal_preflight.asr_preflight_errors",
+                "experiments.phase1.formal.preflight.asr_preflight_errors",
                 return_value=[],
             ),
             patch(
-                "experiments.phase1.formal_preflight.llm_preflight_errors",
+                "experiments.phase1.formal.preflight.llm_preflight_errors",
                 return_value=[],
             ),
             patch(
-                "experiments.phase1.formal_preflight.vlm_preflight_errors",
+                "experiments.phase1.formal.preflight.vlm_preflight_errors",
                 return_value=[],
             ),
             patch(
-                "experiments.phase1.formal_preflight.command_snapshot",
+                "experiments.phase1.formal.preflight.command_snapshot",
                 return_value={
                     "returncode": 0,
                     "output": "2" * 40,
@@ -111,7 +111,7 @@ class FormalPreflightTests(unittest.TestCase):
                 },
             ),
             patch(
-                "experiments.phase1.formal_preflight.FORMAL_COLLECTION_STATUS",
+                "experiments.phase1.formal.preflight.FORMAL_COLLECTION_STATUS",
                 collection_status,
             ),
         ):

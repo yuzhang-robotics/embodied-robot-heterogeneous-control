@@ -11,9 +11,9 @@ import time
 import unittest
 from pathlib import Path
 
-from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
-from experiments.phase1.telemetry import EventRecorder
-from experiments.phase1.vlm_slice import (
+from experiments.phase1.workloads.vlm.process_adapter import ProcessIsolatedVLMAdapter
+from experiments.phase1.common.telemetry import EventRecorder
+from experiments.phase1.workloads.vlm.slice import (
     VLMSliceCondition,
     VLMSliceSpec,
     run_vlm_slice,
@@ -73,7 +73,7 @@ class ProcessIsolatedVLMAdapterTests(unittest.TestCase):
     def test_module_import_does_not_start_or_load_device_paths(self) -> None:
         code = (
             "import sys\n"
-            "import experiments.phase1.vlm_process_adapter\n"
+            "import experiments.phase1.workloads.vlm.process_adapter\n"
             "assert 'jetson.vision_vlm' not in sys.modules\n"
             "assert 'jetson.app' not in sys.modules\n"
             "assert 'jetson.robot_comm' not in sys.modules\n"

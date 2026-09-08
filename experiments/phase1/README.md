@@ -66,24 +66,27 @@ Jetson models or NVIDIA utilities.
 
 ### Experiment layer
 
-The current files in this directory are grouped by responsibility:
+The package is grouped by experimental responsibility:
 
-| Responsibility | Main modules |
+| Path | Responsibility |
 | --- | --- |
-| Shared run artifacts | [manifest.py](manifest.py), [telemetry.py](telemetry.py), [jetson_telemetry.py](jetson_telemetry.py) |
-| Simulation and replay | [simulation.py](simulation.py), [run_simulation.py](run_simulation.py), [replay_lifecycle.py](replay_lifecycle.py) |
-| Jetson simulation pilot | [pilot.py](pilot.py), [run_jetson_pilot.py](run_jetson_pilot.py), [analyze_jetson_pilot.py](analyze_jetson_pilot.py) |
-| Fixed-input workloads | ASR, LLM and VLM adapter, preflight, slice, runner, validator and analyzer modules |
-| Formal G6 study | [formal_protocol.py](formal_protocol.py), [formal_preflight.py](formal_preflight.py), [formal_run.py](formal_run.py), [run_formal_session.py](run_formal_session.py), [analyze_formal_runs.py](analyze_formal_runs.py) |
-| Carryover study | [carryover_protocol.py](carryover_protocol.py), [carryover_preflight.py](carryover_preflight.py), [carryover_observation.py](carryover_observation.py), [run_carryover_session.py](run_carryover_session.py), [analyze_carryover_diagnostic.py](analyze_carryover_diagnostic.py) |
-| Machine-readable contracts | [formal/](formal/), [diagnostic/](diagnostic/) and [schemas/](schemas/) |
-| Host tests | [tests/](tests/) |
-| Public evidence | [results/](results/) |
+| [common/](common/) | Manifests, preflight, telemetry and independent lifecycle replay |
+| [simulation/](simulation/) | Host simulation, Jetson pilot, summaries, validation and analysis |
+| [workloads/asr/](workloads/asr/) | Fixed-input ASR adapter, slice, preflight, summary, validation and analysis |
+| [workloads/llm/](workloads/llm/) | Fixed-input LLM adapter, slice, preflight, summary, validation and analysis |
+| [workloads/vlm/](workloads/vlm/) | Fixed-input VLM adapters, slice, diagnostics, summaries, validation and analysis |
+| [formal/](formal/) | G6 protocols, preflight, execution and formal analysis |
+| [carryover/](carryover/) | ASR/VLM carryover protocol, observation, preflight and analysis |
+| [diagnostic/](diagnostic/) and [schemas/](schemas/) | Additional machine-readable contracts |
+| [tests/](tests/) | Host regression tests and fixtures |
+| [results/](results/) | Claim-bounded public evidence |
 
-This flat experiment directory is retained in the documentation-only change.
-Its package restructuring and repeated workload plumbing are handled as a
-separate code refactor so import changes cannot be hidden inside a narrative
-edit.
+The seven `run_*.py` modules remain at the Phase 1 root as stable device entry
+points. `formal_protocol.py`, `carryover_protocol.py` and
+`analyze_carryover_diagnostic.py` remain as compatibility entry points for
+published commands; their implementations live in the corresponding packages.
+Shared fixed-input slice, runner, summary and validation plumbing is internal to
+[workloads/](workloads/), while workload-specific contracts remain separated.
 
 Real workload dependencies are imported lazily by explicit Jetson adapters.
 The experiment layer owns scheduling, run directories, manifests, validation

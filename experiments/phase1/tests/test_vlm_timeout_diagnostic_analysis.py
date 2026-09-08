@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from experiments.phase1.analyze_vlm_timeout_diagnostic import (
+from experiments.phase1.workloads.vlm.timeout_diagnostic_analysis import (
     DIAGNOSTIC_DESIGN_ROLE,
     EXPECTED_REQUEST_CONTRACT,
     VLM_TIMEOUT_DIAGNOSTIC_ANALYSIS_KIND,
@@ -13,7 +13,7 @@ from experiments.phase1.analyze_vlm_timeout_diagnostic import (
     analyze_vlm_timeout_diagnostic,
     render_markdown,
 )
-from experiments.phase1.vlm_adapter import (
+from experiments.phase1.workloads.vlm.adapter import (
     C100_INPUT_SHA256,
     C100_INPUT_SIZE_BYTES,
 )

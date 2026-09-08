@@ -11,20 +11,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
-from experiments.phase1.asr_adapter import (
+from experiments.phase1.workloads.asr.adapter import (
     FixedInputASRAdapter,
     fixed_asr_payload,
     load_phase0_asr_runtime,
 )
-from experiments.phase1.carryover_observation import (
+from experiments.phase1.carryover.observation import (
     ObservedProcessFactory,
     memory_observation,
 )
-from experiments.phase1.carryover_preflight import (
+from experiments.phase1.carryover.preflight import (
     build_carryover_preflight,
     carryover_preflight_errors,
 )
-from experiments.phase1.carryover_protocol import (
+from experiments.phase1.carryover.protocol import (
     CARRYOVER_PROTOCOL_ID,
     CARRYOVER_PROTOCOL_STATUS,
     DEFAULT_PROTOCOL_PATH,
@@ -37,22 +37,22 @@ from experiments.phase1.carryover_protocol import (
     protocol_sha256,
     session_order,
 )
-from experiments.phase1.formal_run import (
+from experiments.phase1.formal.run import (
     FormalCondition,
     FormalRunSpec,
     run_formal_workload,
 )
-from experiments.phase1.jetson_telemetry import (
+from experiments.phase1.common.telemetry_jetson import (
     TegrastatsSampler,
     load_resource_samples,
     validate_resource_samples,
 )
-from experiments.phase1.llm_adapter import FixedInputLLMAdapter, fixed_llm_payload
-from experiments.phase1.manifest import sha256_file, utc_now_iso, write_json_atomic
+from experiments.phase1.workloads.llm.adapter import FixedInputLLMAdapter, fixed_llm_payload
+from experiments.phase1.common.manifest import sha256_file, utc_now_iso, write_json_atomic
 from experiments.phase1.run_formal_session import ThermalMonitor
-from experiments.phase1.telemetry import EventRecorder, SCHEMA_VERSION
-from experiments.phase1.vlm_adapter import fixed_c100_payload
-from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
+from experiments.phase1.common.telemetry import EventRecorder, SCHEMA_VERSION
+from experiments.phase1.workloads.vlm.adapter import fixed_c100_payload
+from experiments.phase1.workloads.vlm.process_adapter import ProcessIsolatedVLMAdapter
 
 
 CARRYOVER_SESSION_SCHEMA_VERSION = "0.1.0"

@@ -7,13 +7,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.jetson_preflight import build_jetson_preflight
-from experiments.phase1.llm_adapter import (
+from experiments.phase1.common.preflight import build_jetson_preflight
+from experiments.phase1.workloads.llm.adapter import (
     fixed_llm_payload,
     frozen_llm_request_contract,
     llm_request_contract,
 )
-from experiments.phase1.llm_preflight import (
+from experiments.phase1.workloads.llm.preflight import (
     LLMRuntime,
     build_llm_preflight,
     llm_preflight_errors,
@@ -30,7 +30,7 @@ def base_preflight() -> dict[str, object]:
         REPO_ROOT,
         environment=clean_environment(),
         tegrastats_available=True,
-        loaded_modules={"experiments.phase1.llm_preflight"},
+        loaded_modules={"experiments.phase1.workloads.llm.preflight"},
     )
 
 
@@ -54,12 +54,12 @@ class LLMPreflightTests(unittest.TestCase):
         )
         self.patches = [
             patch.multiple(
-                "experiments.phase1.llm_adapter",
+                "experiments.phase1.workloads.llm.adapter",
                 LLM_INPUT_SHA256=self.input_hash,
                 LLM_INPUT_SIZE_BYTES=len(self.input_bytes),
             ),
             patch.multiple(
-                "experiments.phase1.llm_preflight",
+                "experiments.phase1.workloads.llm.preflight",
                 LLM_INPUT_SHA256=self.input_hash,
                 LLM_INPUT_SIZE_BYTES=len(self.input_bytes),
                 LLM_MODEL_SHA256=self.model_hash,

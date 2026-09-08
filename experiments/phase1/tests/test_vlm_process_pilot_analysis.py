@@ -6,16 +6,16 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.analyze_vlm_pilot import (
+from experiments.phase1.workloads.vlm.analysis import (
     PROCESS_ANALYSIS_KIND,
     analyze_vlm_pilot_dir,
     main,
     render_markdown,
 )
-from experiments.phase1.summarize_vlm_process_slice import (
+from experiments.phase1.workloads.vlm.process_summary import (
     VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
 )
-from experiments.phase1.vlm_process_adapter import PROCESS_PROTOCOL_VERSION
+from experiments.phase1.workloads.vlm.process_adapter import PROCESS_PROTOCOL_VERSION
 from experiments.phase1.tests.test_vlm_pilot_analysis import (
     ARCHIVE_SHA256,
     _write_run,
@@ -149,7 +149,7 @@ class VLMProcessPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 reference = write_thread_reference(root)
@@ -186,7 +186,7 @@ class VLMProcessPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 reference = write_thread_reference(root)
@@ -233,7 +233,7 @@ class VLMProcessPilotAnalysisTests(unittest.TestCase):
             process["process"]["exit_code"] = -15
             process_path.write_text(json.dumps(process) + "\n", encoding="utf-8")
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "facts differ"):
@@ -243,7 +243,7 @@ class VLMProcessPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 reference = write_thread_reference(root)
@@ -261,7 +261,7 @@ class VLMProcessPilotAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             session = make_process_session(Path(temp_dir))
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 analysis = analyze_vlm_pilot_dir(session)

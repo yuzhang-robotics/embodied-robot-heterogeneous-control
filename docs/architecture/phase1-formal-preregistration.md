@@ -11,10 +11,11 @@ post-collection status does not alter the frozen design.
 
 The machine-readable protocol is
 [`phase1-g6-v4-preregistration.json`](../../experiments/phase1/formal/phase1-g6-v4-preregistration.json).
-It is generated and validated by
-[`formal_protocol.py`](../../experiments/phase1/formal_protocol.py). The tracked
-protocol uses schema `0.2.0`, protocol ID
-`phase1-g6-fixed-input-sync-async-v4`, and SHA-256
+It is loaded and validated by
+[`formal/protocol.py`](../../experiments/phase1/formal/protocol.py). The stable
+[`formal_protocol.py`](../../experiments/phase1/formal_protocol.py) command
+delegates to that implementation. The tracked protocol uses schema `0.2.0`,
+protocol ID `phase1-g6-fixed-input-sync-async-v4`, and SHA-256
 `84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054`.
 
 > 中文简介：本文记录 Phase 1 固定输入同步/异步正式对照的 G6 v4 修订协议。v2 和 v3

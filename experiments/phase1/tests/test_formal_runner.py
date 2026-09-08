@@ -10,11 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
-from experiments.phase1.formal_protocol import (
+from experiments.phase1.formal.protocol import (
     DEFAULT_PROTOCOL_PATH,
     FORMAL_COLLECTION_STATUS,
 )
-from experiments.phase1.jetson_telemetry import TegrastatsSampler
+from experiments.phase1.common.telemetry_jetson import TegrastatsSampler
 from experiments.phase1.run_formal_session import (
     FormalSessionError,
     ThermalMonitor,

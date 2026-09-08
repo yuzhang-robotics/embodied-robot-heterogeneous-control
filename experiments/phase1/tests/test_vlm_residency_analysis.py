@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.analyze_vlm_residency import (
+from experiments.phase1.workloads.vlm.residency_analysis import (
     EXPECTED_STAGE_ORDER,
     QWEN_REQUEST_TIMEOUT_S,
     VLM_RESIDENCY_ANALYSIS_KIND,
@@ -16,7 +16,7 @@ from experiments.phase1.analyze_vlm_residency import (
 from experiments.phase1.tests.test_vlm_process_pilot_analysis import (
     make_process_session,
 )
-from experiments.phase1.vlm_process_adapter import PROCESS_PROTOCOL_VERSION
+from experiments.phase1.workloads.vlm.process_adapter import PROCESS_PROTOCOL_VERSION
 
 
 COLLECTION_ARCHIVE_SHA256 = "3" * 64
@@ -74,7 +74,7 @@ class VLMResidencyAnalysisTests(unittest.TestCase):
             log = root / "llama.log"
             _write_llama_log(log)
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 analysis = analyze_vlm_residency_diagnostic(
@@ -126,7 +126,7 @@ class VLMResidencyAnalysisTests(unittest.TestCase):
             log = root / "llama.log"
             _write_llama_log(log, cancelled=True)
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 with self.assertRaisesRegex(ValueError, "unexpected cancellation"):
@@ -160,7 +160,7 @@ class VLMResidencyAnalysisTests(unittest.TestCase):
                 str(markdown_output),
             ]
             with patch(
-                "experiments.phase1.analyze_vlm_pilot.validate_vlm_slice_dir",
+                "experiments.phase1.workloads.vlm.analysis.validate_vlm_slice_dir",
                 return_value=[],
             ):
                 first_result = main(arguments)

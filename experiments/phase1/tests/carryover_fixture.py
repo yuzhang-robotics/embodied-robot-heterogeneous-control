@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from experiments.phase1.carryover_preflight import (
+from experiments.phase1.carryover.preflight import (
     CARRYOVER_PREFLIGHT_SCHEMA_VERSION,
     _REQUIRED_CHECKS,
 )
-from experiments.phase1.carryover_protocol import (
+from experiments.phase1.carryover.protocol import (
     CARRYOVER_PROTOCOL_ID,
     CARRYOVER_PROTOCOL_SHA256,
 )

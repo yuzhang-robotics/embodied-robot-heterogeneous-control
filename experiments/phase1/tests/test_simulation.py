@@ -5,17 +5,17 @@ import threading
 import unittest
 from pathlib import Path
 
-from experiments.phase1.replay_lifecycle import (
+from experiments.phase1.common.replay import (
     ReplayError,
     TraceProfile,
     replay_file,
 )
-from experiments.phase1.simulation import (
+from experiments.phase1.simulation.runtime import (
     InlineProbe,
     ScenarioSpec,
     SimulationCondition,
 )
-from experiments.phase1.telemetry import EventRecorder
+from experiments.phase1.common.telemetry import EventRecorder
 
 
 RUN_ID = "20260827T020000Z_phase1_r1_inline_sync_simulated_001"

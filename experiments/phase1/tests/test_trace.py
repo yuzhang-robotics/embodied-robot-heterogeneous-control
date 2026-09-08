@@ -9,14 +9,14 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-from experiments.phase1.replay_lifecycle import (
+from experiments.phase1.common.replay import (
     ReplayError,
     load_events,
     main,
     replay_events,
     replay_file,
 )
-from experiments.phase1.telemetry import EventRecorder
+from experiments.phase1.common.telemetry import EventRecorder
 from jetson.phase1_runtime import (
     BoundedTaskBroker,
     LaneConfig,

@@ -3,37 +3,45 @@
 from __future__ import annotations
 
 import argparse
-import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
-from experiments.phase1.jetson_telemetry import (
+from experiments.phase1.common.telemetry_jetson import (
     TegrastatsSampler,
     load_resource_samples,
 )
-from experiments.phase1.manifest import (
+from experiments.phase1.common.manifest import (
     MANIFEST_SCHEMA_VERSION,
     collect_environment,
     require_motion_disabled,
-    sha256_file,
     utc_now_iso,
     write_json_atomic,
 )
-from experiments.phase1.summarize_vlm_slice import build_vlm_summary
-from experiments.phase1.summarize_vlm_process_slice import (
+from experiments.phase1.workloads.vlm.summary import build_vlm_summary
+from experiments.phase1.workloads.vlm.process_summary import (
     VLM_PROCESS_ISOLATION,
     build_vlm_process_summary,
 )
-from experiments.phase1.telemetry import EventRecorder, SCHEMA_VERSION
-from experiments.phase1.vlm_adapter import FixedInputVLMAdapter, fixed_c100_payload
-from experiments.phase1.vlm_preflight import (
+from experiments.phase1.common.telemetry import EventRecorder, SCHEMA_VERSION
+from experiments.phase1.workloads._runner import (
+    artifact_identity as _artifact_identity,
+    completed_artifact_identities,
+    make_run_id,
+    make_session_id,
+    reproducibility_record as _reproducibility,
+    resolve_output_root,
+    validate_repetition,
+    validate_session_id,
+)
+from experiments.phase1.workloads.vlm.adapter import FixedInputVLMAdapter, fixed_c100_payload
+from experiments.phase1.workloads.vlm.preflight import (
     build_vlm_preflight,
     vlm_preflight_errors,
 )
-from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
-from experiments.phase1.vlm_slice import (
+from experiments.phase1.workloads.vlm.process_adapter import ProcessIsolatedVLMAdapter
+from experiments.phase1.workloads.vlm.slice import (
     VLMSliceCondition,
     VLMSliceSpec,
     run_vlm_slice,
@@ -49,7 +57,6 @@ DEFAULT_INPUT = (
     / "c100-camera-product.jpg"
 )
 DEFAULT_OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "runs" / "phase1-vlm-slice"
-_SESSION_ID_RE = re.compile(r"^[0-9]{8}T[0-9]{6}Z_phase1_vlm_[a-z][a-z0-9_-]{0,31}$")
 THREAD_ISOLATION = "thread"
 
 
@@ -66,68 +73,30 @@ def make_vlm_run_id(
 ) -> str:
     if not isinstance(condition, VLMSliceCondition):
         raise TypeError("condition must be a VLMSliceCondition")
-    if (
-        isinstance(repetition, bool)
-        or not isinstance(repetition, int)
-        or not 0 <= repetition <= 999
-    ):
-        raise ValueError("repetition must be an integer from 0 to 999")
+    validate_repetition(repetition)
     if adapter_isolation not in {THREAD_ISOLATION, VLM_PROCESS_ISOLATION}:
         raise ValueError("adapter_isolation must be thread or spawned_process")
-    current = now or datetime.now(timezone.utc)
-    if current.tzinfo is None:
-        raise ValueError("now must be timezone-aware")
-    stamp = current.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     condition_label = condition.value
     if adapter_isolation == VLM_PROCESS_ISOLATION:
         condition_label = condition_label.replace("vlm_", "vlm_process_", 1)
-    return f"{stamp}_phase1_{condition_label}_vlm_{repetition:03d}"
+    return make_run_id(condition_label, "vlm", repetition, now=now)
 
 
 def make_vlm_session_id(now: datetime | None = None) -> str:
-    current = now or datetime.now(timezone.utc)
-    if current.tzinfo is None:
-        raise ValueError("now must be timezone-aware")
-    stamp = current.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    return f"{stamp}_phase1_vlm_slice"
+    return make_session_id("vlm", now=now)
 
 
 def _validate_session_id(value: str) -> str:
-    if not isinstance(value, str) or not _SESSION_ID_RE.fullmatch(value):
-        raise ValueError(
-            "session_id must use YYYYMMDDTHHMMSSZ_phase1_vlm_<lowercase-label>"
-        )
-    return value
-
-
-def _is_relative_to(path: Path, parent: Path) -> bool:
-    try:
-        path.relative_to(parent)
-    except ValueError:
-        return False
-    return True
+    return validate_session_id(value, "vlm")
 
 
 def _resolve_output_root(output_root: Path, repo_root: Path) -> Path:
-    expanded = output_root.expanduser()
-    resolved = (expanded if expanded.is_absolute() else repo_root / expanded).resolve()
-    phase0_source = (repo_root / "experiments" / "phase0").resolve()
-    if _is_relative_to(resolved, phase0_source):
-        raise VLMRunError("Phase 1 VLM output must not be inside experiments/phase0")
-    if _is_relative_to(resolved, repo_root):
-        ignored_root = (repo_root / "experiments" / "runs").resolve()
-        if not _is_relative_to(resolved, ignored_root):
-            raise VLMRunError(
-                "repository-local VLM output must be inside experiments/runs"
-            )
-    return resolved
-
-
-def _artifact_identity(path: Path) -> dict[str, object]:
-    return {
-        "size_bytes": path.stat().st_size,
-        "sha256": sha256_file(path),
-    }
+    return resolve_output_root(
+        output_root,
+        repo_root,
+        workload="vlm",
+        error_type=VLMRunError,
+    )
 
 
 def _completed_artifact_identities(
@@ -142,41 +111,7 @@ def _completed_artifact_identities(
         "summary.json",
         "process.json",
     )
-    return {
-        name: _artifact_identity(run_dir / name)
-        for name in names
-        if name in completed_names
-    }
-
-
-def _reproducibility(
-    environment: dict[str, object],
-    *,
-    injected_components: list[str],
-) -> dict[str, object]:
-    git = environment.get("git")
-    record = git if isinstance(git, dict) else {}
-    identity_complete = (
-        not record.get("error_codes")
-        and bool(record.get("commit"))
-        and bool(record.get("branch"))
-    )
-    git_clean = identity_complete and record.get("dirty") is False
-    synchronized_main = (
-        git_clean
-        and record.get("branch") == "main"
-        and record.get("upstream") == "origin/main"
-        and record.get("upstream_commit") == record.get("commit")
-        and str(record.get("ahead_behind", "")).split() == ["0", "0"]
-    )
-    return {
-        "git_identity_complete": identity_complete,
-        "git_clean": git_clean,
-        "synchronized_main": synchronized_main,
-        "development_injection": bool(injected_components),
-        "injected_components": injected_components,
-        "formal_evidence_eligible": False,
-    }
+    return completed_artifact_identities(run_dir, completed_names, names)
 
 
 def run_once(
@@ -392,7 +327,7 @@ def run_once(
         manifest["completed_at"] = utc_now_iso()
         write_json_atomic(manifest_path, manifest)
 
-        from experiments.phase1.validate_vlm_slice import validate_vlm_slice_dir
+        from experiments.phase1.workloads.vlm.validation import validate_vlm_slice_dir
 
         validation_errors = validate_vlm_slice_dir(run_dir)
         if validation_errors:

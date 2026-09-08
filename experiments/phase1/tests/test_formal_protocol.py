@@ -8,7 +8,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-from experiments.phase1.formal_protocol import (
+from experiments.phase1.formal.protocol import (
     ASYNC_MAX_GAP_P95_MS,
     BOOTSTRAP_RESAMPLES,
     BOOTSTRAP_SEED,

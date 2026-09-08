@@ -8,7 +8,7 @@ import time
 import unittest
 from pathlib import Path
 
-from experiments.phase1.jetson_telemetry import (
+from experiments.phase1.common.telemetry_jetson import (
     TegrastatsSampler,
     load_resource_samples,
     parse_tegrastats_line,

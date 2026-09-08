@@ -7,7 +7,7 @@ import os
 import threading
 import time
 
-from experiments.phase1.vlm_adapter import VLMExecutionRecord
+from experiments.phase1.workloads.vlm.adapter import VLMExecutionRecord
 from jetson.phase1_runtime import (
     CancellationReport,
     ClaimedTask,

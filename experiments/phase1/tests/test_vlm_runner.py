@@ -11,38 +11,38 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.jetson_preflight import build_jetson_preflight
-from experiments.phase1.jetson_telemetry import (
+from experiments.phase1.common.preflight import build_jetson_preflight
+from experiments.phase1.common.telemetry_jetson import (
     TegrastatsSampler,
     load_resource_samples,
 )
-from experiments.phase1.manifest import sha256_file, write_json_atomic
+from experiments.phase1.common.manifest import sha256_file, write_json_atomic
 from experiments.phase1.run_vlm_slice import build_parser, run_once
-from experiments.phase1.summarize_vlm_process_slice import (
+from experiments.phase1.workloads.vlm.process_summary import (
     LEGACY_VLM_PROCESS_SUMMARY_SCHEMA_VERSION,
     VLM_PROCESS_ISOLATION,
     build_vlm_process_summary,
 )
-from experiments.phase1.summarize_vlm_slice import (
+from experiments.phase1.workloads.vlm.summary import (
     LEGACY_VLM_SUMMARY_SCHEMA_VERSION,
     build_vlm_summary,
 )
 from experiments.phase1.tests.test_jetson_pilot import clean_environment
 from experiments.phase1.tests.test_jetson_telemetry import sampler_command
-from experiments.phase1.validate_vlm_slice import validate_vlm_slice_dir
-from experiments.phase1.vlm_adapter import (
+from experiments.phase1.workloads.vlm.validation import validate_vlm_slice_dir
+from experiments.phase1.workloads.vlm.adapter import (
     FixedInputVLMAdapter,
     VLMPipeline,
     fixed_c100_payload,
 )
-from experiments.phase1.vlm_preflight import (
+from experiments.phase1.workloads.vlm.preflight import (
     build_vlm_preflight,
     probe_tcp_listener,
     probe_vlm_services,
     vlm_preflight_errors,
 )
-from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
-from experiments.phase1.vlm_slice import VLMSliceCondition
+from experiments.phase1.workloads.vlm.process_adapter import ProcessIsolatedVLMAdapter
+from experiments.phase1.workloads.vlm.slice import VLMSliceCondition
 from jetson.vlm_request_contract import current_vlm_workload_contract
 
 
@@ -107,10 +107,10 @@ class VLMRunnerTests(unittest.TestCase):
                 C100_INPUT_SIZE_BYTES=len(self.input_bytes),
             )
             for module in (
-                "experiments.phase1.vlm_adapter",
-                "experiments.phase1.vlm_preflight",
-                "experiments.phase1.summarize_vlm_slice",
-                "experiments.phase1.validate_vlm_slice",
+                "experiments.phase1.workloads.vlm.adapter",
+                "experiments.phase1.workloads.vlm.preflight",
+                "experiments.phase1.workloads.vlm.summary",
+                "experiments.phase1.workloads.vlm.validation",
             )
         ]
         for constant_patch in self.constants:

@@ -9,8 +9,8 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from experiments.phase1.carryover_protocol import DEFAULT_PROTOCOL_PATH
-from experiments.phase1.jetson_telemetry import TegrastatsSampler
+from experiments.phase1.carryover.protocol import DEFAULT_PROTOCOL_PATH
+from experiments.phase1.common.telemetry_jetson import TegrastatsSampler
 from experiments.phase1.run_carryover_session import (
     CarryoverSessionError,
     make_run_id,
@@ -18,7 +18,7 @@ from experiments.phase1.run_carryover_session import (
     validate_fixed_interval,
     validate_primer_2,
 )
-from experiments.phase1.telemetry import EventRecorder
+from experiments.phase1.common.telemetry import EventRecorder
 from experiments.phase1.tests.carryover_fixture import passing_carryover_preflight
 from jetson.phase1_runtime import PayloadRef
 

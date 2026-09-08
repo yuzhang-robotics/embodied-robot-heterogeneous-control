@@ -7,13 +7,13 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.analyze_jetson_pilot import (
+from experiments.phase1.simulation.analysis import (
     _detect_cpu_activity,
     analyze_pilot_dir,
     main,
     render_markdown,
 )
-from experiments.phase1.jetson_telemetry import TegrastatsSampler
+from experiments.phase1.common.telemetry_jetson import TegrastatsSampler
 from experiments.phase1.run_jetson_pilot import run_pilot_session
 from experiments.phase1.tests.test_jetson_pilot import (
     REPO_ROOT,

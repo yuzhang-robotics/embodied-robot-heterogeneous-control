@@ -10,14 +10,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from experiments.phase1.asr_adapter import (
+from experiments.phase1.workloads.asr.adapter import (
     ASRRuntime,
     FixedInputASRAdapter,
     fixed_asr_payload,
 )
-from experiments.phase1.asr_slice import ASRSliceCondition, ASRSliceSpec, run_asr_slice
-from experiments.phase1.replay_lifecycle import TraceProfile, load_events, replay_events
-from experiments.phase1.telemetry import EventRecorder
+from experiments.phase1.workloads.asr.slice import ASRSliceCondition, ASRSliceSpec, run_asr_slice
+from experiments.phase1.common.replay import TraceProfile, load_events, replay_events
+from experiments.phase1.common.telemetry import EventRecorder
 
 
 class ASRSliceTests(unittest.TestCase):
@@ -42,7 +42,7 @@ class ASRSliceTests(unittest.TestCase):
         )
         self.processes: list[subprocess.Popen[bytes]] = []
         self.constants = patch.multiple(
-            "experiments.phase1.asr_adapter",
+            "experiments.phase1.workloads.asr.adapter",
             ASR_INPUT_SHA256=hashlib.sha256(self.input_bytes).hexdigest(),
             ASR_INPUT_SIZE_BYTES=len(self.input_bytes),
             ASR_MODEL_SIZE_BYTES=len(self.model_bytes),
