@@ -1,1033 +1,234 @@
-# Phase 1 Asynchronous Runtime Research
-
-This directory contains the host tests, simulated-condition runner, trace
-recorder, event schema, independent lifecycle replay, run validation, Jetson
-pilot orchestration, deterministic analysis, fixed-input VLM/ASR/LLM integration
-and descriptive summaries for the Phase 1 asynchronous runtime study. The
-motion-disabled Jetson simulation pilot and the fixed-input VLM, ASR and LLM
-correctness pilots are complete, closing G5. The protocol-bound formal runner
-and independent analyzer were then commissioned through two diagnostic v1
-collections. G6 v2 and v3 each closed after a non-replaceable VLM Qwen timeout,
-followed by separate residency-order, timeout-contract and repository-path
-validation. G6 v4 retained the complete v3 scientific design while freezing
-the validated deterministic request, 60 s Qwen boundary and bounded unload
-confirmation. Its formal collection has now completed all five sessions and
-180 planned measured runs. Every run Gate, lifecycle criterion and
-responsiveness endpoint passed, but none of the three workloads established the
-frozen 10% workload-performance noninferiority margin. The intersection-union
-decision is therefore `FAIL`. G6 v4 is closed, Phase 1 has not met its success
-Gate, and the application slice remains unauthorized.
-
-Exploratory reanalysis of the closed v4 evidence found a strong pair-position
-warm-state effect, especially an association between intervening VLM work and
-the next cold ASR invocation. A separately versioned, non-formal
-[ASR/VLM carryover diagnostic](../../docs/architecture/phase1-asr-vlm-carryover-diagnostic.md)
-completed a six-session, duration-matched `idle`/`llm`/`vlm` experiment with
-Whisper page-residency and ASR process-fault observations. Its
-[derived result](results/20260908T072640Z_phase1_asr_vlm_carryover_v2/) is
-exploratory and does not reopen v4 or authorize Phase 2.
-
-> 中文简介：本目录用于 Phase 1 异步运行时研究。当前已实现 host-only 有界 broker、
-> 单 worker 执行层、100 ms 周期探针、独立 trace replay、模拟条件运行器和 Jetson
-> pilot 证据链；固定输入 VLM、ASR、LLM correctness pilot 均已完成，G5 已关闭。
-> 协议绑定的正式 runner 与独立分析器经过两次 v1 commissioning、v2/v3 失败分析以及
-> 独立修复验证后，在 G6 v4 下完成了 5 个 session、180 次正式测量。全部运行 Gate、
-> 生命周期判据和响应性判据通过，但三个工作负载的性能比置信区间上界都超过冻结的
-> `1.10` 非劣效界限，因此交并式整体判定为失败。这是有效的阴性正式结果，而不是运行
-> 故障。v4 已关闭且不重跑、扩充、重新分类或事后修改阈值；Phase 1 尚未满足成功 Gate，
-> 整机应用切片仍未获授权。独立的 ASR/VLM carryover 诊断已完成六种顺序并发布派生
-> 结果；该探索性结果用于定位机制，不改变 v4 的正式结论。
-
-## Current status
-
-- Phase 0 synchronous baseline: complete
-- Phase 1 host runtime contract: frozen for the current host-only boundary
-- Host-only task/result model and bounded broker: implemented and tested
-- Observable worker and simulated adapter: implemented and tested
-- Independent periodic probe: implemented and tested
-- Inline synchronous-path probe: implemented and tested
-- Phase 1 schema `0.2.0`, JSONL recorder and lifecycle replay: implemented
-- Reproducible R0--R4 simulated-condition runner: implemented and host-tested
-- Jetson preflight, continuous resource telemetry and pilot runner: implemented
-- Jetson simulation pilot: completed and independently validated
-- Deterministic pilot analysis and public descriptive report: implemented
-- Fixed-input VLM adapter, single-request runner and validator: completed one
-  independently validated Jetson correctness pilot
-- Deterministic VLM pilot analysis and listener-binding preflight: implemented
-- Spawned-process VLM adapter, cleanup evidence and runner mode: completed one
-  independently validated Jetson correctness pilot
-- Deterministic process-pilot reconstruction and descriptive thread reference:
-  implemented
-- Fixed-input ASR adapter, Whisper process supervision, runner and validator:
-  completed one independently validated Jetson correctness pilot
-- Deterministic ASR-pilot reconstruction and public descriptive report:
-  implemented; ASR component of G5 satisfied
-- Fixed-input LLM adapter, local-server preflight, runner and validator:
-  completed one independently validated Jetson correctness pilot
-- Deterministic LLM-pilot reconstruction and public descriptive report:
-  implemented; LLM component and G5 overall satisfied
-- Machine-validated G6 formal preregistration: v1 through v4 retained as
-  immutable history; v2 and v3 closed after system-under-test failures; v4
-  froze the target-validated VLM repair and is closed after its formal result
-- Protocol-bound formal session runner and independent analyzer: implemented
-  and reviewed; LLM history binding corrected against the frozen adapter
-- Formal Phase 1 evidence: G6 v4 completed 180/180 measured runs with all run,
-  lifecycle and responsiveness Gates passing; workload noninferiority not
-  established for ASR, LLM or VLM; overall decision failed and no formal claim
-  is permitted
-- Deterministic v2 failed-attempt reconstruction: implemented; all 42 manifest
-  artifacts, 18 run records, the ledger prefix and service log correlation
-  independently verified
-- VLM residency-order diagnostic: independently reconstructed; both corrected
-  Qwen paths completed inside the retained 30 s timeout with all Gates passing
-- Deterministic v3 failed-attempt reconstruction: implemented; 26 manifest
-  artifacts, 10 run records, the ledger prefix, resource trace and five service
-  requests independently verified; G6 not met and v3 permanently closed
-- VLM timeout-repair diagnostic: three deterministic request repetitions
-  independently reconstructed; repair design supported
-- VLM timeout-repair target validation: modified repository path directly
-  exercised on Jetson; both lifecycle runs valid with confirmed unload and Qwen
-  completion
-- G6 v4 formal reconstruction: exact recorded commit reproduced the reference
-  JSON and Markdown byte-for-byte on Jetson Python 3.10.12 and NumPy 1.26.4
-- Phase 1 completion: success Gate not met; motion-disabled application slice
-  remains unauthorized
-- ASR/VLM carryover diagnostic: completed all six interposer orders and 18
-  valid units; derived report published with the formal claim boundary intact
-- Physical motion and UART: excluded
-
-The detailed contract is documented in
-[`docs/architecture/phase1-runtime-contract.md`](../../docs/architecture/phase1-runtime-contract.md).
-
-Run the current host-only tests from the repository root:
-
-```bash
-python3 -m unittest discover -s experiments/phase1/tests -p "test_*.py"
-```
-
-Replay a completed trace without importing the runtime implementation:
-
-```bash
-python3 -m experiments.phase1.replay_lifecycle \
-  /path/to/events.jsonl \
-  --profile runtime_threaded_probe
-```
-
-## Simulated conditions
-
-The portable runner separates fast-path isolation from the additional broker
-semantics:
-
-| Condition | Probe path | Slow work | Purpose |
-| --- | --- | --- | --- |
-| `r0_idle` | independent thread | none | probe and recorder timing baseline |
-| `r1_inline_sync` | caller thread | direct adapter call | blocking synchronous reference |
-| `r2_threaded_sync` | independent thread | direct adapter call | timing-domain isolation without the broker |
-| `r3_async` | independent thread | bounded worker | nominal asynchronous runtime |
-| `r4_stale` | independent thread | worker plus state advance | old-generation result rejection |
-| `r4_overflow` | independent thread | worker plus excess arrivals | bounded overflow behavior |
-
-R0--R3 are the responsiveness decomposition. R4-stale and R4-overflow are
-separate correctness stress conditions; their probe ticks are not pooled into
-the primary responsiveness comparison. R4 uses a short claim barrier so the
-state change or excess arrivals are injected at a deterministic lifecycle
-location. Its task timings are therefore correctness evidence, not runtime-
-overhead measurements.
-
-Use one explicit session ID for conditions that will later be compared:
-
-```bash
-python3 -m experiments.phase1.run_simulation \
-  --condition r1_inline_sync \
-  --service-time-s 2 \
-  --session-id 20260827T120000Z_phase1_simulation_pilot \
-  --repetition 1
-```
-
-The default runner refuses a dirty Git tree. `--allow-dirty` is available for
-development checks only; a run created with that flag is not formal
-reproducibility evidence, and its manifest records the development override
-and formal-evidence eligibility separately. The motion setting must be unset or
-explicitly false. Enabled or unrecognized values fail before a run directory
-is created.
-
-Each run is written beneath the ignored Phase 1 root:
-
-```text
-experiments/runs/phase1-simulation/
-└── <session_id>/
-    └── <condition>/
-        └── <run_id>/
-            ├── manifest.json
-            ├── scenario.json
-            ├── events.jsonl
-            └── summary.json
-```
-
-`manifest.json` moves from `running` to `completed` only after event replay,
-condition-specific Gates, artifact hashing and final directory validation all
-pass. A failed or interrupted attempt remains marked `failed` or `running` and
-cannot be accepted by the validator.
-
-Validate a completed directory independently:
-
-```bash
-python3 -m experiments.phase1.validate_run /path/to/run_dir
-```
-
-The summary reports nearest-rank p50/p95/p99 timing statistics and lifecycle
-counts. It is explicitly marked descriptive-only and cannot be used as a
-formal improvement claim.
-
-## Jetson simulation pilot
-
-The Jetson pilot reuses the validated single-run protocol. One non-daemon
-`tegrastats` reader remains active across the complete session, avoiding a
-resource-sampler restart between conditions. Samples are assigned to each run
-using the run's monotonic start and finish timestamps.
-
-The preflight refuses to create a session unless all of the following hold:
-
-- the process runs on Linux ARM64 with an L4T release identity;
-- `tegrastats` is available;
-- the source tree is clean, on `main`, synchronized with `origin/main`, and has
-  a complete Git identity;
-- motion is unset or explicitly disabled;
-- robot application, motion-planner and UART modules are not loaded.
-
-Run the descriptive pilot on a clean, synchronized Jetson `main` branch with
-explicit simulated service durations:
-
-```bash
-export ROBOT_ENABLE_MOTION=0
-python3 -m experiments.phase1.run_jetson_pilot \
-  --service-times-s 2 5 70 \
-  --correctness-service-time-s 2 \
-  --repetitions 1
-```
-
-The responsiveness matrix runs R0--R3 at each service duration. R4-stale and
-R4-overflow run once per repetition at the separate correctness duration. The
-order, durations, capacities, probe settings and 200 ms resource interval are
-frozen in `pilot_plan.json` before the first condition starts. Resource rows use
-the separate [`0.1.0` JSON Schema](schemas/resource.schema.json).
-
-The ignored session directory contains:
-
-```text
-experiments/runs/phase1-jetson-pilot/
-└── <session_id>/
-    ├── session_manifest.json
-    ├── pilot_plan.json
-    ├── preflight.json
-    ├── resources.jsonl
-    ├── pilot_summary.json
-    └── <condition>/<run_id>/
-        ├── manifest.json
-        ├── scenario.json
-        ├── events.jsonl
-        └── summary.json
-```
-
-The session manifest becomes `completed` only after every single-run validator,
-the continuous resource trace, per-run resource coverage, sampler shutdown,
-artifact hashes and an independent pilot-summary rebuild pass. Validate it
-again with:
-
-```bash
-python3 -m experiments.phase1.validate_jetson_pilot /path/to/session_dir
-```
-
-Build deterministic JSON and Markdown derivatives outside the ignored session
-directory:
-
-```bash
-python3 -m experiments.phase1.analyze_jetson_pilot /path/to/session_dir \
-  --source-archive-sha256 <sha256> \
-  --json-output /path/to/analysis.json \
-  --markdown-output /path/to/report.md
-```
-
-The analyzer reruns the independent session validator before reading results.
-It preserves the non-inferential claim boundary, reports missing resource
-capabilities rather than converting them to zero, and applies a declared CPU
-activity screen without excluding samples. It refuses to write into the source
-session because an extra file would invalidate the evidence directory.
-
-The first public derived result is the
-[`20260828T121142Z` Jetson simulation pilot](results/20260828T121142Z_phase1_jetson_pilot/).
-It contains one fixed-order repetition and a simulated workload. The report is
-therefore descriptive evidence for protocol and runtime behavior, not a causal
-resource comparison or heterogeneous-inference result.
-
-The pilot is descriptive evidence used to design the later formal protocol. It
-does not authorize an asynchronous-performance or hard-real-time claim.
-Condition-level power summaries use instantaneous rail samples; the
-`tegrastats`-reported average is retained only as a session-window diagnostic.
-
-The second public derived result is the
-[`20260830T073825Z` fixed-input VLM pilot](results/20260830T073825Z_phase1_vlm_pilot/).
-Both real-model conditions passed their correctness Gates, but the periodic
-probe recorded 85 and 63 skipped releases respectively. All skipped releases
-were scheduled during lazy module import. The result therefore validates
-nominal consumption and stale-result rejection while explicitly withholding a
-thread-level timing-isolation claim.
-
-The third public derived result is the
-[`20260830T122541Z` process-isolated VLM pilot](results/20260830T122541Z_phase1_vlm_process_reaping/).
-Both spawned children completed the bounded protocol, exited with code zero
-and were reaped without forced termination. The 100 ms probe recorded zero
-skipped releases and zero deadline misses in both conditions. The previously
-published thread pilot recorded 148 skipped releases, but the two sessions are
-single, fixed-order observations from different commits. The public report
-therefore labels the contrast as a descriptive mitigation signal and continues
-to prohibit causal performance and timing-isolation claims.
-
-## Fixed-input VLM slice
-
-The first real-workload integration reuses the exact Phase 0 C100 JPEG, the
-Moondream request path, Qwen rewrite with Argos fallback, output normalization
-and the per-request unload policy. The current adapter requests Moondream unload
-after description and before Qwen rewriting, with cleanup on earlier failure.
-`vlm_adapter.py` imports the model-facing
-module only inside the worker call. Importing the experiment package on a host
-does not load OpenCV, Argos, a camera or either model service.
-
-The initial protocol has two separate single-request correctness conditions:
-
-| Condition | State action | Required disposition |
-| --- | --- | --- |
-| `vlm_async` | none | one result consumed |
-| `vlm_stale` | advance generation after Moondream starts | one `rejected_state`, zero consumed |
-
-State invalidation does not claim that Ollama stopped GPU inference. The
-adapter allows the backend path to finish, records
-`backend_stop_confirmed=null`, and relies on the broker's generation check to
-reject the completed result. Public artifacts retain only input identity,
-output hash and length, translation route, stage durations and lifecycle
-facts. Model text, prompts and the private input path are not serialized.
-
-Reproduce each condition from a clean, synchronized Jetson `main` branch:
-
-```bash
-export ROBOT_ENABLE_MOTION=0
-python3 -m experiments.phase1.run_vlm_slice \
-  --condition vlm_async \
-  --session-id 20260829T000000Z_phase1_vlm_pilot \
-  --repetition 1
-
-python3 -m experiments.phase1.run_vlm_slice \
-  --condition vlm_stale \
-  --session-id 20260829T000000Z_phase1_vlm_pilot \
-  --repetition 1
-```
-
-The runner refuses to create a directory unless platform, Git, motion, module,
-fixed-input, dependency, Ollama CLI, Moondream and Qwen checks all pass. VLM
-preflight schema `0.2.0` also records the TCP listener addresses and rejects a
-service bound to a wildcard or non-loopback address. Each run contains
-`preflight.json`, the event and resource JSONL traces, `scenario.json`,
-`summary.json` and an atomic manifest. Validate either directory again with:
-
-```bash
-python3 -m experiments.phase1.validate_vlm_slice /path/to/run_dir
-```
-
-Build deterministic derivatives from a two-condition ignored session with:
-
-```bash
-python3 -m experiments.phase1.analyze_vlm_pilot \
-  /path/to/session_dir \
-  --source-archive-sha256 <archive_sha256> \
-  --json-output /path/to/analysis.json \
-  --markdown-output /path/to/README.md
-```
-
-For a process-isolated session, add the published thread analysis as a frozen
-workload-identity reference:
-
-```bash
-python3 -m experiments.phase1.analyze_vlm_pilot \
-  /path/to/process_session_dir \
-  --source-archive-sha256 <process_archive_sha256> \
-  --thread-reference-analysis \
-    experiments/phase1/results/20260830T073825Z_phase1_vlm_pilot/analysis.json \
-  --json-output /path/to/analysis.json \
-  --markdown-output /path/to/README.md
-```
-
-The first VLM pilot was collected under preflight schema `0.1.0`. Its request
-URLs were loopback addresses, and the operator checked the llama.cpp listener
-before execution, but actual listener bindings were not stored in the archive.
-The public analysis retains that evidence gap rather than converting the
-manual observation into a reproducible claim. The validator remains able to
-read the original schema while new runs fail closed under `0.2.0`.
-
-These two runs establish integration and stale-result correctness only. They
-do not form a balanced synchronous/asynchronous comparison, prove backend
-preemption, measure visual accuracy or authorize a heterogeneous-performance
-claim.
-
-### Spawned-process VLM variant
-
-The process-isolated variant keeps the broker, state generations, result
-freshness checks, event recorder and periodic probe in the parent process. It
-moves only the lazy VLM adapter call into one child created with `spawn`. The
-child receives one task through bounded private IPC and returns the same
-hash-only result and stage facts as the thread adapter. It cannot mutate the
-broker or choose a final disposition.
-
-Each process run adds a distinct condition directory and `process.json`. The
-process summary is independently rebuilt from supervisor facts in
-`scenario.json` and requires a complete protocol, ordered boundaries, correct
-cancellation forwarding, exit code zero and a normally reaped child. A forced
-child termination is recorded separately and never becomes a claim that the
-Ollama backend stopped inference.
-
-The child closes its bounded protocol and exits from inside the process after
-adapter cleanup, preventing imported inference runtimes from delaying process
-reaping during interpreter shutdown. If a final Gate still fails, the run is
-marked failed after its completed scenario, process and slice diagnostics are
-written and hashed.
-
-The two motion-disabled pilot conditions can be reproduced with:
-
-```bash
-export ROBOT_ENABLE_MOTION=0
-python3 -m experiments.phase1.run_vlm_slice \
-  --condition vlm_async \
-  --adapter-isolation spawned_process \
-  --process-execution-timeout-s 600 \
-  --completion-timeout-s 720 \
-  --session-id 20260830T000000Z_phase1_vlm_process_pilot \
-  --repetition 1
-
-python3 -m experiments.phase1.run_vlm_slice \
-  --condition vlm_stale \
-  --adapter-isolation spawned_process \
-  --process-execution-timeout-s 600 \
-  --completion-timeout-s 720 \
-  --session-id 20260830T000000Z_phase1_vlm_process_pilot \
-  --repetition 1
-```
-
-These commands define a correctness pilot, not a formal thread/process
-comparison. Session `20260830T122541Z_phase1_vlm_process_reaping` completed
-both conditions on `main@1818c83`; the Jetson and Windows independent validators
-and every slice and process Gate passed. The result is published as descriptive
-evidence and does not freeze a formal timing threshold.
-
-## Fixed-input ASR slice
-
-The first Phase 1D workload extension reuses the exact formal Phase 0 WAV
-identity (`114136` bytes, SHA-256
-`3fffeee1e04250faa483174a423878bf220b95f6706684f6e109ed8f9b731440`),
-the `ggml-small.bin` model identity, whisper.cpp source version and command
-arguments. The nominal transcript was identical across all 30 measured Phase 0
-runs, so the correctness slice verifies its SHA-256 and character count while
-never serializing the transcript itself.
-
-Whisper already executes as a native subprocess. The Phase 1 worker therefore
-does not add another Python process layer: it starts `whisper-cli`, waits with a
-bounded poll interval, and owns timeout/cancellation termination and process
-reaping. The broker, state generation, accepted-result mailbox, event recorder
-and periodic probe remain in the parent process. Unlike an HTTP cancellation
-request, a terminated and reaped Whisper child permits
-`backend_stop_confirmed=true` for that specific process invocation.
-
-The two host-tested correctness conditions are:
-
-| Condition | State action | Required disposition and process fact |
-| --- | --- | --- |
-| `asr_async` | none | one transcript identity consumed; Whisper exits 0 and is reaped |
-| `asr_stale` | observe active Whisper for 0.5 s, then advance generation | one `rejected_state`, zero consumed; Whisper is stopped and reaped |
-
-The stale observation window is a correctness-pilot control, not a cancellation
-latency or performance threshold. It is longer than the default 200 ms resource
-sampling interval so at least one sample can fall inside the active adapter
-interval. The runner rejects a stale window that does not exceed the configured
-resource interval or that reaches either the adapter or slice completion
-timeout. A first Jetson attempt without this control cancelled Whisper in about
-6.5 ms: every lifecycle and process Gate passed, but the resource-coverage Gate
-correctly failed because no 200 ms sample could fall inside that interval.
-
-Run them only from a clean, synchronized Jetson `main` branch after the fixed
-WAV has been restored beneath the ignored Phase 0 input root:
-
-```bash
-export ROBOT_ENABLE_MOTION=0
-python3 -m experiments.phase1.run_asr_slice \
-  --condition asr_async \
-  --session-id 20260831T000000Z_phase1_asr_pilot \
-  --repetition 1
-
-python3 -m experiments.phase1.run_asr_slice \
-  --condition asr_stale \
-  --stale-observation-s 0.5 \
-  --session-id 20260831T000000Z_phase1_asr_pilot \
-  --repetition 1
-```
-
-The ASR preflight independently verifies the fixed input, model identity,
-whisper.cpp source version, frozen inference arguments and absence of a
-pre-existing `whisper-cli` process. Each successful run has the same atomic
-manifest, event/resource traces, scenario, deterministic summary and
-independent validation boundary as the VLM slice. Revalidate one run with:
-
-```bash
-python3 -m experiments.phase1.validate_asr_slice /path/to/run_dir
-```
-
-Session `20260831T140705Z_phase1_asr_pilot_v2` completed both real Jetson
-conditions on synchronized `main@bc1ca35`. The Jetson and Windows validators and
-all eleven per-run Gates passed. Its independently derived
-[descriptive report](results/20260831T140705Z_phase1_asr_pilot_v2/) records the
-archive identity, process facts, privacy boundary, observation control, probe
-continuity and resource coverage. This satisfies the ASR component of G5. G5
-was subsequently closed by the real LLM correctness slice. The separate G6
-preregistration now freezes the formal design; no numerical threshold, sample
-size, performance result or cancellation-latency result is inferred from this
-pilot.
-
-## Fixed-input LLM slice
-
-The LLM slice reuses the tracked Phase 0 prompt, Qwen GGUF identity, empty
-conversation history, system-prompt identity and chat request fields. It sends
-one request to the pre-existing loopback llama.cpp server and records only the
-response hash, character count, served response model and token usage. Prompt,
-history and response text, raw HTTP data and private filesystem paths are not
-serialized.
-
-| Condition | State action | Required disposition and boundary fact |
-| --- | --- | --- |
-| `llm_async` | none | one response identity consumed; no cancellation requested |
-| `llm_stale` | observe the active request for 0.5 s, then advance generation | one `rejected_state`, zero consumed; cancellation observed without a backend-stop claim |
-
-The llama-server is resident before the run and remains externally managed.
-State invalidation prevents an old response from entering conversation history,
-but the Python worker continues its blocking HTTP wait until the server responds
-or the request timeout expires. Consequently the stale condition requires
-`client_wait_stopped=false` and `backend_stop_confirmed=null`; the adapter sends
-no stop or unload request. The 0.5 s window is only a correctness and telemetry-
-coverage control, not a cancellation-latency or performance threshold.
-
-The preflight hashes the Phase 0 prompt and Qwen model, records a clean
-llama.cpp source identity, requires exactly one llama-server with the frozen
-launch arguments and model path, verifies a loopback-only listener and confirms
-the expected served model ID. Optional private path overrides are
-`PHASE0_QWEN_MODEL` and `PHASE0_LLAMA_DIR`; their values never enter the public
-adapter artifacts.
-
-Run both conditions only from a clean, synchronized Jetson `main` branch:
-
-```bash
-export ROBOT_ENABLE_MOTION=0
-export SESSION_ID="$(date -u +%Y%m%dT%H%M%SZ)_phase1_llm_pilot"
-
-python3 -m experiments.phase1.run_llm_slice \
-  --condition llm_async \
-  --session-id "$SESSION_ID" \
-  --repetition 1
-
-python3 -m experiments.phase1.run_llm_slice \
-  --condition llm_stale \
-  --stale-observation-s 0.5 \
-  --session-id "$SESSION_ID" \
-  --repetition 1
-```
-
-Revalidate either completed run independently with:
-
-```bash
-python3 -m experiments.phase1.validate_llm_slice /path/to/run_dir
-```
-
-Each run must pass its lifecycle, fixed-identity, request-contract, token-usage,
-privacy, residency, cancellation-boundary, thread-closure and resource-coverage
-Gates. Session `20260901T143315Z_phase1_llm_pilot` completed both conditions on
-synchronized `main@6e83ede`. The Jetson and Windows validators and all fourteen
-per-run Gates passed. Reconstruct a two-condition session with:
-
-```bash
-python3 -m experiments.phase1.analyze_llm_pilot /path/to/session_dir \
-  --source-archive-sha256 889debda235c475ad70362980c6a85e90b9a4c782937f2bb5b0c128cecb0797e \
-  --json-output /path/to/analysis.json \
-  --markdown-output /path/to/README.md
-```
-
-Its independently derived
-[descriptive report](results/20260901T143315Z_phase1_llm_pilot/) records the
-archive and frozen identities, nominal consumption, stale rejection, token
-usage, server-residency boundary, observation control, probe continuity and
-resource coverage. The LLM component and G5 overall are satisfied. The separate
-G6 preregistration freezes the numerical thresholds, balanced order, sample
-size, exclusions and statistical methods. The two single-run durations and
-resource summaries remain descriptive; they do not establish performance
-superiority, cancellation latency, backend cancellation or heterogeneous
-inference.
-
-## G6 formal preregistration
-
-The G6 v4 confirmatory Phase 1 comparison is preserved in the amended
-[human-readable preregistration](../../docs/architecture/phase1-formal-preregistration.md)
-and the tracked
-[`phase1-g6-v4-preregistration.json`](formal/phase1-g6-v4-preregistration.json).
-The superseded v1, v2 and v3 JSON files remain tracked as
-[`phase1-g6-preregistration.json`](formal/phase1-g6-preregistration.json) and
-[`phase1-g6-v2-preregistration.json`](formal/phase1-g6-v2-preregistration.json),
-and
-[`phase1-g6-v3-preregistration.json`](formal/phase1-g6-v3-preregistration.json).
-Validate the machine-readable protocol with:
-
-```bash
-python3 -m experiments.phase1.formal_protocol --print-sha256
-```
-
-The expected SHA-256 is
-`84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054`.
-V4 was activated by the reviewed merge at `main@6904e5f`. The clean
-synchronized-`main` preflight rejected collection before that event. V3 remains
-closed and its partial collection was not reused or reclassified.
-
-The design fixes five sessions, six paired blocks per workload and session, 30
-pairs per workload and 180 measured runs overall. Every session uses each of the
-six workload orders once and balances sync-first and async-first order three
-times per workload. Its retained v2 matrix also balances each workload/block across
-sessions two/three, each workload/position five/five, and each measured
-preceding-workload context as closely as its even or odd count permits. Every
-session/block contains both pair orders. The asynchronous p95 per-run
-maximum-gap bound is 300 ms. The upper confidence bound for the geometric mean
-paired workload-performance ratio must not exceed `1.10`. Confidence intervals
-use 100,000 paired hierarchical bootstrap resamples with seed `20260902`.
-
-No post-hoc outlier exclusion, imputation, measured-run replacement or runtime
-reordering is permitted. Warm-ups and idle epochs are excluded only by their
-predeclared roles. Every planned attempt remains in the completion denominator,
-and lifecycle or safety failure prevents the overall formal claim.
-
-The formal tools load this exact protocol and refuse schedule, identity,
-threshold or analysis-method drift. The runner records one complete protocol
-session at a time beneath the ignored `experiments/runs/phase1-formal/` root.
-It requires a clean synchronized `main`, exact workload and service identities,
-dynamic DVFS, restarted model services, ten consecutive Tj samples no greater
-than 55 C, continuous 200 ms resource telemetry and `ROBOT_ENABLE_MOTION=0`.
-Each measured `formal_sync` call uses the inline same-thread probe; each
-`formal_async` call uses the one-worker bounded runtime and independent probe.
-Both VLM conditions retain the same spawned-process adapter. Every run binds
-the adapter record to a separate privacy-preserving result envelope. The Gates
-also enforce the expected ASR transcript identity, the frozen LLM request and
-token/residency facts, and VLM child reaping, spawned-process protocol `0.2.0`
-and the `Moondream -> confirmed unload -> Qwen` execution order.
-
-Collection `20260905T062312Z_phase1_formal_g6` stopped after its three ASR
-warm-ups and before the first LLM request, pre-measurement idle epoch or measured
-matrix. The formal task builder used the SHA-256 of an empty byte string where
-the frozen LLM contract requires the identity of an empty JSON history. The
-attempt remains diagnostic and is not retried or analyzed as formal evidence.
-The correction reuses the adapter's frozen empty-history constant and adds
-sync/async integration coverage with the real adapter boundary. It changes no
-protocol identity, schedule, threshold or analysis method. Formal collection
-therefore restarts from session 1 under a new collection identifier after the
-correction is reviewed on `main`.
-
-Collection `20260905T065922Z_phase1_formal_g6` then completed session 1's five
-warm-ups, two idle epochs and 36 measured invocations. Before any outcome
-analysis or subsequent session, the independent integrity check rejected the
-session because `resources.jsonl` stopped before the post-measurement idle
-interval ended. The final sample preceded that boundary by 170.607 ms, within
-the frozen 200 ms sampling period. The runner stopped the sampler immediately
-after the idle probe returned, allowing the most recent sample to precede the
-recorded finish boundary while still marking the manifest complete. The
-collection is retained unchanged as diagnostic evidence and is not analyzed or
-continued.
-The resource-tail correction requires a positive resource sample at or after the final
-activity boundary before sampler shutdown and makes absence of that sample an
-infrastructure failure. It changes no protocol identity, hypothesis, schedule,
-threshold or statistical method. Admissible collection again restarts from
-session 1 under a new identifier after review on `main`.
-
-A subsequent audit used only the serialized v1 order, not timing, resource,
-model-output or endpoint values. It found that the workload-order and shared
-condition-order cycles both reset at each session, repeating the same
-condition/predecessor relationship five times. G6 v2 therefore replaces only
-the condition-order matrix with the fixed cross-balanced schedule documented in
-the preregistration. It retains all sample sizes, inputs, conditions,
-environment constraints, thresholds, statistical methods, exclusions and
-stopping rules. Both v1 commissioning collections remain diagnostic and no v1
-run can enter the v2 analysis.
-
-Collection `20260905T140816Z_phase1_formal_g6_v2` was the first admissible v2
-attempt. It passed the frozen preflight, completed five warm-ups, the
-pre-measurement idle epoch and 12 measured runs, then stopped at measured
-ordinal 18. The VLM Qwen rewrite ran for 30029.203 ms at its 30 s client
-boundary, used the disallowed Argos fallback and failed
-`translation_route_verified`. The VLM child exited normally, llama-server
-cancelled the corresponding request and returned its slot to idle, all 3,558
-resource samples validated, and the maximum Tj was 55.093 C. The independently
-derived
-[failed-attempt report](results/20260905T140816Z_phase1_formal_g6_v2/)
-records 179 passed Gates and the single failure while retaining all raw model
-text, service logs and private paths outside Git.
-
-The recorded stage order placed the Moondream unload request after the failed
-Qwen rewrite and Argos fallback. This is a residency-order confound, not proof
-that residency caused the timeout. The implementation correction now requests
-Moondream unload before Qwen, records privacy-safe exception classes, and keeps
-cleanup on earlier failures. The process and summary schemas advance to `0.2.0`;
-the validator still reconstructs retained `0.1.0` pilot artifacts by their
-original contracts.
-
-Reconstruct the closed attempt from a private collection and service log with:
-
-```bash
-python3 -m experiments.phase1.analyze_formal_failure \
-  /path/to/20260905T140816Z_phase1_formal_g6_v2 \
-  --llama-log /path/to/phase1_formal_v2_llama.log \
-  --source-archive-sha256 0306a0c9e5e2746b9da37c15db3189c51cc131771d515dfe97d420b1f829a892 \
-  --llama-log-archive-sha256 67352addf8dcb67c57eeaa19cd5b5e90afd6e819bddeab42ed3d669e2af6ab40 \
-  --json-output /tmp/phase1-g6-v2-failure.json \
-  --markdown-output /tmp/phase1-g6-v2-failure.md
-```
-
-The default formal runner refuses further v2 collection. The failed attempt is
-not rerun or replaced, and the incomplete matrix is not used for performance
-estimation. The separate process-isolated fixed-input diagnostic
-`20260905T160805Z_phase1_vlm_residency_diag` completed both corrected Qwen paths
-in 18400.091 ms and 18864.649 ms. Both slice and process Gate sets passed, both
-children exited normally and the bound llama-server log contained no
-cancellation record. Its deterministic
-[residency-order report](results/20260905T160805Z_phase1_vlm_residency_diag/)
-binds both archive hashes while publishing no raw input, model text, log or
-private path.
-
-The diagnostic is one fixed-order run per lifecycle condition, so it does not
-establish residency causality or performance superiority. It supports retaining
-the existing 30 s timeout and freezing the corrected order for v3. No outcome
-value changed the schedule, hypotheses, sample size, thresholds or analysis.
-V3 subsequently started formal collection from session 1 on clean synchronized
-`main`.
-
-Reconstruct the diagnostic privately with:
-
-```bash
-python3 -m experiments.phase1.analyze_vlm_residency \
-  /path/to/20260905T160805Z_phase1_vlm_residency_diag \
-  --llama-log /path/to/phase1_vlm_residency_llama.log \
-  --source-archive-sha256 <collection-archive-sha256> \
-  --llama-log-archive-sha256 <log-archive-sha256> \
-  --json-output /tmp/phase1-vlm-residency.json \
-  --markdown-output /tmp/phase1-vlm-residency.md
-```
-
-Collection `20260906T055511Z_phase1_formal_g6_v3` was the first admissible v3
-attempt. It passed the frozen preflight, completed five warm-ups, the
-pre-measurement idle reference and four measured runs, then stopped at measured
-ordinal 10. The synchronous VLM Qwen rewrite ran for 30031.008 ms at its 30 s
-client boundary, used the Argos fallback and failed
-`translation_route_verified` and `residency_contract_verified`. The child
-completed process protocol `0.2.0` and exited normally. All five llama-server
-requests released their slots, no cancellation record was present, all 1,724
-resource samples validated, and maximum Tj was 55.812 C. The deterministic
-[v3 failed-attempt report](results/20260906T055511Z_phase1_formal_g6_v3/)
-records 97 passed and two failed Gates without publishing raw model text, logs
-or private paths.
-
-The failed server request completed in 30117.120 ms, 117.120 ms beyond the
-configured timeout. It had 10 more prompt tokens and 5 more generated tokens
-than the VLM warm-up request, but these two observations cannot establish why
-the boundary was crossed. The unload request returned before Qwen; actual Ollama
-unload completion is not observable. Neither prompt length nor residency is
-assigned as causal. A `multiprocessing.resource_tracker` semaphore warning was
-also observed on the operator console after runner failure. It was not retained
-in either hash-bound archive, did not fail a Gate, and is secondary to the
-recorded normal child-process closure.
-
-Reconstruct the closed v3 attempt from a private collection and service log with:
-
-```bash
-python3 -m experiments.phase1.analyze_formal_v3_failure \
-  /path/to/20260906T055511Z_phase1_formal_g6_v3 \
-  --llama-log /path/to/phase1_formal_g6_v3_llama.log \
-  --source-archive-sha256 601a097e5691264a663e88c07b9ea07e6c5b9bf7c3db4cbf6594ab3a14d41c69 \
-  --llama-log-archive-sha256 a18b253e477a18b5e09bd8fa1e928112e8f4d51f9a951779a00fbd009b308239 \
-  --json-output /tmp/phase1-g6-v3-failure.json \
-  --markdown-output /tmp/phase1-g6-v3-failure.md
-```
-
-Under the frozen rules this is a non-replaceable system-under-test result. V3
-is closed, no later session is collected, and the partial matrix does not enter
-confirmatory analysis. No v4 is implied as an automatic retry. The G6 success
-criterion is not met and the application slice is not authorized.
-
-Corrective work proceeds outside the closed protocol. Diagnostic
-`20260906T082627Z_phase1_vlm_timeout_diag` repeated the fixed input three times
-with temperature `0.0`, seed `20260906`, the existing model and output-token
-bounds, explicit Ollama process-list polling after unload, and a 60 s Qwen
-client timeout. All three Qwen calls completed in 21753.498, 10883.012 and
-10203.343 ms. Their request usage was consistently 164 prompt plus 32
-completion tokens; all three server tasks released normally, no cancellation
-was recorded, and maximum Tj was 54.062 C. The independently reconstructed
-[timeout-repair report](results/20260906T082627Z_phase1_vlm_timeout_diag/)
-publishes no raw prompt, model text, service log, telemetry or private path.
-
-This diagnostic used an inline harness that reproduced the proposed contract;
-it did not directly execute the modified repository adapter. It therefore
-supports the repair design but does not by itself validate the repository path.
-
-Reconstruct the diagnostic privately with:
-
-```bash
-python3 -m experiments.phase1.analyze_vlm_timeout_diagnostic \
-  /path/to/20260906T082627Z_phase1_vlm_timeout_diag \
-  --source-archive-sha256 fb76b78c0d54895ddcd44682dbc1fe688451444c9682c976ff9719b7f6740500 \
-  --json-output /tmp/phase1-vlm-timeout-diagnostic.json \
-  --markdown-output /tmp/phase1-vlm-timeout-diagnostic.md
-```
-
-Target validation `20260906T101723Z_phase1_vlm_timeout_repair_validation`
-then directly executed the modified `run_vlm_slice` path in the nominal and
-stale lifecycle conditions. Both independent validators returned `VALID`, all
-slice and process Gates passed, both Moondream unloads were confirmed, and both
-rewrites used Qwen. The Qwen stages completed in 23704.782 and 26854.584 ms;
-the llama-server log records two matching releases and no cancellation, timeout
-or error. The independently reconstructed
-[target-validation report](results/20260906T101723Z_phase1_vlm_timeout_repair_validation/)
-binds the transferred collection, service log and exact 11-file validation
-source bundle without publishing private paths or raw evidence.
-
-This validates the repair path but remains one fixed-order correctness run per
-condition, not formal sync/async evidence. G6 v3 remains closed and immutable.
-G6 v4 subsequently froze the repair while retaining the v3 scientific design
-and began a fresh collection from session 1 rather than reusing any v3 run.
-
-Reconstruct the target validation privately with:
-
-```bash
-python3 -m experiments.phase1.analyze_vlm_timeout_repair \
-  /path/to/20260906T101723Z_phase1_vlm_timeout_repair_validation \
-  --llama-log /path/to/validation_llama-server.log \
-  --source-bundle /path/to/phase1-vlm-qwen-timeout-validation-source.tar.gz \
-  --repository-root /path/to/repository \
-  --collection-archive-sha256 f8e4df5000f64cc26f18f03b92677b4f3f061433d6bed6ccb2a73ed7efae1b78 \
-  --llama-log-archive-sha256 64792cc3a8aaa32146ca617192390657699af7bf529b65311426270d867f11ea \
-  --source-bundle-sha256 e344b0461ac9f96d70f56f1561d8b5cd214487f5f75cd5a080b432bb8b5132e5 \
-  --json-output /tmp/phase1-vlm-timeout-repair.json \
-  --markdown-output /tmp/phase1-vlm-timeout-repair.md
-```
-
-## G6 v4 formal result
-
-Collection `20260907T051448Z_phase1_formal_g6_v4` completed all five planned
-sessions on `main@6904e5f`. Each session contained five warm-ups, two idle
-references and 36 measured runs, with more than 30 minutes and new Ollama and
-llama-server process identities between sessions. The analyzer validated all
-180 planned measured runs, 30 paired units per workload, 36,348 resource
-samples and every run Gate. There were no replacement attempts, stale-result
-consumptions, capacity violations, unreaped processes or unjoined threads.
-Maximum observed Tj was 57.406 C; physical motion remained disabled and UART
-was not accessed.
-
-All three workloads passed both responsiveness criteria. Their asynchronous
-p95 maximum gaps were 100.511 ms for ASR, 100.396 ms for LLM and 100.664 ms for
-VLM. The paired async-minus-sync gap confidence intervals were entirely below
-zero. However, the upper 95% confidence bounds for the paired geometric-mean
-workload-performance ratios were 2.8935, 1.1617 and 1.1841 respectively, all
-above the frozen `1.10` noninferiority margin. Under the preregistered
-intersection-union rule, every workload therefore failed and the overall G6
-decision is `FAIL`.
-
-The independently reconstructed
-[formal report](results/20260907T051448Z_phase1_formal_g6_v4/) binds the full
-collection, protocol and analysis hashes. A clean checkout of the recorded
-commit reproduced both analyzer outputs byte-for-byte on the target Python
-3.10.12 and NumPy 1.26.4 environment. This is valid negative evidence rather
-than an execution failure. V4 will not be rerun, extended, replaced,
-reclassified or evaluated with a post-hoc margin. G6 is not met, Phase 1 has not
-met its success Gate, and the application slice remains unauthorized.
-
-Reconstruct a private copy of the collection with:
-
-```bash
-python3 -m experiments.phase1.analyze_formal_runs \
-  /path/to/20260907T051448Z_phase1_formal_g6_v4 \
-  --json-output /tmp/phase1-g6-v4-analysis.json \
-  --markdown-output /tmp/phase1-g6-v4-analysis.md
-```
-
-## ASR/VLM carryover diagnostic
-
-The closed G6 v4 data show that position within each adjacent pair dominated
-the nominal sync/async condition. The next experiment therefore isolates one
-mechanism instead of changing the formal margin: after two ASR primers, run one
-`idle`, `llm` or `vlm` interposer and start measured ASR exactly 150 seconds
-after primer 2. Six sessions cover every condition order.
-
-The runner records continuous resources, four non-touching Whisper model-file
-residency snapshots per unit and sampled `/proc` counters for every ASR child.
-The analyzer reports within-session VLM-minus-idle and LLM-minus-idle contrasts
-without any formal pass/fail field. Protocol v2 excludes per-process filesystem
-input because the target kernel does not expose `/proc/<pid>/io`; both v1
-commissioning collections closed with zero completed units. See the
-[frozen design](../../docs/architecture/phase1-asr-vlm-carryover-diagnostic.md).
-
-Collection `20260908T072640Z_phase1_asr_vlm_carryover_v2` completed all six
-sessions and 18 units. Every invocation Gate and fixed interval passed, both
-model services changed identity between sessions, and 14,272 resource samples
-covered the run windows. The
-[derived report](results/20260908T072640Z_phase1_asr_vlm_carryover_v2/) records
-a 7.3440 geometric-mean VLM/idle ASR duration ratio, near-complete post-VLM
-Whisper page eviction and a +904.2 mean major-fault difference. The LLM active
-control did not show the same pattern. This is exploratory mechanism evidence;
-G6 v4 remains closed and Phase 2 remains unauthorized.
-
-Print and validate the tracked protocol with:
-
-```bash
+# Phase 1 Bounded Runtime Study
+
+Phase 1 investigates whether long-running ASR, LLM and VLM work can be removed
+from a time-constrained Jetson path without creating unbounded backlog,
+unaccounted work or obsolete results. It combines a host-testable runtime
+kernel with fixed-input Jetson experiments and independently reconstructed
+evidence.
+
+> 中文简介：Phase 1 研究本地长时推理与时限敏感任务之间的运行时边界。任务生命周期、
+> 队列容量、取消和结果新鲜度机制已实现，VLM、ASR、LLM 实模型正确性 Gate 已完成；
+> G6 v4 正式对照也已完成，但三个工作负载均未证明冻结的 10% 性能非劣效界限。因此
+> Phase 1 得到了有效阴性结果，整体成功 Gate 未通过，整机应用切片未获授权。
+
+## Final status
+
+| Work item | State |
+| --- | --- |
+| Host-only runtime and lifecycle replay | Complete |
+| Simulated-condition runner and Jetson telemetry path | Complete |
+| VLM, ASR and LLM correctness pilots | Complete; G5 closed |
+| Preregistered synchronous/asynchronous comparison | Complete under G6 v4 |
+| Lifecycle and software probe-responsiveness criteria | Passed for all three workloads |
+| Workload-performance noninferiority | Not established for ASR, LLM or VLM |
+| Overall Phase 1 success Gate | Not met |
+| Motion-disabled application slice | Not authorized |
+| ASR/VLM carryover mechanism follow-up | Complete; exploratory evidence only |
+
+The formal experiment is finished and will not be rerun, extended or evaluated
+with a changed margin. “Complete” therefore describes the research execution,
+not a successful G6 decision.
+
+## Research boundary
+
+Phase 1 tests three separate properties:
+
+1. **Lifecycle correctness:** every admitted task has bounded ownership and one
+   accountable terminal disposition.
+2. **Result validity:** cancelled, expired, superseded, mismatched or
+   old-generation results are rejected before consumption.
+3. **Timing and cost:** an independent 100 ms software probe remains responsive
+   and the same workload adapter does not exceed the frozen performance margin
+   when used through the asynchronous path.
+
+The runtime is not a hard-real-time scheduler. It reports observed periods,
+lateness, gaps and deadline misses without claiming a worst-case execution
+time or operating-system guarantee.
+
+## Implemented system
+
+### Runtime kernel
+
+The reusable package in
+[jetson/phase1_runtime/](../../jetson/phase1_runtime/) provides:
+
+- immutable task, result, state and payload-reference records;
+- bounded pending, active, result-mailbox and state-scope ownership;
+- reject-new, drop-oldest and coalesce-by-key overflow policies;
+- one non-daemon observable worker with cooperative cancellation and finite
+  join reports;
+- result freshness checks at publication and consumption;
+- inline and independent absolute-schedule probes;
+- schema-shaped append-only events.
+
+The kernel remains import-safe without a camera, microphone, serial device,
+Jetson models or NVIDIA utilities.
+
+### Experiment layer
+
+The current files in this directory are grouped by responsibility:
+
+| Responsibility | Main modules |
+| --- | --- |
+| Shared run artifacts | [manifest.py](manifest.py), [telemetry.py](telemetry.py), [jetson_telemetry.py](jetson_telemetry.py) |
+| Simulation and replay | [simulation.py](simulation.py), [run_simulation.py](run_simulation.py), [replay_lifecycle.py](replay_lifecycle.py) |
+| Jetson simulation pilot | [pilot.py](pilot.py), [run_jetson_pilot.py](run_jetson_pilot.py), [analyze_jetson_pilot.py](analyze_jetson_pilot.py) |
+| Fixed-input workloads | ASR, LLM and VLM adapter, preflight, slice, runner, validator and analyzer modules |
+| Formal G6 study | [formal_protocol.py](formal_protocol.py), [formal_preflight.py](formal_preflight.py), [formal_run.py](formal_run.py), [run_formal_session.py](run_formal_session.py), [analyze_formal_runs.py](analyze_formal_runs.py) |
+| Carryover study | [carryover_protocol.py](carryover_protocol.py), [carryover_preflight.py](carryover_preflight.py), [carryover_observation.py](carryover_observation.py), [run_carryover_session.py](run_carryover_session.py), [analyze_carryover_diagnostic.py](analyze_carryover_diagnostic.py) |
+| Machine-readable contracts | [formal/](formal/), [diagnostic/](diagnostic/) and [schemas/](schemas/) |
+| Host tests | [tests/](tests/) |
+| Public evidence | [results/](results/) |
+
+This flat experiment directory is retained in the documentation-only change.
+Its package restructuring and repeated workload plumbing are handled as a
+separate code refactor so import changes cannot be hidden inside a narrative
+edit.
+
+Real workload dependencies are imported lazily by explicit Jetson adapters.
+The experiment layer owns scheduling, run directories, manifests, validation
+and analysis; the runtime kernel owns broker mutations and executor lifecycle.
+
+## Evidence progression
+
+The work advanced through distinct evidence levels:
+
+- host tests established queue, ownership, cancellation and replay invariants;
+- simulated R0–R4 conditions exercised the measurement path without claiming
+  real-model timing behavior;
+- the Jetson simulation pilot validated preflight, telemetry and session
+  reconstruction on the target device;
+- fixed-input VLM, ASR and LLM pilots validated real adapter behavior, nominal
+  consumption, stale rejection and process cleanup, closing G5;
+- G6 v4 applied a frozen five-session paired design to the synchronous and
+  bounded asynchronous paths;
+- the carryover diagnostic investigated one mechanism suggested by the closed
+  formal evidence.
+
+The v2 and v3 formal attempts stopped under their predeclared system-under-test
+failure rules. Their partial evidence remains immutable and was not pooled with
+v4. Repair diagnostics were conducted outside the closed protocols before v4
+started from a new collection.
+
+All public reports, including failed attempts, are indexed in
+[experiments/README.md](../README.md).
+
+## G6 v4 result
+
+The final collection
+[20260907T051448Z_phase1_formal_g6_v4](results/20260907T051448Z_phase1_formal_g6_v4/)
+completed all five sessions and 180 planned measurements. Every run Gate,
+lifecycle criterion and asynchronous 100 ms probe-responsiveness endpoint
+passed.
+
+The upper 95% confidence bound of the paired workload-performance ratio
+exceeded the preregistered 1.10 limit for ASR, LLM and VLM. Because the
+intersection-union decision required every workload to pass every criterion,
+the overall G6 result is <code>FAIL</code> and no formal performance claim is
+permitted.
+
+This is failure to establish noninferiority, not evidence that every
+asynchronous invocation was slower. It is also not an execution failure: the
+complete dataset, Gates and independent reconstruction are valid.
+
+## Carryover finding
+
+The follow-up
+[ASR/VLM carryover diagnostic](results/20260908T072640Z_phase1_asr_vlm_carryover_v2/)
+covered all six orders of duration-matched idle, LLM and VLM work. It found a
+repeatable sequence after VLM:
+
+- the warmed Whisper model file was almost entirely non-resident;
+- the next ASR invocation incurred substantially more major faults and a large
+  cold-start delay;
+- an immediate recovery invocation returned to the warm latency range;
+- the idle and LLM controls did not reproduce the pattern.
+
+This identifies a plausible memory-residency mechanism behind the strong ASR
+position effect. It is configuration-specific exploratory evidence and does
+not alter, replace or reopen G6 v4.
+
+## Reproduction entry points
+
+Run the Phase 1 host suite from the repository root:
+
+~~~bash
+python3 -m unittest discover -s experiments/phase1/tests -t .
+~~~
+
+Check the tracked machine-readable protocols:
+
+~~~bash
+python3 -m experiments.phase1.formal_protocol
 python3 -m experiments.phase1.carryover_protocol
-```
+~~~
 
-## Planned implementation order
+The principal device entry points are:
 
-1. freeze the task, result, lifecycle, queue, cancellation, and freshness
-   contract — complete;
-2. implement and stress-test the host-only runtime kernel — complete;
-3. add the observable worker, periodic probe, Phase 1 event schema, and
-   independent trace replay — complete;
-4. implement the portable R0--R4 simulation protocol and run artifacts —
-   complete;
-5. implement and host-test Jetson preflight, continuous resource telemetry and
-   pilot session validation — complete;
-6. run and independently analyze the safe Jetson simulation pilot with
-   `ROBOT_ENABLE_MOTION=0` — complete;
-7. implement, run and independently analyze the fixed-input VLM correctness
-   slice — complete;
-8. record actual model-service listener bindings and qualify the simulated
-   thread-isolation result with real-workload evidence — complete;
-9. implement process-level VLM isolation and independently analyze its Jetson
-   correctness pilot — complete;
-10. extend the adapter/runtime boundary to ASR and LLM, then independently
-    analyze both Jetson correctness pilots — complete; G5 closed;
-11. preregister formal thresholds, balanced order, sample size, exclusions and
-    statistical methods — complete;
-12. implement and review the protocol-bound formal runner and independent
-    analyzer — complete;
-13. collect, validate and publish the formal synchronous/asynchronous comparison
-    — complete; v4 produced a valid negative result: responsiveness and
-    lifecycle passed, workload noninferiority and overall G6 failed;
-14. add an opt-in motion-disabled application slice after the research Gates
-    pass — not authorized because G6 v4 is closed with a failed decision.
+| Command module | Purpose |
+| --- | --- |
+| <code>experiments.phase1.run_jetson_pilot</code> | Motion-disabled simulated-condition Jetson session |
+| <code>experiments.phase1.run_vlm_slice</code> | Fixed-input VLM correctness slice |
+| <code>experiments.phase1.run_asr_slice</code> | Fixed-input ASR correctness slice |
+| <code>experiments.phase1.run_llm_slice</code> | Fixed-input LLM correctness slice |
+| <code>experiments.phase1.run_formal_session</code> | Protocol-bound G6 session |
+| <code>experiments.phase1.run_carryover_session</code> | Protocol-bound carryover session |
 
-Contract changes are reviewed before implementation, and the formal protocol
-is frozen before data collection.
+Do not start a device runner from this table alone. Each formal or diagnostic
+collection binds a repository state, protocol hash, model/service identity,
+session order, thermal rule and private input identity. Review the applicable
+contract and the command's <code>--help</code> output first.
 
 ## Safety rules
 
-Phase 1 automated tests and initial experiments:
+Phase 1 tests and experiments:
 
-- do not import or call `jetson.robot_comm`;
-- do not open `/dev/ttyTHS1`;
-- refuse to run if physical motion is enabled or the motion setting is
-  unrecognized;
-- do not require the STM32, motor power, or the assembled chassis;
-- do not modify Phase 0 schemas, run directories, reports, or archives;
-- use a new Phase 1 schema and ignored run root;
-- keep raw audio, images, prompts, model outputs, and private paths out of event
-  details.
+- refuse to run when <code>ROBOT_ENABLE_MOTION</code> is true or unrecognized;
+- do not import or call <code>jetson.robot_comm</code>,
+  <code>jetson.motion_planner</code> or <code>jetson.app</code>;
+- do not open <code>/dev/ttyTHS1</code>;
+- do not require the STM32, motor power or assembled chassis;
+- do not modify Phase 0 schemas, run directories, reports or archives;
+- store new raw artifacts only under ignored Phase 1 paths;
+- keep raw inputs, prompts, model outputs, service logs and private paths out
+  of public event details.
 
-Any violation stops the experiment regardless of its performance result.
+Any safety, protocol, environment, artifact or lifecycle violation invalidates
+the affected run regardless of its timing.
 
-## Code boundary
+## Evidence model
 
-The reusable, hardware-independent kernel lives under
-`jetson/phase1_runtime/`. The current experiment-specific files are:
+Console output is not treated as sufficient evidence. A complete study binds:
 
-```text
-experiments/phase1/
-├── analyze_asr_pilot.py
-├── analyze_formal_failure.py
-├── analyze_formal_runs.py
-├── analyze_vlm_timeout_diagnostic.py
-├── analyze_vlm_timeout_repair.py
-├── analyze_vlm_residency.py
-├── analyze_llm_pilot.py
-├── analyze_vlm_pilot.py
-├── asr_adapter.py
-├── asr_preflight.py
-├── asr_slice.py
-├── formal/
-│   ├── phase1-g6-preregistration.json
-│   ├── phase1-g6-v2-preregistration.json
-│   ├── phase1-g6-v3-preregistration.json
-│   └── phase1-g6-v4-preregistration.json
-├── formal_protocol.py
-├── formal_preflight.py
-├── formal_run.py
-├── jetson_preflight.py
-├── jetson_telemetry.py
-├── llm_adapter.py
-├── llm_preflight.py
-├── llm_slice.py
-├── manifest.py
-├── pilot.py
-├── replay_lifecycle.py
-├── run_asr_slice.py
-├── run_formal_session.py
-├── run_jetson_pilot.py
-├── run_llm_slice.py
-├── run_simulation.py
-├── run_vlm_slice.py
-├── schemas/
-│   ├── event.schema.json
-│   └── resource.schema.json
-├── simulation.py
-├── summarize_asr_slice.py
-├── summarize_llm_slice.py
-├── summarize_run.py
-├── summarize_vlm_process_slice.py
-├── summarize_vlm_slice.py
-├── tests/
-├── telemetry.py
-├── validate_asr_slice.py
-├── validate_jetson_pilot.py
-├── validate_llm_slice.py
-├── validate_run.py
-├── validate_vlm_slice.py
-├── vlm_adapter.py
-├── vlm_preflight.py
-├── vlm_process_adapter.py
-├── vlm_slice.py
-└── README.md
-```
+- a reviewed human-readable contract and machine-readable protocol;
+- fail-closed environment and input preflight;
+- atomic manifests and artifact hashes;
+- append-only schedule or lifecycle records;
+- continuous resource and thermal sampling;
+- validators that operate on completed artifacts;
+- an independent analyzer that reconstructs the declared endpoints;
+- a claim-bounded public report and derived JSON.
 
-The pilot analyzers validate ignored raw sessions and produce tracked,
-deterministic derivatives under `results/`. Raw sessions remain outside Git.
+Raw sessions remain under ignored <code>experiments/runs/</code>; complete
+archives and service logs remain private. Published results contain no raw
+audio, images, prompts, model text or local filesystem paths.
 
-The experiment layer owns condition scheduling, run directories, manifests,
-validation and summaries. The executor continues to own all traced broker
-mutations, while result consumption remains explicit so result-mailbox
-capacity and the second freshness check stay measurable.
+## Next decision
 
-The kernel package must remain import-safe on a host without Jetson models,
-camera, microphone, serial device, or NVIDIA tools. Real workload dependencies
-are imported lazily only by their explicit Jetson experiment adapters.
+The next experiment should test a narrowly defined Whisper-residency mitigation
+or post-VLM rewarm policy, including the policy's own latency, memory and power
+cost. Its endpoints and stopping rules must be frozen before confirmatory
+collection. Broader resource arbitration and live application integration
+follow only if a new Gate explicitly authorizes them.
 
-## Evidence standard
+Encoder feedback, closed-loop PWM and full mecanum control are separate research
+questions and remain outside this runtime study.
 
-Phase 1 correctness is not established by console output or runtime counters
-alone. `replay_lifecycle.py` reconstructs the append-only event trace without
-importing runtime classes and proves:
+## Reference documents
 
-- queue and result-mailbox bounds were respected;
-- each admitted task reached exactly one final disposition;
-- cancellation and state changes produced legal transitions;
-- no stale, cancelled, superseded, or mismatched result was consumed;
-- shutdown closed all live lifecycle locations;
-- event sequence and monotonic timestamps remained valid.
-
-Replay uses an explicit trace profile. A probe-only condition cannot pass as a
-runtime trace, an inline probe cannot claim a worker join, and a runtime-plus-
-probe condition must close both lifecycles.
-
-Pilot runs are descriptive. Numerical success thresholds, sample sizes,
-condition order, exclusions, and statistical methods are frozen before formal
-data collection.
+- [Research roadmap](../../docs/research-roadmap.md)
+- [Architecture overview](../../docs/architecture/README.md)
+- [Phase 1 runtime contract](../../docs/architecture/phase1-runtime-contract.md)
+- [G6 formal preregistration](../../docs/architecture/phase1-formal-preregistration.md)
+- [ASR/VLM carryover design](../../docs/architecture/phase1-asr-vlm-carryover-diagnostic.md)
+- [Experiment and result index](../README.md)

@@ -1,14 +1,21 @@
 # System Architecture
 
-This page documents the architecture of the hardware-validated thesis baseline and the changes planned for the next research stage. Current behavior and proposed work are kept separate so that later measurements can be compared with the tagged baseline.
+This page separates the hardware-validated thesis architecture from the Phase 1
+research runtime and the next candidate resource-management boundary. The
+synchronous application remains the reproducible robot baseline; the
+experimental runtime has not replaced it.
 
-> 中文简介：本页说明“章鱼号”当前同步运行链路的时序边界、已知限制，以及下一阶段异步推理与实时控制研究的架构设想。前半部分描述已经验证的现状，后半部分是尚待实现和评测的研究计划。
+> 中文简介：本页只描述三类边界：已验证的同步整机架构、Phase 1 已实现的实验运行时，以及
+> 尚待验证的资源管理方向。Phase 1 的正式成功 Gate 未通过，因此异步运行时尚未接入整机
+> 应用。
 
-## Current synchronous baseline
+## Hardware-validated baseline
 
-The Jetson application is a single Python process. It moves through wake-word detection, recording, ASR and one selected task before returning to the wake-word loop.
+The Jetson application is one Python process. It moves through wake-word
+detection, recording, ASR and one selected task before returning to the
+wake-word loop.
 
-```mermaid
+~~~mermaid
 flowchart LR
     Mic["USB microphone"] --> KWS["sherpa-onnx KWS"]
     KWS --> Record["ALSA recording"]
@@ -24,168 +31,136 @@ flowchart LR
     UART <--> STM32["STM32 protocol and chassis layer"]
     STM32 --> PWM["20 kHz PWM + direction outputs"]
     Encoders["Four quadrature encoders"] --> STM32
-```
+~~~
 
-Dialogue and vision-language inference run in local services, but calls from the application are blocking. Moondream is stopped after a scene-description request so that its unified-memory allocation can be reclaimed before later work. The color-target routine also blocks the speech loop until it arrives, times out or fails.
+Dialogue and scene-description services are local, but the application waits
+for their responses synchronously. The color-target routine also owns the
+speech loop until it arrives, times out or fails.
 
-The STM32 runs independently of Jetson inference. Its main loop polls USART3, while a TIM13 interrupt samples encoders and advances the command watchdog every 10 ms. Motor PWM is generated in hardware by TIM8.
+The STM32 executes independently of Jetson inference. Its main loop parses
+USART3 frames, TIM13 samples encoders and advances the command watchdog every
+10 ms, and TIM8 generates motor PWM in hardware.
 
 ## Timing domains
 
-| Domain | Baseline timing | Role |
+| Domain | Baseline timing | Responsibility |
 | --- | --- | --- |
-| Jetson conversation pipeline | event-driven and blocking | KWS, recording, ASR, dialogue/VLM and TTS |
-| Jetson color controller | nominal 100 ms loop | target detection and discrete motion decision |
-| Jetson command refresh | at most 300 ms between unchanged commands | keep the STM32 watchdog alive during tracking |
-| STM32 periodic interrupt | 10 ms | encoder update, heartbeat and watchdog tick |
-| STM32 command timeout | about 1.2 s | stop motors after loss of valid commands |
-| Motor PWM | 20 kHz | four TB6612FNG drive channels |
+| Jetson conversation path | Event-driven and blocking | KWS, recording, ASR, dialogue/VLM and TTS |
+| Jetson color controller | Nominal 100 ms loop | Target detection and discrete motion decision |
+| Jetson command refresh | At most 300 ms between unchanged commands | Keep the STM32 watchdog alive during tracking |
+| STM32 periodic interrupt | 10 ms | Encoder update, heartbeat and watchdog tick |
+| STM32 command timeout | About 1.2 s | Stop motors after loss of valid commands |
+| Motor PWM | 20 kHz | Four driver channels |
 
-These values are configuration targets, not a claim of measured worst-case timing on the Jetson. The Python loop can be delayed by camera I/O, operating-system scheduling and serial response waits.
+These are configuration targets, not measured Jetson worst-case guarantees.
+Camera I/O, model calls, Python execution and operating-system scheduling can
+delay the high-level loop.
 
-## Data and control boundaries
+## Data, control and safety boundaries
 
-| Boundary | Owner | Current contract |
+| Boundary | Owner | Contract |
 | --- | --- | --- |
-| Raw audio and camera frames | Jetson process | consumed synchronously; runtime files remain local |
-| Model state and requests | llama.cpp / Ollama / whisper.cpp | process or HTTP interfaces managed outside the application |
-| Motion decision | Jetson | one of `forward`, `backward`, `turn_left`, `turn_right`, `search`, `stop` |
-| Motion frame validation | STM32 | strict `<direction>,<speed>\n` parser with `A/E` response |
-| Motor stop on communication loss | STM32 | independent 1.2 s valid-command watchdog |
-| Encoder samples | STM32 | calculated every 10 ms but not yet used for closed-loop PWM |
+| Raw audio and camera frames | Jetson application | Consumed locally; runtime files are not published |
+| Model state and requests | whisper.cpp, llama.cpp and Ollama | Managed through subprocess or loopback HTTP interfaces |
+| Motion decision | Jetson application | One discrete direction and speed command |
+| Frame validation | STM32 | Strict line parser with <code>A</code>/<code>E</code> response |
+| Communication-loss stop | STM32 | Independent valid-command watchdog |
+| Physical-motion opt-in | Jetson configuration | Disabled by default; invalid settings fail closed |
+| Encoder samples | STM32 | Updated every 10 ms; not yet part of closed-loop PWM |
 
-The UART protocol is documented separately in [`protocol/README.md`](../../protocol/README.md).
+The wire contract is documented in
+[protocol/README.md](../../protocol/README.md). Phase 1 experiments do not
+import the chassis communication path, open <code>/dev/ttyTHS1</code> or
+require motor power.
 
-## Baseline limitations
+## Phase 1 research runtime
 
-The synchronous design was sufficient for the thesis demonstration, but it leaves several problems for the next stage:
+Phase 1 introduced a hardware-independent path for fixed-input systems
+experiments. It makes ownership and validity observable rather than assuming
+that moving work to a thread is sufficient.
 
-- a slow model request blocks new speech interaction and other high-level work;
-- captured data and inference results do not carry timestamps or validity deadlines;
-- there is no bounded queue, backpressure, cancellation or stale-result policy;
-- local model services compete for CPU, GPU and unified memory without a scheduler;
-- control-loop jitter and end-to-end command latency are printed informally rather than recorded as experiment data;
-- encoder feedback is observed but is not part of the motor control law;
-- safety is split between explicit Jetson stop commands, a software motion-enable flag and the STM32 timeout, without a unified supervisor state machine.
-
-## Planned asynchronous architecture
-
-The next implementation will preserve the STM32 safety boundary while separating Jetson work by timing requirement.
-
-```mermaid
+~~~mermaid
 flowchart LR
-    Sensors["Audio + camera acquisition"] -->|"timestamped samples"| Queues["Bounded queues"]
-    Queues --> Fast["Fast perception / control worker"]
-    Queues --> Slow["ASR, LLM and VLM workers"]
-    Slow -->|"result + source time + deadline"| Fusion["Task state and result validation"]
-    Fast --> Supervisor["Motion and safety supervisor"]
-    Fusion --> Supervisor
-    Supervisor -->|"rate-limited commands"| Link["UART transport"]
-    Link <--> MCU["STM32 real-time execution and watchdog"]
-    Metrics["Latency, jitter, resource and power recorder"] -.-> Sensors
-    Metrics -.-> Fast
-    Metrics -.-> Slow
-    Metrics -.-> Supervisor
-```
+    Submit["Task + state generation + deadline"] --> Broker["Bounded broker"]
+    Broker --> Worker["Single observable executor"]
+    Worker --> Adapter["Simulated or real workload adapter"]
+    Adapter --> Mailbox["Bounded result mailbox"]
+    Mailbox --> Check["Freshness and state check"]
+    Check --> Consume["Explicit consumption or rejection"]
+    Probe["100 ms absolute-schedule probe"] -.-> Worker
+    Trace["Append-only events + resource telemetry"] -.-> Broker
+    Trace -.-> Worker
+    Trace -.-> Check
+~~~
 
-The first experiments will address these questions:
+The implemented boundary includes:
 
-1. How much do separate workers and bounded queues reduce control jitter while ASR, LLM or VLM inference is active?
-2. When should an inference result be cancelled or rejected because its source observation is stale?
-3. Which CPU/GPU scheduling and model-residency policy gives the best latency–memory–power trade-off on an 8 GB Jetson?
-4. Which safety actions must remain on the STM32, and which supervisory states belong on the Jetson?
-5. How does encoder feedback change approach accuracy and stopping repeatability compared with the open-loop thesis baseline?
+- immutable task, result, state and payload-reference records;
+- bounded pending, active and accepted-result ownership;
+- explicit cancellation, terminal states and finite worker shutdown;
+- state generations and freshness checks before both publication and
+  consumption;
+- independent lifecycle replay from schema-validated events;
+- a periodic probe and continuous Jetson resource sampling;
+- simulated and fixed-input VLM, ASR and LLM adapters;
+- fail-closed session protocols, manifests, validators and independent
+  analyzers.
 
-The proposed task model, lifecycle invariants, queue policies, cancellation
-semantics, and Phase 1 safety Gates are specified in the
-[Phase 1 runtime contract](phase1-runtime-contract.md). That document is a
-design and correctness boundary. The host-only model, bounded broker,
-observable worker, periodic probe, lifecycle replay and simulated-condition
-runner are implemented. The Jetson preflight, continuous resource sampler and
-pilot-session validator have also completed one motion-disabled simulation
-pilot on the Jetson. The independently reconstructed
-[descriptive result](../../experiments/phase1/results/20260828T121142Z_phase1_jetson_pilot/)
-validates the evidence chain and runtime semantics, but it is not a real-model
-or formal performance result. The fixed-input VLM adapter has since completed
-one nominal/stale correctness pilot on the Jetson. Its independently derived
-[report](../../experiments/phase1/results/20260830T073825Z_phase1_vlm_pilot/)
-confirms stale-result rejection while also recording module-import-scale gaps
-in the threaded periodic probe. The subsequent implementation moved the VLM
-adapter call into a spawned child process while the broker, freshness authority and
-periodic probe remain in the parent. Its independently derived
-[process-pilot report](../../experiments/phase1/results/20260830T122541Z_phase1_vlm_process_reaping/)
-records normally reaped children and no skipped probe releases in either
-condition. The earlier thread session recorded 148 skipped releases, but the
-cross-session single-run contrast remains descriptive, so timing isolation is
-still not claimed. Phase 1D now has a fixed-input ASR path that supervises the
-native `whisper-cli` subprocess, retains FIFO utterance semantics, stops and
-reaps the child after state invalidation, and records only transcript identity.
-Its independently derived
-[Jetson correctness report](../../experiments/phase1/results/20260831T140705Z_phase1_asr_pilot_v2/)
-closes the ASR component of G5. The fixed-input LLM HTTP slice preserves the
-one-active/one-pending conversation boundary, records response identity and
-token counts only, and does not claim that state invalidation stops the blocking
-client wait or the externally managed llama-server. Its independently derived
-[Jetson correctness report](../../experiments/phase1/results/20260901T143315Z_phase1_llm_pilot/)
-records valid nominal consumption and stale rejection. The VLM, ASR and LLM
-components are therefore complete and G5 is closed. The reviewed
-[G6 formal preregistration](phase1-formal-preregistration.md) fixes the formal
-thresholds, order, sample size, exclusions, statistical method, five-session
-paired-block schedule and activation boundary. A protocol-bound session runner
-and independent analyzer implement that frozen design with fail-closed
-environment, ordering, lifecycle, artifact and statistical checks. The first v2
-formal attempt stopped at measured ordinal 18
-when the VLM Qwen rewrite reached its 30 s client timeout and used the
-disallowed Argos route. Its
-[failed-attempt report](../../experiments/phase1/results/20260905T140816Z_phase1_formal_g6_v2/)
-verifies the preserved artifact, ledger, lifecycle, telemetry and service-log
-evidence. V2 is closed without a confirmatory claim. The subsequent
-[residency-order diagnostic](../../experiments/phase1/results/20260905T160805Z_phase1_vlm_residency_diag/)
-validated the corrected Qwen path in both lifecycle conditions without
-authorizing a causal or performance claim. G6 v3 retained the v2 design and 30 s
-timeout while binding the corrected order and spawned-process protocol `0.2.0`.
-Its first formal attempt stopped at measured ordinal 10 when the synchronous VLM
-Qwen request crossed the client boundary and the fallback route failed two
-system-under-test Gates. The independently reconstructed
-[v3 failed-attempt report](../../experiments/phase1/results/20260906T055511Z_phase1_formal_g6_v3/)
-binds the archive and service-log identities without publishing raw evidence.
-V3 will not be rerun or replaced; its incomplete matrix supports no formal
-sync/async comparison. G6 is not met and the application slice is not
-authorized. A later
-[timeout-repair diagnostic](../../experiments/phase1/results/20260906T082627Z_phase1_vlm_timeout_diag/)
-completed three deterministic, unload-confirmed Qwen requests within a 60 s
-client boundary while retaining the llama-server arguments. It supports the
-candidate repair contract, not a formal result. The later
-[target validation](../../experiments/phase1/results/20260906T101723Z_phase1_vlm_timeout_repair_validation/)
-directly executed the modified repository adapter in both lifecycle conditions.
-Both unload confirmations, Qwen routes, slice/process Gate sets and child
-closures passed. G6 v4 retained the complete v3 scientific design and froze the
-validated deterministic request, 60 s Qwen timeout and bounded positive unload
-confirmation. Its completed
-[formal comparison](../../experiments/phase1/results/20260907T051448Z_phase1_formal_g6_v4/)
-contains all 180 planned measured runs from a fresh five-session collection;
-no v3 run was reused or reclassified. All run, lifecycle and responsiveness
-criteria passed, but ASR, LLM and VLM each failed the frozen 10%
-workload-performance noninferiority criterion. The overall G6 decision failed.
-V4 is closed without rerun or post-hoc threshold change, Phase 1 has not met its
-success Gate, and the application slice remains unauthorized.
+The reusable kernel is in
+[jetson/phase1_runtime/](../../jetson/phase1_runtime/). Experiment orchestration
+is in [experiments/phase1/](../../experiments/phase1/). The full semantic
+contract remains in
+[phase1-runtime-contract.md](phase1-runtime-contract.md).
 
-The follow-up
-[ASR/VLM carryover diagnostic](phase1-asr-vlm-carryover-diagnostic.md) completed
-all six orders of a duration-matched idle, LLM and VLM experiment. Its
-[derived result](../../experiments/phase1/results/20260908T072640Z_phase1_asr_vlm_carryover_v2/)
-isolates post-VLM Whisper page eviction and the next ASR cold-start cost. This
-exploratory diagnostic remains outside G6 v4 and cannot alter its decision.
+## What the architecture evidence means
 
-## Evaluation plan
+The completed G6 v4 comparison showed that the asynchronous path met the frozen
+lifecycle and software probe-responsiveness criteria. It did not establish the
+workload-performance noninferiority margin for ASR, LLM or VLM. This means
+control-flow isolation worked at the tested boundary, but it was not sufficient
+to authorize application integration.
 
-Future experiments should record at least:
+The later carryover diagnostic identified a shared-resource path that the
+runtime did not manage: VLM work nearly eliminated warmed Whisper model-file
+residency, so the next ASR invocation incurred storage-backed page faults and a
+cold-start delay. The
+[formal result](../../experiments/phase1/results/20260907T051448Z_phase1_formal_g6_v4/)
+and
+[carryover result](../../experiments/phase1/results/20260908T072640Z_phase1_asr_vlm_carryover_v2/)
+retain the numerical evidence and limitations.
 
-- sensor capture time, inference start/end time and result age at consumption;
-- control-loop period, jitter, deadline misses and UART round-trip time;
-- command refresh gaps and watchdog-triggered stops;
-- CPU, GPU and unified-memory usage by workload;
-- end-to-end task latency and target-approach success/stopping error;
-- power consumption where the available instrumentation permits it.
+## Next candidate boundary
 
-The tagged thesis code remains the comparison point. Scheduling and communication changes will be introduced incrementally. Physical motion will remain disabled by default, and the existing UART and watchdog tests will be repeated whenever either boundary changes.
+The next architecture study should add an explicit, measurable residency policy
+around the existing workload adapters before connecting the runtime to live
+robot tasks.
+
+~~~mermaid
+flowchart LR
+    Requests["Bounded workload requests"] --> Policy["Residency and resource policy"]
+    Policy --> ASR["ASR process"]
+    Policy --> LLM["LLM service"]
+    Policy --> VLM["VLM service"]
+    ASR --> Observe["Latency, residency, faults, memory and power"]
+    LLM --> Observe
+    VLM --> Observe
+    Observe --> Policy
+~~~
+
+Candidate policies must account for their own rewarm time, memory pressure and
+power cost. A new frozen comparison is required before choosing a policy or
+authorizing a motion-disabled application slice.
+
+Only after that Gate passes should live acquisition, inference and supervision
+be separated into timestamped bounded lanes. The STM32 watchdog remains the
+independent last line of defense. Encoder feedback and full mecanum kinematics
+belong to a later control study and should not be added to the resource
+experiment.
+
+## Reference documents
+
+- [Research roadmap](../research-roadmap.md)
+- [Phase 1 runtime contract](phase1-runtime-contract.md)
+- [G6 formal preregistration](phase1-formal-preregistration.md)
+- [ASR/VLM carryover design](phase1-asr-vlm-carryover-diagnostic.md)
+- [Experiment and evidence index](../../experiments/README.md)
