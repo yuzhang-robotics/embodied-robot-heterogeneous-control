@@ -6,16 +6,19 @@ import sys
 import tempfile
 import time
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from experiments.phase1.carryover_protocol import DEFAULT_PROTOCOL_PATH
 from experiments.phase1.jetson_telemetry import TegrastatsSampler
 from experiments.phase1.run_carryover_session import (
     CarryoverSessionError,
+    make_run_id,
     run_session,
     validate_fixed_interval,
     validate_primer_2,
 )
+from experiments.phase1.telemetry import EventRecorder
 from experiments.phase1.tests.carryover_fixture import passing_carryover_preflight
 from jetson.phase1_runtime import PayloadRef
 
@@ -60,6 +63,20 @@ def run_record(
 
 
 class CarryoverRunnerTests(unittest.TestCase):
+    def test_run_id_is_accepted_by_event_recorder(self) -> None:
+        run_id = make_run_id(
+            "asr",
+            1,
+            datetime(2026, 9, 7, 16, 58, 53, tzinfo=timezone.utc),
+        )
+        self.assertEqual(
+            run_id,
+            "20260907T165853Z_phase1_carryover_asr_001",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            recorder = EventRecorder(Path(temporary), run_id)
+            recorder.close()
+
     def test_primer_and_fixed_interval_fail_closed(self) -> None:
         primer = run_record(1, 2_000_000_001, duration_ms=2_000.0)
         self.assertEqual(validate_primer_2(primer), 2_000.0)

@@ -96,6 +96,28 @@ def make_collection_id(now: datetime | None = None) -> str:
     )
 
 
+def make_run_id(
+    workload: str,
+    ordinal: int,
+    now: datetime | None = None,
+) -> str:
+    """Build one UTC-correlated run ID accepted by the event recorder."""
+
+    if workload not in {"asr", "llm", "vlm"}:
+        raise ValueError(f"unsupported carryover workload: {workload}")
+    if (
+        isinstance(ordinal, bool)
+        or not isinstance(ordinal, int)
+        or not 1 <= ordinal <= 999
+    ):
+        raise ValueError("ordinal must be between 1 and 999")
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    stamp = current.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return f"{stamp}_phase1_carryover_{workload}_{ordinal:03d}"
+
+
 def _artifact_inventory(session_dir: Path) -> dict[str, object]:
     paths = sorted(
         path
@@ -241,7 +263,7 @@ def _run_invocation(
     if run_dir.exists():
         raise FileExistsError(f"refusing to overwrite diagnostic invocation: {run_dir}")
     run_dir.mkdir(parents=True)
-    run_id = f"carryover-u{unit_index:02d}-{ordinal:03d}-{workload}-{diagnostic_role}"
+    run_id = make_run_id(workload, ordinal)
     recorder = EventRecorder(run_dir, run_id)
     timeout = _TIMEOUTS[workload]
     role = "warmup" if diagnostic_role.startswith("primer") else "measured"
