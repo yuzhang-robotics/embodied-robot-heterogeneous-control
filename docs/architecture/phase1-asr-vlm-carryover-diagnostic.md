@@ -9,10 +9,20 @@ formal result. It also does not authorize the application slice or Phase 2.
 > 都未能证明冻结的 10% 非劣效界限。本诊断用于验证 ASR 与 VLM 之间的模型驻留干扰，
 > 不修改或重开 v4，也不产生新的正式通过/失败判定。
 
-The machine-readable contract is
-[`phase1-asr-vlm-carryover-v1.json`](../../experiments/phase1/diagnostic/phase1-asr-vlm-carryover-v1.json),
-protocol ID `phase1-asr-vlm-carryover-diagnostic-v1`, SHA-256
-`7b12b83d8a08699107e4776ba40a43ce86dafaceb2bffaf8d785d224301092ee`.
+The active machine-readable contract is
+[`phase1-asr-vlm-carryover-v2.json`](../../experiments/phase1/diagnostic/phase1-asr-vlm-carryover-v2.json),
+protocol ID `phase1-asr-vlm-carryover-diagnostic-v2`, SHA-256
+`7382293989c684c2c796f5e9243247efd1c56fd7a66193fb6d020aabe554cd12`.
+
+Version 1 remains preserved at its original hash. Commissioning collections
+`20260907T165849Z_phase1_asr_vlm_carryover_v1` and
+`20260908T063621Z_phase1_asr_vlm_carryover_v1` both closed with zero completed
+units. The first exposed an invalid event run ID before the first primer. The
+second reached the first primer and established that the target kernel does not
+expose `/proc/<pid>/io`; treating that unavailable file as mandatory rejected
+every otherwise readable process sample. Version 2 removes only filesystem
+input from the required observation set. The question, inputs, schedule,
+session count, timing boundaries and planned contrasts are unchanged.
 
 ## Motivation
 
@@ -69,8 +79,9 @@ Continuous `tegrastats` sampling runs at 200 ms. At four unit boundaries the
 runner records `MemAvailable`, `Cached`, `SReclaimable` and Whisper model-file
 resident pages using a non-touching `mmap` plus `mincore` observation. Each ASR
 child is sampled through Linux `/proc` for user/system time, high-water RSS,
-minor/major faults, filesystem-read bytes and context switches. Fixed-input
-identities, output correctness and lifecycle Gates remain enforced.
+minor/major faults and context switches. The target kernel does not expose
+per-process filesystem input. Fixed-input identities, output correctness and
+lifecycle Gates remain enforced.
 
 Raw audio, images, prompts, model responses, private paths, service logs and run
 archives remain outside Git.
@@ -79,10 +90,10 @@ archives remain outside Git.
 
 The primary within-session contrasts are measured-ASR duration ratio `vlm / idle`,
 post-interposer resident-fraction difference `vlm - idle`, and measured-ASR
-fault/read differences `vlm - idle`. The same `llm - idle` contrasts are
-secondary. The report exposes all units and descriptive aggregates.
+fault differences `vlm - idle`. The same `llm - idle` contrasts are secondary.
+The report exposes all units and descriptive aggregates.
 
 No diagnostic artifact may contain a formal claim field. The result can justify
 a narrowly scoped repair and a later, newly preregistered comparison, but it
-cannot make v4 pass. Phase 1 closes successfully only if that new formal
-comparison independently passes all frozen Gates.
+cannot make v4 pass. G6 v4 remains a closed negative result; this diagnostic is
+reported independently of the completed Phase 1 study.

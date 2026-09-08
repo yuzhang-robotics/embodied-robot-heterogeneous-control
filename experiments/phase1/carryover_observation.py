@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Callable, Mapping, cast
 
 
-OBSERVATION_SCHEMA_VERSION = "0.1.0"
+OBSERVATION_SCHEMA_VERSION = "0.2.0"
 _MEMINFO_FIELDS = ("MemAvailable", "Cached", "SReclaimable")
 
 
@@ -265,7 +265,6 @@ def read_process_counters(
             ),
         )
         status = (root / "status").read_text(encoding="ascii", errors="strict")
-        io_text = (root / "io").read_text(encoding="ascii", errors="strict")
     except (OSError, UnicodeError) as exc:
         raise ObservationError("could not read live process counters") from exc
     resolved_page_size = _positive_integer(
@@ -279,7 +278,6 @@ def read_process_counters(
         "major_faults": stat["major_faults"],
         "rss_bytes": cast(int, stat["rss_pages"]) * resolved_page_size,
         "high_water_rss_bytes": _named_integer(status, "VmHWM", suffix="kB") * 1024,
-        "filesystem_read_bytes": _named_integer(io_text, "read_bytes"),
         "voluntary_context_switches": _named_integer(status, "voluntary_ctxt_switches"),
         "involuntary_context_switches": _named_integer(
             status, "nonvoluntary_ctxt_switches"
@@ -392,7 +390,6 @@ class ObservedProcessFactory:
             "maximum_rss_bytes": max(
                 cast(int, item.get("high_water_rss_bytes", 0)) for item in self._samples
             ),
-            "filesystem_read_bytes": last.get("filesystem_read_bytes"),
             "voluntary_context_switches": last.get("voluntary_context_switches"),
             "involuntary_context_switches": last.get("involuntary_context_switches"),
             "pid_recorded": False,
@@ -409,7 +406,6 @@ def validate_process_observation(value: Mapping[str, object]) -> None:
         "minor_faults",
         "major_faults",
         "maximum_rss_bytes",
-        "filesystem_read_bytes",
         "voluntary_context_switches",
         "involuntary_context_switches",
     )

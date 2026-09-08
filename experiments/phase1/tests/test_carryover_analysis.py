@@ -56,7 +56,7 @@ def observation(resident_fraction: float, monotonic_ns: int) -> dict[str, object
     }
 
 
-def process_observation(faults: int, reads: int) -> dict[str, object]:
+def process_observation(faults: int) -> dict[str, object]:
     return {
         "observation_schema_version": OBSERVATION_SCHEMA_VERSION,
         "method": "sampled_linux_proc",
@@ -69,7 +69,6 @@ def process_observation(faults: int, reads: int) -> dict[str, object]:
         "minor_faults": faults,
         "major_faults": faults // 10,
         "maximum_rss_bytes": 100_000,
-        "filesystem_read_bytes": reads,
         "voluntary_context_switches": 3,
         "involuntary_context_switches": 2,
         "pid_recorded": False,
@@ -81,7 +80,7 @@ class CarryoverAnalysisTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.collection = (
-            Path(self.temporary.name) / "fixture_phase1_asr_vlm_carryover_v1"
+            Path(self.temporary.name) / "fixture_phase1_asr_vlm_carryover_v2"
         )
         self.collection.mkdir()
         protocol = load_protocol()
@@ -139,8 +138,7 @@ class CarryoverAnalysisTests(unittest.TestCase):
                         },
                         "asr_process_observation": (
                             process_observation(
-                                {"idle": 100, "llm": 120, "vlm": 1_000}[condition],
-                                {"idle": 0, "llm": 0, "vlm": 50_000}[condition],
+                                {"idle": 100, "llm": 120, "vlm": 1_000}[condition]
                             )
                             if workload == "asr"
                             else None

@@ -167,7 +167,7 @@ class CarryoverRunnerTests(unittest.TestCase):
             args = argparse.Namespace(
                 session_index=1,
                 attempt=1,
-                collection_id="20260907T000000Z_phase1_asr_vlm_carryover_v1",
+                collection_id="20260907T000000Z_phase1_asr_vlm_carryover_v2",
                 protocol=DEFAULT_PROTOCOL_PATH,
                 output_root=Path(temp_dir),
                 asr_input=Path("fixture-asr"),

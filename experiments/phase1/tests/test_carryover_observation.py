@@ -124,7 +124,6 @@ class CarryoverObservationTests(unittest.TestCase):
                 "nonvoluntary_ctxt_switches:\t4\n",
                 encoding="ascii",
             )
-            (proc / "io").write_text("read_bytes: 4096\n", encoding="ascii")
             counters = read_process_counters(
                 123,
                 proc_root=temp_dir,
@@ -133,7 +132,7 @@ class CarryoverObservationTests(unittest.TestCase):
             )
         self.assertEqual(counters["rss_bytes"], 7 * 4096)
         self.assertEqual(counters["high_water_rss_bytes"], 8 * 1024)
-        self.assertEqual(counters["filesystem_read_bytes"], 4096)
+        self.assertNotIn("filesystem_read_bytes", counters)
 
     def test_process_observation_rejects_missing_or_invalid_metrics(self) -> None:
         report = {
@@ -148,7 +147,6 @@ class CarryoverObservationTests(unittest.TestCase):
             "minor_faults": 2,
             "major_faults": 0,
             "maximum_rss_bytes": 10,
-            "filesystem_read_bytes": 0,
             "voluntary_context_switches": 1,
             "involuntary_context_switches": 1,
             "pid_recorded": False,

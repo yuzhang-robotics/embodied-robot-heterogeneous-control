@@ -35,7 +35,7 @@ from experiments.phase1.run_carryover_session import (
 )
 
 
-CARRYOVER_ANALYSIS_SCHEMA_VERSION = "0.1.0"
+CARRYOVER_ANALYSIS_SCHEMA_VERSION = "0.2.0"
 CARRYOVER_ANALYSIS_KIND = "phase1_asr_vlm_carryover_diagnostic"
 _CONDITIONS = ("idle", "llm", "vlm")
 
@@ -250,7 +250,6 @@ def _analyze_unit(session_dir: Path, path: Path, condition: str) -> dict[str, ob
                 "minor_faults",
                 "major_faults",
                 "maximum_rss_bytes",
-                "filesystem_read_bytes",
                 "voluntary_context_switches",
                 "involuntary_context_switches",
                 "sample_count",
@@ -273,7 +272,6 @@ def _contrast(
     residency_differences: list[float] = []
     minor_fault_differences: list[int] = []
     major_fault_differences: list[int] = []
-    filesystem_read_differences: list[int] = []
     per_session: list[dict[str, object]] = []
     for session in sessions:
         units = session["units"]
@@ -304,14 +302,10 @@ def _contrast(
         major_difference = int(selected_process["major_faults"]) - int(
             idle_process["major_faults"]
         )
-        read_difference = int(selected_process["filesystem_read_bytes"]) - int(
-            idle_process["filesystem_read_bytes"]
-        )
         duration_ratios.append(ratio)
         residency_differences.append(residency_difference)
         minor_fault_differences.append(minor_difference)
         major_fault_differences.append(major_difference)
-        filesystem_read_differences.append(read_difference)
         per_session.append(
             {
                 "session": session["session"],
@@ -319,7 +313,6 @@ def _contrast(
                 "resident_fraction_difference": residency_difference,
                 "minor_fault_difference": minor_difference,
                 "major_fault_difference": major_difference,
-                "filesystem_read_bytes_difference": read_difference,
             }
         )
     return {
@@ -345,10 +338,6 @@ def _contrast(
         "major_fault_difference": {
             "mean": statistics.fmean(major_fault_differences),
             "median": statistics.median(major_fault_differences),
-        },
-        "filesystem_read_bytes_difference": {
-            "mean": statistics.fmean(filesystem_read_differences),
-            "median": statistics.median(filesystem_read_differences),
         },
     }
 
@@ -539,19 +528,17 @@ def render_markdown(analysis: Mapping[str, object]) -> str:
         residency = contrast["resident_fraction_difference"]
         minor = contrast["minor_fault_difference"]
         major = contrast["major_fault_difference"]
-        reads = contrast["filesystem_read_bytes_difference"]
         assert all(
             isinstance(item, Mapping)
-            for item in (duration, residency, minor, major, reads)
+            for item in (duration, residency, minor, major)
         )
         rows.append(
-            "| `{}` | {:.4f} | {:+.6f} | {:+.1f} | {:+.1f} | {:+.1f} |".format(
+            "| `{}` | {:.4f} | {:+.6f} | {:+.1f} | {:+.1f} |".format(
                 name.replace("_vs_idle", ""),
                 float(duration["geometric_mean"]),
                 float(residency["mean"]),
                 float(minor["mean"]),
                 float(major["mean"]),
-                float(reads["mean"]),
             )
         )
     return "\n".join(
@@ -571,8 +558,8 @@ def render_markdown(analysis: Mapping[str, object]) -> str:
             "",
             "## Paired descriptive contrasts",
             "",
-            "| Interposer | ASR duration ratio vs idle | Post-interposer resident fraction difference | Minor-fault difference | Major-fault difference | Filesystem-read difference (bytes) |",
-            "| --- | ---: | ---: | ---: | ---: | ---: |",
+            "| Interposer | ASR duration ratio vs idle | Post-interposer resident fraction difference | Minor-fault difference | Major-fault difference |",
+            "| --- | ---: | ---: | ---: | ---: |",
             *rows,
             "",
             "The duration ratio is the geometric mean of the six within-session ratios. Other columns are means of within-session differences.",

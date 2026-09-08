@@ -9,11 +9,15 @@ from pathlib import Path
 from typing import Mapping
 
 
-CARRYOVER_PROTOCOL_SCHEMA_VERSION = "0.1.0"
-CARRYOVER_PROTOCOL_ID = "phase1-asr-vlm-carryover-diagnostic-v1"
+CARRYOVER_V1_PROTOCOL_ID = "phase1-asr-vlm-carryover-diagnostic-v1"
+CARRYOVER_V1_PROTOCOL_SHA256 = (
+    "7b12b83d8a08699107e4776ba40a43ce86dafaceb2bffaf8d785d224301092ee"
+)
+CARRYOVER_PROTOCOL_SCHEMA_VERSION = "0.2.0"
+CARRYOVER_PROTOCOL_ID = "phase1-asr-vlm-carryover-diagnostic-v2"
 CARRYOVER_PROTOCOL_STATUS = "active"
 CARRYOVER_PROTOCOL_SHA256 = (
-    "7b12b83d8a08699107e4776ba40a43ce86dafaceb2bffaf8d785d224301092ee"
+    "7382293989c684c2c796f5e9243247efd1c56fd7a66193fb6d020aabe554cd12"
 )
 CARRYOVER_SESSION_COUNT = 6
 INTERPOSER_INTERVAL_S = 150.0
@@ -21,7 +25,7 @@ PRIMER_WARM_MAX_MS = 5_000.0
 START_LATENESS_MAX_MS = 250.0
 RESOURCE_INTERVAL_MS = 200
 DEFAULT_PROTOCOL_PATH = (
-    Path(__file__).resolve().parent / "diagnostic" / "phase1-asr-vlm-carryover-v1.json"
+    Path(__file__).resolve().parent / "diagnostic" / "phase1-asr-vlm-carryover-v2.json"
 )
 INTERPOSERS = ("idle", "llm", "vlm")
 
@@ -39,6 +43,12 @@ def expected_protocol() -> dict[str, object]:
         "schema_version": CARRYOVER_PROTOCOL_SCHEMA_VERSION,
         "protocol_id": CARRYOVER_PROTOCOL_ID,
         "status": CARRYOVER_PROTOCOL_STATUS,
+        "supersedes": {
+            "protocol_id": CARRYOVER_V1_PROTOCOL_ID,
+            "protocol_sha256": CARRYOVER_V1_PROTOCOL_SHA256,
+            "reason": "target_kernel_does_not_expose_proc_pid_io",
+            "completed_units": 0,
+        },
         "source_result": {
             "protocol_id": "phase1-g6-fixed-input-sync-async-v4",
             "protocol_sha256": (
@@ -94,10 +104,10 @@ def expected_protocol() -> dict[str, object]:
                 "maximum_rss",
                 "minor_faults",
                 "major_faults",
-                "filesystem_input",
                 "voluntary_context_switches",
                 "involuntary_context_switches",
             ],
+            "unavailable_on_target": ["filesystem_input"],
             "raw_input_recorded": False,
             "raw_model_text_recorded": False,
             "private_paths_recorded": False,

@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import copy
+import json
 import unittest
 
 from experiments.phase1.carryover_protocol import (
     CARRYOVER_PROTOCOL_ID,
     CARRYOVER_PROTOCOL_SHA256,
+    CARRYOVER_V1_PROTOCOL_ID,
+    CARRYOVER_V1_PROTOCOL_SHA256,
+    DEFAULT_PROTOCOL_PATH,
     diagnostic_orders,
     expected_protocol,
     load_protocol,
@@ -16,6 +20,13 @@ from experiments.phase1.carryover_protocol import (
 
 
 class CarryoverProtocolTests(unittest.TestCase):
+    def test_v1_protocol_is_preserved_at_its_original_hash(self) -> None:
+        path = DEFAULT_PROTOCOL_PATH.with_name("phase1-asr-vlm-carryover-v1.json")
+        protocol = json.loads(path.read_text(encoding="utf-8"))
+
+        self.assertEqual(protocol["protocol_id"], CARRYOVER_V1_PROTOCOL_ID)
+        self.assertEqual(protocol_sha256(protocol), CARRYOVER_V1_PROTOCOL_SHA256)
+
     def test_tracked_protocol_is_exact_and_has_six_permutations(self) -> None:
         protocol = load_protocol()
 

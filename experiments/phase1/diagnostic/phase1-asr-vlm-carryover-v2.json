@@ -1,0 +1,108 @@
+{
+  "analysis": {
+    "formal_pass_fail_field_permitted": false,
+    "primary_contrasts": [
+      "measured_asr_duration_ratio_vlm_over_idle",
+      "post_interposer_resident_fraction_difference_vlm_minus_idle",
+      "measured_asr_fault_difference_vlm_minus_idle"
+    ],
+    "secondary_contrasts": [
+      "measured_asr_duration_ratio_llm_over_idle",
+      "post_interposer_resident_fraction_difference_llm_minus_idle",
+      "measured_asr_fault_difference_llm_minus_idle"
+    ]
+  },
+  "claim_boundary": {
+    "exploratory_only": true,
+    "formal_evidence": false,
+    "g6_v4_reopening_permitted": false,
+    "phase2_authorized": false
+  },
+  "design": {
+    "interposer_interval_s": 150.0,
+    "interposers": [
+      "idle",
+      "llm",
+      "vlm"
+    ],
+    "measured_asr_count_per_unit": 1,
+    "measured_start_lateness_max_ms": 250.0,
+    "primer_2_warm_max_ms": 5000.0,
+    "primer_count": 2,
+    "primary_question": "asr_carryover_after_vlm_vs_duration_matched_idle",
+    "recovery_asr_count_per_unit": 1,
+    "reprime_asr_each_unit": true,
+    "resource_interval_ms": 200,
+    "restart_model_services_each_session": true,
+    "sessions": [
+      {
+        "interposer_order": ["idle", "llm", "vlm"],
+        "session": "session-01"
+      },
+      {
+        "interposer_order": ["idle", "vlm", "llm"],
+        "session": "session-02"
+      },
+      {
+        "interposer_order": ["llm", "idle", "vlm"],
+        "session": "session-03"
+      },
+      {
+        "interposer_order": ["llm", "vlm", "idle"],
+        "session": "session-04"
+      },
+      {
+        "interposer_order": ["vlm", "idle", "llm"],
+        "session": "session-05"
+      },
+      {
+        "interposer_order": ["vlm", "llm", "idle"],
+        "session": "session-06"
+      }
+    ]
+  },
+  "observations": {
+    "asr_process": [
+      "user_time",
+      "system_time",
+      "maximum_rss",
+      "minor_faults",
+      "major_faults",
+      "voluntary_context_switches",
+      "involuntary_context_switches"
+    ],
+    "boundaries": [
+      "before_primers",
+      "after_primer_2",
+      "after_interposer",
+      "after_measured_asr"
+    ],
+    "fixed_inputs": ["asr", "llm", "vlm"],
+    "memory": ["MemAvailable", "Cached", "SReclaimable"],
+    "private_paths_recorded": false,
+    "raw_input_recorded": false,
+    "raw_model_text_recorded": false,
+    "unavailable_on_target": ["filesystem_input"],
+    "whisper_model_residency": "non_touching_mmap_mincore"
+  },
+  "protocol_id": "phase1-asr-vlm-carryover-diagnostic-v2",
+  "safety": {
+    "llama_n_gpu_layers": 10,
+    "motion_required": false,
+    "uart_access_permitted": false
+  },
+  "schema_version": "0.2.0",
+  "source_result": {
+    "collection_id": "20260907T051448Z_phase1_formal_g6_v4",
+    "decision": "closed_negative_result",
+    "protocol_id": "phase1-g6-fixed-input-sync-async-v4",
+    "protocol_sha256": "84da36aa9b4a804ecc5692b12902321e42254f707463d1a5937e7049ffa0d054"
+  },
+  "status": "active",
+  "supersedes": {
+    "completed_units": 0,
+    "protocol_id": "phase1-asr-vlm-carryover-diagnostic-v1",
+    "protocol_sha256": "7b12b83d8a08699107e4776ba40a43ce86dafaceb2bffaf8d785d224301092ee",
+    "reason": "target_kernel_does_not_expose_proc_pid_io"
+  }
+}

@@ -864,7 +864,9 @@ after primer 2. Six sessions cover every condition order.
 The runner records continuous resources, four non-touching Whisper model-file
 residency snapshots per unit and sampled `/proc` counters for every ASR child.
 The analyzer reports within-session VLM-minus-idle and LLM-minus-idle contrasts
-without any formal pass/fail field. See the
+without any formal pass/fail field. Protocol v2 excludes per-process filesystem
+input because the target kernel does not expose `/proc/<pid>/io`; both v1
+commissioning collections closed with zero completed units. See the
 [frozen design](../../docs/architecture/phase1-asr-vlm-carryover-diagnostic.md).
 
 Print and validate the tracked protocol with:

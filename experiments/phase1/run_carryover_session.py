@@ -56,7 +56,7 @@ from experiments.phase1.vlm_process_adapter import ProcessIsolatedVLMAdapter
 
 
 CARRYOVER_SESSION_SCHEMA_VERSION = "0.1.0"
-CARRYOVER_RUN_SCHEMA_VERSION = "0.1.0"
+CARRYOVER_RUN_SCHEMA_VERSION = "0.2.0"
 DEFAULT_OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "runs" / "phase1-carryover"
 DEFAULT_ASR_INPUT = (
     Path(__file__).resolve().parents[1]
@@ -75,7 +75,7 @@ DEFAULT_VLM_INPUT = (
     / "vlm"
     / "c100-camera-product.jpg"
 )
-_COLLECTION_RE = re.compile(r"^[0-9]{8}T[0-9]{6}Z_phase1_asr_vlm_carryover_v1$")
+_COLLECTION_RE = re.compile(r"^[0-9]{8}T[0-9]{6}Z_phase1_asr_vlm_carryover_v2$")
 _TIMEOUTS = {
     "asr": {"validity": 180.0, "completion": 150.0, "join": 10.0},
     "llm": {"validity": 180.0, "completion": 150.0, "join": 130.0},
@@ -92,7 +92,7 @@ def make_collection_id(now: datetime | None = None) -> str:
     if current.tzinfo is None:
         raise ValueError("now must be timezone-aware")
     return current.astimezone(timezone.utc).strftime(
-        "%Y%m%dT%H%M%SZ_phase1_asr_vlm_carryover_v1"
+        "%Y%m%dT%H%M%SZ_phase1_asr_vlm_carryover_v2"
     )
 
 
