@@ -6,10 +6,10 @@ acting on obsolete results. It began as a complete bachelor's thesis system;
 the research work keeps that working baseline intact and introduces new
 runtime mechanisms only through measured, reviewable stages.
 
-> 中文简介：本页集中说明项目从本科毕设基线到异步运行时研究的演进。当前 Phase 1
-> 已完成运行时语义、实模型正确性验证和正式对照，但未通过冻结的工作负载性能非劣效
-> Gate，因此不会直接进入整机异步应用。后续首先研究 VLM 引起的模型页驱逐和资源仲裁，
-> 再决定是否重新评估应用集成。
+> 中文简介：本页集中说明项目从本科毕设基线到异步运行时研究的演进。Phase 1 已正式
+> 关闭：运行时语义、实模型正确性验证和正式对照均已完成，但未通过冻结的工作负载
+> 性能非劣效 Gate，因此不会直接进入整机异步应用。后续工作属于新的研究阶段，首先
+> 评审 VLM 引起的模型页驱逐和资源管理问题，再决定是否开展新的正式实验。
 
 ## Research question
 
@@ -40,7 +40,7 @@ answer:
 | Phase 1 runtime kernel | Can slow work have bounded ownership, cancellation and freshness semantics? | Immutable task/result model, bounded broker, observable worker, lifecycle replay and periodic probe | Makes asynchronous behavior testable instead of relying on threads and console timing |
 | Phase 1 Jetson pilots | Do the runtime contracts survive real model paths? | Simulation pilot plus VLM, ASR and LLM correctness pilots; process isolation added for VLM | Closed G5 and exposed where host simulations did not represent Python import and process behavior |
 | G6 formal comparison | Does the bounded asynchronous path preserve responsiveness without unacceptable workload cost? | G6 v4 completed in full; lifecycle and responsiveness passed, but workload-performance noninferiority was not established | Provides a valid negative result and prevents unsupported application claims |
-| Carryover diagnostic | What caused the large ASR position effect seen around VLM work? | Six-session diagnostic isolated near-complete loss of warmed Whisper file residency after VLM, followed by storage-backed page faults and repeatable next-invocation ASR cold starts | Converts an unexplained formal effect into a focused systems hypothesis for the next study |
+| Phase 1 closing diagnostic | What caused the large ASR position effect seen around VLM work? | Six-session diagnostic isolated near-complete loss of warmed Whisper file residency after VLM, followed by storage-backed page faults and repeatable next-invocation ASR cold starts | Converts an unexplained formal effect into a focused systems hypothesis for a separate next study |
 
 The detailed, immutable evidence for each Jetson study is indexed in
 [`experiments/README.md`](../experiments/README.md). The thesis implementation
@@ -87,12 +87,17 @@ The current repository supports two statements:
 
 The follow-up carryover experiment is exploratory mechanism evidence. It does
 not reopen G6 v4, convert the negative result into a pass or establish a general
-Jetson memory-management claim.
+Jetson memory-management claim. Phase 1 is closed with this valid negative
+decision; an unmet success Gate is part of the result, not unfinished data
+collection.
 
-## Next research direction
+## Candidate Phase 2 boundary
 
-The next study should address the observed resource mechanism before expanding
-the robot application. Its scope should remain narrow:
+Phase 2 is a provisional name for a new residency-aware resource-management
+study; it is not an extension or rerun of Phase 1 and is not yet active. Before
+implementation or data collection, it requires a reviewed research question,
+new machine-readable protocol, new collection identity and new Gate. Its scope
+should remain narrow:
 
 1. define a model-residency policy that is observable and bounded, such as a
    post-VLM ASR rewarm or an explicit residency-management rule;
@@ -105,7 +110,7 @@ the robot application. Its scope should remain narrow:
 5. proceed to broader CPU/GPU/unified-memory arbitration only if the focused
    mechanism is repeatable.
 
-An application slice becomes reasonable only after a new Gate explicitly
+An application slice becomes reasonable only after that new Gate explicitly
 authorizes it. Later work can then connect timestamped acquisition, bounded
 inference lanes and a safety supervisor to the live robot while preserving the
 STM32 watchdog. Encoder feedback, closed-loop wheel-speed control and full

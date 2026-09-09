@@ -13,7 +13,7 @@ tracks protocols, validators, analyzers and privacy-preserving derived results.
 | Study | Purpose | Current state |
 | --- | --- | --- |
 | [`phase0/`](phase0/) | Measure fixed-input synchronous ASR, LLM and VLM workloads on the target Jetson | Complete baseline tooling and formal-analysis path |
-| [`phase1/`](phase1/) | Evaluate bounded task ownership, lifecycle, freshness, responsiveness and workload cost | Formal comparison complete; overall success Gate not met |
+| [`phase1/`](phase1/) | Evaluate bounded task ownership, lifecycle, freshness, responsiveness and workload cost | Closed with a valid negative formal result; overall success Gate not met |
 
 Phase 0 establishes workload identities and the synchronous reference. Phase 1
 reuses those identities so that an architecture comparison does not silently
@@ -55,6 +55,10 @@ as a sequence of interchangeable trials.
 Failed attempts and diagnostics are retained because they answer different
 questions. They are not pooled with the confirmatory v4 dataset, and the
 carryover result does not alter the closed G6 decision.
+
+This index is the frozen public record of Phase 1. New mitigation experiments
+must use a new stage, protocol and result namespace rather than appending runs
+to any Phase 1 collection.
 
 ## Data boundary
 

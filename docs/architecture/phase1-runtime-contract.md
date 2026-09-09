@@ -57,8 +57,8 @@ met its success Gate, and the application slice remains unauthorized.
 
 ## Status
 
-- Phase: incomplete after the valid negative G6 v4 result; formal comparison
-  complete but success Gate not met; application slice not authorized
+- Phase: closed after the valid negative G6 v4 result and closing carryover
+  diagnostic; success Gate not met; application slice not authorized
 - Contract status: frozen through independently validated Jetson simulation,
   thread/process VLM pilots, and fixed-input ASR and LLM correctness pilots
 - VLM-pilot result: `main@aebd1a2`, session
@@ -1324,10 +1324,14 @@ The original completion boundary required:
 6. at least one opt-in, motion-disabled application slice uses the validated
    runtime while the synchronous baseline remains available.
 
-Items 1 through 5 are complete. Item 6 remains unsatisfied and unauthorized
-because its G6 prerequisite did not pass. The complete v4 comparison is valid
-negative evidence: it passed responsiveness and lifecycle criteria but did not
-establish workload noninferiority for any workload. The closed result is not an
-automatic-retry trigger. Phase 1 therefore has a completed formal experiment
-but has not met its success Gate, and the motion-disabled application slice must
-not begin.
+Items 1 through 5 are complete. Item 6 was not attempted and remains
+unauthorized because its G6 prerequisite did not pass. The complete v4
+comparison is valid negative evidence: it passed responsiveness and lifecycle
+criteria but did not establish workload noninferiority for any workload. The
+closed result is not an automatic-retry trigger.
+
+Phase 1 is therefore closed without meeting its success Gate. Item 6 is retired
+from this phase rather than left as pending work, and the motion-disabled
+application slice must not begin under a Phase 1 identity. Any residency
+mitigation, new comparison or later application slice requires a separately
+reviewed stage, protocol, collection identity and Gate.

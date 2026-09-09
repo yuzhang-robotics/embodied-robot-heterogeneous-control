@@ -6,6 +6,9 @@ unaccounted work or obsolete results. It combines a host-testable runtime
 kernel with fixed-input Jetson experiments and independently reconstructed
 evidence.
 
+Phase 1 is closed. Its final formal comparison is a valid negative result, and
+the later carryover diagnostic is the closing exploratory mechanism study.
+
 > 中文简介：Phase 1 研究本地长时推理与时限敏感任务之间的运行时边界。任务生命周期、
 > 队列容量、取消和结果新鲜度机制已实现，VLM、ASR、LLM 实模型正确性 Gate 已完成；
 > G6 v4 正式对照也已完成，但三个工作负载均未证明冻结的 10% 性能非劣效界限。因此
@@ -24,6 +27,7 @@ evidence.
 | Overall Phase 1 success Gate | Not met |
 | Motion-disabled application slice | Not authorized |
 | ASR/VLM carryover mechanism follow-up | Complete; exploratory evidence only |
+| Phase 1 research stage | Closed; no rerun, extension or application slice |
 
 The formal experiment is finished and will not be rerun, extended or evaluated
 with a changed margin. “Complete” therefore describes the research execution,
@@ -216,13 +220,15 @@ Raw sessions remain under ignored <code>experiments/runs/</code>; complete
 archives and service logs remain private. Published results contain no raw
 audio, images, prompts, model text or local filesystem paths.
 
-## Next decision
+## Post-Phase 1 boundary
 
-The next experiment should test a narrowly defined Whisper-residency mitigation
-or post-VLM rewarm policy, including the policy's own latency, memory and power
-cost. Its endpoints and stopping rules must be frozen before confirmatory
-collection. Broader resource arbitration and live application integration
-follow only if a new Gate explicitly authorizes them.
+Any next experiment belongs to a separate research stage. A candidate study
+would test a narrowly defined Whisper-residency mitigation or post-VLM rewarm
+policy, including the policy's own latency, memory and power cost. Its question,
+control, endpoints, stopping rules, protocol identity and Gate must be reviewed
+and frozen before implementation or confirmatory collection. Broader resource
+arbitration and live application integration follow only if that new Gate
+explicitly authorizes them.
 
 Encoder feedback, closed-loop PWM and full mecanum control are separate research
 questions and remain outside this runtime study.
