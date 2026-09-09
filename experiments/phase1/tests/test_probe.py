@@ -26,6 +26,13 @@ class RecordingSink:
             return sum(event.event == name for event in self.events)
 
 
+class FatalSink(RecordingSink):
+    def emit(self, event: RuntimeEvent) -> None:
+        if event.event == "probe.tick":
+            raise SystemExit("private event sink exit")
+        super().emit(event)
+
+
 class ProbeTests(unittest.TestCase):
     def wait_for(self, predicate, *, timeout_s: float = 1.0) -> None:
         deadline = time.monotonic() + timeout_s
@@ -102,6 +109,40 @@ class ProbeTests(unittest.TestCase):
         details = " ".join(str(dict(event.details)) for event in sink.events)
         self.assertNotIn("unbounded private", details)
         self.assertEqual(sink.count("probe.failed"), 1)
+
+    def test_probe_base_exception_is_bounded_and_observable(self) -> None:
+        sink = RecordingSink()
+
+        def exit_callback() -> None:
+            raise SystemExit("private probe exit must not escape the thread")
+
+        probe = PeriodicProbe(
+            period_ns=1_000_000,
+            work=exit_callback,
+            event_sink=sink,
+        )
+        probe.start()
+        self.wait_for(lambda: not probe.is_alive)
+        report = probe.stop(join_timeout_s=1.0)
+
+        self.assertTrue(report.joined)
+        self.assertEqual(report.error_code, "probe_systemexit")
+        details = " ".join(str(dict(event.details)) for event in sink.events)
+        self.assertNotIn("private probe exit", details)
+        self.assertEqual(sink.count("probe.failed"), 1)
+
+    def test_event_sink_base_exception_does_not_escape_stop(self) -> None:
+        sink = FatalSink()
+        probe = PeriodicProbe(period_ns=1_000_000, event_sink=sink)
+        probe.start()
+        self.wait_for(lambda: not probe.is_alive)
+
+        report = probe.stop(join_timeout_s=1.0)
+
+        self.assertTrue(report.joined)
+        self.assertEqual(report.error_code, "probe_event_sink_systemexit")
+        details = " ".join(str(dict(event.details)) for event in sink.events)
+        self.assertNotIn("private event sink exit", details)
 
     def test_stop_interrupts_wait_for_a_distant_release(self) -> None:
         sink = RecordingSink()

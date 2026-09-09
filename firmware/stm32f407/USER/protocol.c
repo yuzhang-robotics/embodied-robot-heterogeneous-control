@@ -6,6 +6,7 @@
 
 static char rx_buf[UART_RX_BUF_SIZE];
 static uint16_t rx_index = 0;
+static uint8_t rx_discard_until_newline = 0;
 
 static uint8_t ParseSpeed(const char *s, int *speed)
 {
@@ -80,8 +81,19 @@ void Protocol_PollReceive(void)
 {
     uint8_t ch;
 
-    if (USART3_ReadByteNonBlocking(&ch))
+    while (USART3_ReadByteNonBlocking(&ch))
     {
+        if (rx_discard_until_newline)
+        {
+            if (ch == '\n')
+            {
+                rx_discard_until_newline = 0;
+                rx_index = 0;
+                memset(rx_buf, 0, sizeof(rx_buf));
+            }
+            continue;
+        }
+
         if (ch == '\n')
         {
             rx_buf[rx_index] = '\0';
@@ -102,6 +114,7 @@ void Protocol_PollReceive(void)
             {
                 rx_index = 0;
                 memset(rx_buf, 0, sizeof(rx_buf));
+                rx_discard_until_newline = 1;
                 USART3_SendString("E\n");
             }
         }

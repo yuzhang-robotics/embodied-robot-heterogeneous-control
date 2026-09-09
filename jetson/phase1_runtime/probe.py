@@ -178,14 +178,25 @@ class PeriodicProbe:
         status: EventStatus,
         details: dict[str, str | int | float | bool | None],
     ) -> None:
-        self._event_sink.emit(
-            RuntimeEvent(
-                event=event,
-                component="probe",
-                status=status,
-                details=details,
-            )
+        observation = RuntimeEvent(
+            event=event,
+            component="probe",
+            status=status,
+            details=details,
         )
+        try:
+            self._event_sink.emit(observation)
+        except BaseException as exc:
+            error_name = type(exc).__name__.lower()
+            error_code = "probe_event_sink_" + "".join(
+                character if character.isalnum() else "_"
+                for character in error_name
+            )
+            with self._lock:
+                if self._error_code is None:
+                    self._error_code = error_code[:64]
+            self._event_sink = NullEventSink()
+            raise RuntimeError("periodic probe event sink failed") from exc
 
     def _wait_until(self, target_ns: int) -> bool:
         while True:
@@ -274,13 +285,14 @@ class PeriodicProbe:
                         self._max_gap_ns = max(self._max_gap_ns, tick.actual_period_ns)
                 previous_started = started
                 index += 1
-        except Exception as exc:
+        except BaseException as exc:
             error_name = type(exc).__name__.lower()
             error_code = "probe_" + "".join(
                 character if character.isalnum() else "_" for character in error_name
             )
             with self._lock:
-                self._error_code = error_code[:64]
+                if self._error_code is None:
+                    self._error_code = error_code[:64]
             try:
                 self._emit(
                     "probe.failed",
@@ -290,7 +302,7 @@ class PeriodicProbe:
                         "thread_name": self._thread_name,
                     },
                 )
-            except Exception:
+            except BaseException:
                 pass
         finally:
             try:
@@ -308,7 +320,7 @@ class PeriodicProbe:
                     EventStatus.ERROR if self._error_code else EventStatus.OK,
                     details,
                 )
-            except Exception:
+            except BaseException:
                 pass
 
     def stop(self, *, join_timeout_s: float) -> ProbeStopReport:

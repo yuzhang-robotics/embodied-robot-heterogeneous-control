@@ -191,6 +191,73 @@ class ExecutorTests(unittest.TestCase):
             executor.shutdown(cancel_live=False, join_timeout_s=1.0).complete
         )
 
+    def test_adapter_base_exception_is_contained_by_worker_boundary(self) -> None:
+        def exiting_adapter(_claimed: ClaimedTask) -> ResultEnvelope:
+            raise SystemExit("private adapter exit must not stop the worker")
+
+        sink = RecordingSink()
+        executor = make_executor(exiting_adapter, sink=sink)
+        executor.start()
+        self.addCleanup(self.stop_if_alive, executor)
+
+        executor.submit(make_task("system-exit-one"))
+        self.wait_for(lambda: executor.snapshot().terminal_admitted_total == 1)
+        executor.submit(make_task("system-exit-two"))
+        self.wait_for(lambda: executor.snapshot().terminal_admitted_total == 2)
+
+        snapshot = executor.snapshot()
+        self.assertEqual(
+            dict(snapshot.disposition_counts)[FinalDisposition.EXECUTION_ERROR],
+            2,
+        )
+        self.assertTrue(executor.is_alive)
+        self.assertIsNone(executor.worker_error_code)
+        serialized_details = " ".join(
+            str(dict(event.details)) for event in sink.snapshot()
+        )
+        self.assertNotIn("private adapter exit", serialized_details)
+        self.assertTrue(
+            executor.shutdown(cancel_live=False, join_timeout_s=1.0).complete
+        )
+
+    def test_unexpected_worker_failure_closes_admission(self) -> None:
+        def failing_adapter(_claimed: ClaimedTask) -> ResultEnvelope:
+            raise RuntimeError("adapter failure before broken clock")
+
+        def broken_clock() -> int:
+            raise SystemExit("private clock failure")
+
+        sink = RecordingSink()
+        broker = BoundedTaskBroker(
+            LaneConfig(
+                task_kind=TaskKind.SIMULATED,
+                pending_capacity=2,
+                result_capacity=1,
+                terminal_record_capacity=8,
+                overflow_policy=OverflowPolicy.REJECT_NEW,
+            )
+        )
+        executor = ObservableExecutor(
+            broker,
+            failing_adapter,
+            event_sink=sink,
+            clock_ns=broken_clock,
+        )
+        executor.start()
+        executor.submit(make_task("worker-fatal"))
+        self.wait_for(lambda: not executor.is_alive)
+
+        snapshot = executor.snapshot()
+        self.assertEqual(snapshot.state.value, "closing")
+        self.assertEqual(snapshot.active_id, "worker-fatal")
+        self.assertEqual(executor.worker_error_code, "worker_systemexit")
+        rejected = executor.submit(make_task("after-worker-fatal"))
+        self.assertFalse(rejected.admitted)
+        self.assertEqual(rejected.disposition, FinalDisposition.SHUTDOWN_CANCELLED)
+        names = [event.event for event in sink.snapshot()]
+        self.assertIn("worker.failed", names)
+        self.assertIn("worker.stopped", names)
+
     def test_identity_mismatch_is_terminal_and_never_enters_mailbox(self) -> None:
         def mismatched_adapter(claimed: ClaimedTask) -> ResultEnvelope:
             task = claimed.task

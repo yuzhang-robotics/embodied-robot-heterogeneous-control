@@ -48,6 +48,18 @@ The STM32 emits exactly one short response after a non-empty line is processed:
 | `E\n` | the frame was malformed, unsupported, out of range or exceeded the receive buffer |
 
 An acknowledgment confirms that the firmware parsed and applied the command. It does not prove from encoder feedback that the chassis reached a requested velocity.
+The Jetson accepts only one exact, newline-terminated response frame for each
+serialized command transaction. Partial, oversized or otherwise malformed
+responses are failures and cannot be reported to the application as successful
+commands.
+Unknown internal command names are rejected before any UART write; they are not
+silently converted into another motion command.
+
+This compatibility protocol has no transaction sequence number. A response
+therefore confirms parser acceptance at this serialized link boundary, not
+arbitrarily delayed response correlation. A transport failure invalidates the
+cached serial handle before another command can reopen it; a future timestamped
+protocol would be required for a stronger end-to-end identity guarantee.
 
 ## Timing and safety contract
 
@@ -55,6 +67,8 @@ An acknowledgment confirms that the firmware parsed and applied the command. It 
 - The STM32 resets its watchdog only after a valid frame is applied.
 - If no valid frame arrives for approximately 1.2 seconds, the STM32 sets all four motors to stop.
 - Invalid traffic does not keep the chassis watchdog alive.
+- After a receive-buffer overflow, the STM32 discards the remainder of that
+  line so a valid-looking suffix cannot be executed as a second frame.
 - The Jetson waits up to 800 ms for `A` or `E` and records missing responses in its local motion log.
 - Opening, closing or losing the serial port must never be treated as a stop command; the STM32 watchdog provides the independent fallback.
 
