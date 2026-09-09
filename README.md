@@ -21,9 +21,10 @@ resource-limited edge computer.
 | --- | --- |
 | Thesis robot | Complete and validated on the assembled Jetson–STM32 platform |
 | Phase 0 synchronous baseline | Fixed-input measurement, validation and analysis tooling complete |
-| Phase 1 bounded runtime | Lifecycle, capacity, freshness and real-workload correctness studies complete |
-| Phase 1 formal comparison | G6 v4 completed; valid negative result, overall success Gate not met |
-| Mechanism follow-up | ASR/VLM carryover diagnostic complete; model-residency interference isolated |
+| Phase 1 bounded-runtime study | Closed; lifecycle, capacity, freshness and real-workload correctness established |
+| G6 v4 formal decision | Closed valid negative result; overall success Gate not met |
+| Closing mechanism diagnostic | Complete; post-VLM Whisper residency loss isolated under the tested configuration |
+| Next research stage | Not active; a separate residency-aware study requires a new protocol and Gate |
 
 The validated thesis implementation is preserved at
 [v0.1.0-thesis-baseline](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline).
@@ -85,7 +86,9 @@ decision therefore failed, and the application slice was not authorized.
 A separate six-session diagnostic then found a repeatable post-VLM loss of
 warmed Whisper model-file residency, followed by a slow storage-backed ASR
 invocation and immediate recovery. This does not change G6 v4; it identifies a
-focused resource-management question for the next study.
+focused resource-management question for a separate next study. Phase 1 is
+closed: its protocols, results and failed-attempt evidence remain frozen, and
+no Phase 1 application integration will be started.
 
 See the [G6 v4 report](experiments/phase1/results/20260907T051448Z_phase1_formal_g6_v4/)
 and [carryover report](experiments/phase1/results/20260908T072640Z_phase1_asr_vlm_carryover_v2/)

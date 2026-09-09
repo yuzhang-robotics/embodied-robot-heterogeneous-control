@@ -1,13 +1,13 @@
 # System Architecture
 
-This page separates the hardware-validated thesis architecture from the Phase 1
-research runtime and the next candidate resource-management boundary. The
-synchronous application remains the reproducible robot baseline; the
+This page separates the hardware-validated thesis architecture from the closed
+Phase 1 research runtime and the next candidate resource-management boundary.
+The synchronous application remains the reproducible robot baseline; the
 experimental runtime has not replaced it.
 
-> 中文简介：本页只描述三类边界：已验证的同步整机架构、Phase 1 已实现的实验运行时，以及
-> 尚待验证的资源管理方向。Phase 1 的正式成功 Gate 未通过，因此异步运行时尚未接入整机
-> 应用。
+> 中文简介：本页只描述三类边界：已验证的同步整机架构、已经关闭的 Phase 1 实验运行时，
+> 以及尚待评审的资源管理方向。Phase 1 的正式成功 Gate 未通过，因此异步运行时尚未接入
+> 整机应用。
 
 ## Hardware-validated baseline
 
@@ -129,11 +129,17 @@ and
 [carryover result](../../experiments/phase1/results/20260908T072640Z_phase1_asr_vlm_carryover_v2/)
 retain the numerical evidence and limitations.
 
-## Next candidate boundary
+These two records close Phase 1. Its runtime and evidence remain reusable, but
+its formal collection will not be rerun and its unexecuted application slice is
+not carried forward as unfinished Phase 1 work.
 
-The next architecture study should add an explicit, measurable residency policy
-around the existing workload adapters before connecting the runtime to live
-robot tasks.
+## Candidate Phase 2 boundary
+
+Phase 2 is only a provisional name for a separate study. Before any
+implementation or collection, it must define and freeze a new question,
+protocol, control condition and Gate. The candidate architecture should add an
+explicit, measurable residency policy around the existing workload adapters
+before connecting the runtime to live robot tasks.
 
 ~~~mermaid
 flowchart LR
