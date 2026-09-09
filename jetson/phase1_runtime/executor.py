@@ -203,7 +203,7 @@ class ObservableExecutor:
         )
         try:
             self._event_sink.emit(observation)
-        except Exception as exc:
+        except BaseException as exc:
             error_name = type(exc).__name__.lower()
             error_code = "event_sink_" + "".join(
                 character if character.isalnum() else "_" for character in error_name
@@ -477,7 +477,7 @@ class ObservableExecutor:
     def _execute_adapter(self, claimed: ClaimedTask) -> ResultEnvelope:
         try:
             result = self._adapter(claimed)
-        except Exception:
+        except BaseException:
             return self._adapter_error_result(
                 claimed,
                 error_code="adapter_exception",
@@ -578,7 +578,7 @@ class ObservableExecutor:
                 ):
                     break
                 self._wake_event.wait()
-        except Exception as exc:
+        except BaseException as exc:
             error_name = type(exc).__name__.lower()
             error_code = "worker_" + "".join(
                 character if character.isalnum() else "_" for character in error_name
@@ -587,20 +587,33 @@ class ObservableExecutor:
                 self._worker_error_code = error_code[:64]
             try:
                 with self._boundary_lock:
-                    snapshot = self._broker.snapshot()
+                    before = self._broker.snapshot()
+                    cursor = _DepthCursor.from_snapshot(before)
+                    shutdown_result = self._broker.begin_shutdown(cancel_live=True)
+                    after = self._broker.snapshot()
                     self._emit(
                         "worker.failed",
                         EventStatus.ERROR,
-                        _DepthCursor.from_snapshot(snapshot),
+                        cursor,
                         component="worker",
                         details={
                             "worker_name": self._worker_name,
                             "error_code": self._worker_error_code,
                             "event_error_code": self.event_error_code,
+                            "broker_state": shutdown_result.state.value,
+                            "active_cancellation_requested": (
+                                shutdown_result.active_cancellation_requested
+                            ),
                         },
                     )
-            except Exception:
-                pass
+                    for transition in shutdown_result.terminalized:
+                        self._emit_terminal(transition, cursor)
+                    self._assert_depths(cursor, after)
+            except BaseException:
+                try:
+                    self._broker.begin_shutdown(cancel_live=True)
+                except BaseException:
+                    pass
         finally:
             try:
                 with self._boundary_lock:
@@ -623,7 +636,7 @@ class ObservableExecutor:
                             "event_error_code": self.event_error_code,
                         },
                     )
-            except Exception:
+            except BaseException:
                 pass
 
     def shutdown(

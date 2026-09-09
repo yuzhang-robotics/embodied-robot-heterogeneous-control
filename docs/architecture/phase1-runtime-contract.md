@@ -516,11 +516,14 @@ trace without serializing the slow inference interval.
 
 The worker does not automatically consume a successful result. Consumption is
 an explicit upper-layer action so result-mailbox pressure and the second
-freshness check remain observable. Normal adapter exceptions become bounded
-`adapter_exception` execution results; exception messages and tracebacks are
-not written to events. An event-sink failure stops admission and requests
-cancel shutdown. A closed broker with a worker, probe or event-recording error
-is not reported as a successful run.
+freshness check remain observable. Exceptions crossing the adapter callback
+boundary, including `BaseException` subclasses such as `SystemExit`, become
+bounded `adapter_exception` execution results; exception messages and
+tracebacks are not written to events. An unexpected worker-boundary failure or
+event-sink failure stops admission and requests cancel shutdown. Any remaining
+active identity stays explicit in the shutdown report rather than being
+silently forgotten. A closed broker with a worker, probe or event-recording
+error is not reported as a successful run.
 
 The simulated adapter can model finite service time, execution errors,
 timeouts, cooperative cancellation and a finite non-cooperative interval. It
@@ -548,6 +551,11 @@ The experiment layer provides both:
 - an independent threaded probe representing the isolated fast timing domain.
 
 The probe is a software scheduling proxy, not a motor controller.
+Exceptions crossing its callback boundary, including `BaseException`
+subclasses, stop the probe and become bounded `probe_<type>` error codes; raw
+exception messages are not serialized. Probe event-sink failures are likewise
+contained, switch subsequent emissions to a null sink and remain visible in
+the stop report.
 
 Both probe paths and their pure release/tick calculations are implemented. The
 inline path advances on the caller thread and therefore records releases

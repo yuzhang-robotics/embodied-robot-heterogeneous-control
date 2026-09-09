@@ -84,6 +84,14 @@ python3 -m jetson.app
 
 Motion output is disabled by default. Commands are printed and appended to `jetson/runtime/motion_commands.log`, but the serial port is not opened.
 
+The motion-enabled UART path serializes complete command transactions. A
+command is reported as applied only after one exact `A\n` response; `E\n`, a
+partial or malformed response, a read/write failure, and an 800 ms response
+timeout remain explicit communication failures. Transport failures invalidate
+the cached serial handle before a later transaction can reopen it. The STM32
+watchdog is still the independent fallback when command state cannot be
+confirmed.
+
 Only enable the physical base after checking the 3.3 V UART wiring, STM32 firmware, command watchdog and physical motor-power switch. Keep all four wheels off the ground for the first test:
 
 ```bash
@@ -91,6 +99,14 @@ ROBOT_ENABLE_MOTION=1 python3 -m jetson.app
 ```
 
 Press `Ctrl+C` to exit. The application sends a final stop command when leaving an active motion routine.
+When the application itself exits in motion-enabled mode, it also attempts one
+explicit stop transaction before closing the serial port.
+
+Run the host-safe UART boundary tests without a serial device or motor output:
+
+```bash
+python3 -m unittest jetson.tests.test_robot_comm
+```
 
 ## Configuration
 

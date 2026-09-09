@@ -29,7 +29,12 @@ from .config import (
     WHISPER_DIR,
 )
 from .motion_planner import move_to_color_object_fast
-from .robot_comm import motion_enabled, send_motion_command
+from .robot_comm import (
+    MotionCommunicationError,
+    close_serial,
+    motion_enabled,
+    send_motion_command,
+)
 from .vision_vlm import describe_scene_with_vlm
 
 SAMPLE_RATE = 16000
@@ -266,7 +271,14 @@ def handle_direct_motion(intent):
     command = intent.get("command", "stop")
     command_cn = intent.get("command_cn", "运动")
 
-    serial_text = send_motion_command(command)
+    try:
+        serial_text = send_motion_command(command)
+    except MotionCommunicationError as exc:
+        print(f"\n[底盘通信失败] code={exc.code}")
+        return (
+            "底盘没有返回有效确认，本次指令状态无法确认。"
+            "如果通信已经中断，STM32看门狗会自动停止电机。"
+        )
 
     print("\n[直接运动]", intent, "=>", serial_text)
 
@@ -599,4 +611,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        try:
+            if motion_enabled():
+                try:
+                    send_motion_command("stop")
+                except MotionCommunicationError as exc:
+                    print(f"[退出停车未确认] code={exc.code}")
+        finally:
+            close_serial()
