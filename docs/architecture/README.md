@@ -1,13 +1,13 @@
 # System Architecture
 
 This page separates the hardware-validated thesis architecture from the closed
-Phase 1 research runtime and the next candidate resource-management boundary.
+Phase 1 research runtime and the active Phase 2 resource-management design.
 The synchronous application remains the reproducible robot baseline; the
 experimental runtime has not replaced it.
 
 > 中文简介：本页只描述三类边界：已验证的同步整机架构、已经关闭的 Phase 1 实验运行时，
-> 以及尚待评审的资源管理方向。Phase 1 的正式成功 Gate 未通过，因此异步运行时尚未接入
-> 整机应用。
+> 以及已经进入设计阶段的 Phase 2 驻留恢复研究。Phase 1 的正式成功 Gate 未通过，因此
+> 异步运行时尚未接入整机应用；Phase 2 的实现、预注册和数据采集也尚未开始。
 
 ## Hardware-validated baseline
 
@@ -133,13 +133,14 @@ These two records close Phase 1. Its runtime and evidence remain reusable, but
 its formal collection will not be rerun and its unexecuted application slice is
 not carried forward as unfinished Phase 1 work.
 
-## Candidate Phase 2 boundary
+## Active Phase 2 design boundary
 
-Phase 2 is only a provisional name for a separate study. Before any
-implementation or collection, it must define and freeze a new question,
-protocol, control condition and Gate. The candidate architecture should add an
-explicit, measurable residency policy around the existing workload adapters
-before connecting the runtime to live robot tasks.
+Phase 2 design is active as a separate bounded Whisper residency-restoration
+study, and P2-D0 design is complete. It compares one verified sequential
+model-file prefetch with an unchanged post-VLM control and charges the action
+through measured ASR result availability. Host-only implementation is next;
+machine preregistration and collection remain inactive until their preceding
+work packages are reviewed.
 
 ~~~mermaid
 flowchart LR
@@ -153,15 +154,18 @@ flowchart LR
     Observe --> Policy
 ~~~
 
-Candidate policies must account for their own rewarm time, memory pressure and
-power cost. A new frozen comparison is required before choosing a policy or
-authorizing a motion-disabled application slice.
+The design accounts for the action's own time, memory pressure and power cost.
+It separates evidence validity, mechanism support, operational benefit and
+application authority rather than making every secondary resource statistic
+part of one performance Gate. The complete contract is in the
+[Phase 2 residency-restoration design](phase2-residency-restoration-design.md).
 
-Only after that Gate passes should live acquisition, inference and supervision
-be separated into timestamped bounded lanes. The STM32 watchdog remains the
-independent last line of defense. Encoder feedback and full mecanum kinematics
-belong to a later control study and should not be added to the resource
-experiment.
+Only after the completed cost evidence and a later application-readiness
+review provide explicit authority should live acquisition, inference and
+supervision be separated into timestamped bounded lanes. The STM32 watchdog
+remains the independent last line of defense. Encoder feedback and full
+mecanum kinematics belong to a later control study and should not be added to
+the resource experiment.
 
 ## Reference documents
 
@@ -169,4 +173,5 @@ experiment.
 - [Phase 1 runtime contract](phase1-runtime-contract.md)
 - [G6 formal preregistration](phase1-formal-preregistration.md)
 - [ASR/VLM carryover design](phase1-asr-vlm-carryover-diagnostic.md)
+- [Phase 2 residency-restoration design](phase2-residency-restoration-design.md)
 - [Experiment and evidence index](../../experiments/README.md)
