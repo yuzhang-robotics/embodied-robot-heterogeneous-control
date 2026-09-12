@@ -14,6 +14,7 @@ tracks protocols, validators, analyzers and privacy-preserving derived results.
 | --- | --- | --- |
 | [`phase0/`](phase0/) | Measure fixed-input synchronous ASR, LLM and VLM workloads on the target Jetson | Complete baseline tooling and formal-analysis path |
 | [`phase1/`](phase1/) | Evaluate bounded task ownership, lifecycle, freshness, responsiveness and workload cost | Closed with a valid negative formal result; overall success Gate not met |
+| [Phase 2 design](../docs/architecture/phase2-residency-restoration-design.md) | Test bounded, fully charged Whisper residency restoration after VLM | P2-D0 complete; host-only experiment package is next |
 
 Phase 0 establishes workload identities and the synchronous reference. Phase 1
 reuses those identities so that an architecture comparison does not silently
@@ -58,7 +59,9 @@ carryover result does not alter the closed G6 decision.
 
 This index is the frozen public record of Phase 1. New mitigation experiments
 must use a new stage, protocol and result namespace rather than appending runs
-to any Phase 1 collection.
+to any Phase 1 collection. The reviewed Phase 2 design activates host-only
+design and implementation work in ordered work packages; it does not yet
+authorize a target collection.
 
 ## Data boundary
 

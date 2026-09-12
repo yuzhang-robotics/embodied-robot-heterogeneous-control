@@ -24,7 +24,7 @@ resource-limited edge computer.
 | Phase 1 bounded-runtime study | Closed; lifecycle, capacity, freshness and real-workload correctness established |
 | G6 v4 formal decision | Closed valid negative result; overall success Gate not met |
 | Closing mechanism diagnostic | Complete; post-VLM Whisper residency loss isolated under the tested configuration |
-| Next research stage | Not active; a separate residency-aware study requires a new protocol and Gate |
+| Phase 2 residency-restoration study | P2-D0 design complete; host-only implementation is next |
 
 The validated thesis implementation is preserved at
 [v0.1.0-thesis-baseline](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline).
@@ -85,10 +85,11 @@ decision therefore failed, and the application slice was not authorized.
 
 A separate six-session diagnostic then found a repeatable post-VLM loss of
 warmed Whisper model-file residency, followed by a slow storage-backed ASR
-invocation and immediate recovery. This does not change G6 v4; it identifies a
-focused resource-management question for a separate next study. Phase 1 is
-closed: its protocols, results and failed-attempt evidence remain frozen, and
-no Phase 1 application integration will be started.
+invocation and immediate recovery. This does not change G6 v4. It motivates
+the now-active design stage for a separate
+[bounded residency-restoration study](docs/architecture/phase2-residency-restoration-design.md).
+Phase 1 is closed: its protocols, results and failed-attempt evidence remain
+frozen, and no Phase 1 application integration will be started.
 
 See the [G6 v4 report](experiments/phase1/results/20260907T051448Z_phase1_formal_g6_v4/)
 and [carryover report](experiments/phase1/results/20260908T072640Z_phase1_asr_vlm_carryover_v2/)
@@ -116,6 +117,8 @@ for the complete results and claim boundaries.
   [hardware notes](docs/hardware/README.md).
 - To understand the research progression, read the
   [research roadmap](docs/research-roadmap.md).
+- To review the active Phase 2 design boundary, read the
+  [bounded residency-restoration design](docs/architecture/phase2-residency-restoration-design.md).
 - To inspect experimental methods and results, start from the
   [experiment index](experiments/README.md).
 - To review the current and proposed timing boundaries, see the

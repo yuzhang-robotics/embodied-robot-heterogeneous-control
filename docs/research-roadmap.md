@@ -8,8 +8,8 @@ runtime mechanisms only through measured, reviewable stages.
 
 > 中文简介：本页集中说明项目从本科毕设基线到异步运行时研究的演进。Phase 1 已正式
 > 关闭：运行时语义、实模型正确性验证和正式对照均已完成，但未通过冻结的工作负载
-> 性能非劣效 Gate，因此不会直接进入整机异步应用。后续工作属于新的研究阶段，首先
-> 评审 VLM 引起的模型页驱逐和资源管理问题，再决定是否开展新的正式实验。
+> 性能非劣效 Gate，因此不会直接进入整机异步应用。Phase 2 的 P2-D0 设计已经完成，
+> 首个问题固定为有界且完整计费的 Whisper 文件驻留恢复；host-only 实现是下一工作包。
 
 ## Research question
 
@@ -41,6 +41,7 @@ answer:
 | Phase 1 Jetson pilots | Do the runtime contracts survive real model paths? | Simulation pilot plus VLM, ASR and LLM correctness pilots; process isolation added for VLM | Closed G5 and exposed where host simulations did not represent Python import and process behavior |
 | G6 formal comparison | Does the bounded asynchronous path preserve responsiveness without unacceptable workload cost? | G6 v4 completed in full; lifecycle and responsiveness passed, but workload-performance noninferiority was not established | Provides a valid negative result and prevents unsupported application claims |
 | Phase 1 closing diagnostic | What caused the large ASR position effect seen around VLM work? | Six-session diagnostic isolated near-complete loss of warmed Whisper file residency after VLM, followed by storage-backed page faults and repeatable next-invocation ASR cold starts | Converts an unexplained formal effect into a focused systems hypothesis for a separate next study |
+| Phase 2 design | Can a bounded, verified Whisper file prefetch restore post-VLM ASR readiness after charging its own cost? | P2-D0 complete; one mitigation, unchanged control and layered decision model reviewed | Turns residency into an explicit resource-management primitive without reopening Phase 1 |
 
 The detailed, immutable evidence for each Jetson study is indexed in
 [`experiments/README.md`](../experiments/README.md). The thesis implementation
@@ -91,31 +92,34 @@ Jetson memory-management claim. Phase 1 is closed with this valid negative
 decision; an unmet success Gate is part of the result, not unfinished data
 collection.
 
-## Candidate Phase 2 boundary
+## Active Phase 2 design boundary
 
-Phase 2 is a provisional name for a new residency-aware resource-management
-study; it is not an extension or rerun of Phase 1 and is not yet active. Before
-implementation or data collection, it requires a reviewed research question,
-new machine-readable protocol, new collection identity and new Gate. Its scope
-should remain narrow:
+Phase 2 is a separate bounded Whisper residency-restoration study, not an
+extension or rerun of Phase 1. P2-D0 design is complete; host-only
+implementation is next, while machine preregistration and target data
+collection remain inactive. The reviewed direction is intentionally narrow:
 
-1. define a model-residency policy that is observable and bounded, such as a
-   post-VLM ASR rewarm or an explicit residency-management rule;
-2. compare that policy with an unchanged control under fixed inputs, service
-   identities, memory observations and thermal limits;
-3. preregister the latency, page-residency, fault and recovery endpoints before
-   collecting confirmatory data;
-4. measure the mitigation's own time, memory and power cost rather than treating
-   a faster next ASR invocation as a free improvement;
-5. proceed to broader CPU/GPU/unified-memory arbitration only if the focused
-   mechanism is repeatable.
+1. compare one bounded, verified sequential prefetch of the frozen Whisper
+   model file with an unchanged post-VLM control;
+2. charge the prefetch's own time between the common post-VLM boundary and ASR
+   result availability;
+3. keep study validity, mechanism evidence, operational benefit,
+   responsiveness and application authority as separate decisions;
+4. measure page residency, faults, recovery, memory, power and thermal cost,
+   without turning every secondary statistic into a formal success Gate;
+5. close the first comparison after one valid positive, negative or
+   inconclusive result rather than tuning until it passes.
 
-An application slice becomes reasonable only after that new Gate explicitly
-authorizes it. Later work can then connect timestamped acquisition, bounded
-inference lanes and a safety supervisor to the live robot while preserving the
-STM32 watchdog. Encoder feedback, closed-loop wheel-speed control and full
-mecanum motion are separate control research topics and should not be mixed
-into the resource-management experiment.
+The complete decision, causal model and anti-tuning rules are recorded in the
+[Phase 2 design](architecture/phase2-residency-restoration-design.md).
+
+An application slice becomes reasonable only after the completed cost evidence
+and a later application-readiness review explicitly authorize it. Later work
+can then connect timestamped acquisition, bounded inference lanes and a safety
+supervisor to the live robot while preserving the STM32 watchdog. Encoder
+feedback, closed-loop wheel-speed control and full mecanum motion are separate
+control research topics and should not be mixed into the resource-management
+experiment.
 
 ## Evidence and claim boundaries
 
