@@ -24,7 +24,7 @@ resource-limited edge computer.
 | Phase 1 bounded-runtime study | Closed; lifecycle, capacity, freshness and real-workload correctness established |
 | G6 v4 formal decision | Closed valid negative result; overall success Gate not met |
 | Closing mechanism diagnostic | Complete; post-VLM Whisper residency loss isolated under the tested configuration |
-| Phase 2 residency-restoration study | P2-D2 host-only evidence path implemented and tested; target pilot remains inactive |
+| Phase 2 residency-restoration study | P2-D3 correctness-pilot contract and runner prepared and host-tested; no target data collected |
 
 The validated thesis implementation is preserved at
 [v0.1.0-thesis-baseline](https://github.com/yuzhang-robotics/embodied-robot-heterogeneous-control/tree/v0.1.0-thesis-baseline).

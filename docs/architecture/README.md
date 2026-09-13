@@ -135,12 +135,12 @@ not carried forward as unfinished Phase 1 work.
 
 ## Active Phase 2 design boundary
 
-Phase 2 design is active as a separate bounded Whisper residency-restoration
-study, and P2-D0 design is complete. It compares one verified sequential
-model-file prefetch with an unchanged post-VLM control and charges the action
-through measured ASR result availability. Host-only implementation is next;
-machine preregistration and collection remain inactive until their preceding
-work packages are reviewed.
+Phase 2 is active as a separate bounded Whisper residency-restoration study.
+The P2-D3 package prepares one nonformal control/treatment correctness pair,
+strict target preflight and closed process, probe, sampler and evidence
+lifecycles. It charges the action through measured ASR result availability.
+No target data have been collected; machine preregistration and commissioning
+remain inactive until their preceding work packages are reviewed.
 
 ~~~mermaid
 flowchart LR

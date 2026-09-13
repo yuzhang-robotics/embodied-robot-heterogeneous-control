@@ -167,6 +167,8 @@ def _prefetch_child(
 
 
 ChildWorker = Callable[[Connection, str, int, int], None]
+ChildStartedCallback = Callable[[int], None]
+StopRequested = Callable[[], bool]
 
 
 def _validated_child_message(
@@ -244,6 +246,8 @@ def run_sequential_prefetch(
     buffer_size_bytes: int = DEFAULT_BUFFER_SIZE_BYTES,
     timeout_s: float = DEFAULT_TIMEOUT_S,
     start_method: str = "spawn",
+    child_started_callback: ChildStartedCallback | None = None,
+    stop_requested: StopRequested | None = None,
     _worker: ChildWorker = _prefetch_child,
 ) -> PrefetchActionRecord:
     """Run one bounded child-owned sequential file read.
@@ -264,6 +268,10 @@ def run_sequential_prefetch(
         raise PrefetchInputError("start_method must be a non-empty string")
     if not callable(_worker):
         raise TypeError("_worker must be callable")
+    if child_started_callback is not None and not callable(child_started_callback):
+        raise TypeError("child_started_callback must be callable or None")
+    if stop_requested is not None and not callable(stop_requested):
+        raise TypeError("stop_requested must be callable or None")
 
     resolved = Path(path).expanduser().resolve()
     if not resolved.is_file():
@@ -283,19 +291,36 @@ def run_sequential_prefetch(
         daemon=False,
     )
     action_started_ns = time.monotonic_ns()
+    process_started = False
     try:
         process.start()
+        process_started = True
+        send_connection.close()
+        if child_started_callback is not None:
+            if process.pid is None:
+                raise PrefetchLifecycleError("prefetch child identity is unavailable")
+            child_started_callback(process.pid)
     except BaseException as exc:
         receive_connection.close()
         send_connection.close()
-        raise PrefetchLifecycleError("prefetch child could not be started") from exc
-    send_connection.close()
+        if process_started:
+            _stop_and_reap(process, terminate_requested=True)
+        if isinstance(exc, PrefetchLifecycleError):
+            raise
+        if not process_started:
+            raise PrefetchLifecycleError("prefetch child could not be started") from exc
+        raise PrefetchLifecycleError("prefetch child observer could not start") from exc
 
     message: object | None = None
     timed_out = False
+    stopped = False
+    supervision_error: BaseException | None = None
     deadline = time.monotonic() + timeout
     try:
         while True:
+            if stop_requested is not None and stop_requested():
+                stopped = True
+                break
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 timed_out = True
@@ -313,12 +338,20 @@ def run_sequential_prefetch(
                     except EOFError:
                         message = None
                 break
+    except BaseException as exc:
+        supervision_error = exc
     finally:
         receive_connection.close()
 
+    if supervision_error is not None:
+        _stop_and_reap(process, terminate_requested=True)
+        raise PrefetchLifecycleError(
+            "prefetch supervision failed"
+        ) from supervision_error
+
     terminate_requested, kill_requested = _stop_and_reap(
         process,
-        terminate_requested=timed_out,
+        terminate_requested=timed_out or stopped,
     )
     action_finished_ns = time.monotonic_ns()
     child = _validated_child_message(
@@ -330,6 +363,9 @@ def run_sequential_prefetch(
     if timed_out:
         status = "timeout"
         error_code = "timeout"
+    elif stopped:
+        status = "error"
+        error_code = "stop_requested"
     elif child is None:
         status = "error"
         error_code = "child_protocol_incomplete"
