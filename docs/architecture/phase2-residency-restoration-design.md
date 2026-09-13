@@ -14,7 +14,7 @@ UART or physical-motion integration.
 | Item | Reviewed decision |
 | --- | --- |
 | Phase name | Phase 2: Bounded Whisper Residency Restoration |
-| Status | P2-D0 design complete; P2-D1 host-only implementation is next |
+| Status | P2-D2 host-only evidence path implemented and tested; P2-D3 target pilot awaits review |
 | Primary system boundary | Fixed-input, motion-disabled Jetson experiment |
 | Treatment | One bounded, verified sequential prefetch of the frozen Whisper model file |
 | Control | The unchanged VLM-to-ASR path with no residency action |
@@ -330,9 +330,10 @@ an open-ended latency benchmark.
 - multi-model concurrency, global CPU/GPU scheduling or ROS 2;
 - hard-real-time or WCET claims.
 
-## First implementation boundary
+## Current implementation boundary
 
-P2-D0 is complete: this design has been reviewed and the public status pages
-point to it. The next authorized work is P2-D1 host-only development. It must
-begin with exact action/lifecycle contracts and tests; no target data are
-collected as part of that implementation step.
+P2-D0 and P2-D1 established the reviewed design and bounded prefetch action.
+P2-D2 adds host-tested observation validation, exact-window VDD_IN integration,
+privacy checks and an injected post-VLM evidence path. No target data were
+collected. A motion-disabled P2-D3 correctness pilot requires separate review
+before any Jetson command is issued.

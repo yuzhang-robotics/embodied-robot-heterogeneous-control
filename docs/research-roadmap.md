@@ -8,8 +8,9 @@ runtime mechanisms only through measured, reviewable stages.
 
 > 中文简介：本页集中说明项目从本科毕设基线到异步运行时研究的演进。Phase 1 已正式
 > 关闭：运行时语义、实模型正确性验证和正式对照均已完成，但未通过冻结的工作负载
-> 性能非劣效 Gate，因此不会直接进入整机异步应用。Phase 2 的 P2-D0 设计已经完成，
-> 首个问题固定为有界且完整计费的 Whisper 文件驻留恢复；host-only 实现是下一工作包。
+> 性能非劣效 Gate，因此不会直接进入整机异步应用。Phase 2 的首个问题固定为有界且
+> 完整计费的 Whisper 文件驻留恢复；P2-D2 host-only evidence path 已实现并通过测试，
+> 尚未运行 Jetson pilot 或授权应用接入。
 
 ## Research question
 
@@ -95,9 +96,10 @@ collection.
 ## Active Phase 2 design boundary
 
 Phase 2 is a separate bounded Whisper residency-restoration study, not an
-extension or rerun of Phase 1. P2-D0 design is complete; host-only
-implementation is next, while machine preregistration and target data
-collection remain inactive. The reviewed direction is intentionally narrow:
+extension or rerun of Phase 1. P2-D2 now provides a host-tested action,
+observation, exact-window energy and privacy-preserving injected evidence path.
+Machine preregistration and target data collection remain inactive. The
+reviewed direction is intentionally narrow:
 
 1. compare one bounded, verified sequential prefetch of the frozen Whisper
    model file with an unchanged post-VLM control;
