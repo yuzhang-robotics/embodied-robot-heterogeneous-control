@@ -14,7 +14,7 @@ tracks protocols, validators, analyzers and privacy-preserving derived results.
 | --- | --- | --- |
 | [`phase0/`](phase0/) | Measure fixed-input synchronous ASR, LLM and VLM workloads on the target Jetson | Complete baseline tooling and formal-analysis path |
 | [`phase1/`](phase1/) | Evaluate bounded task ownership, lifecycle, freshness, responsiveness and workload cost | Closed with a valid negative formal result; overall success Gate not met |
-| [Phase 2 design](../docs/architecture/phase2-residency-restoration-design.md) | Test bounded, fully charged Whisper residency restoration after VLM | P2-D0 complete; host-only experiment package is next |
+| [Phase 2 design](../docs/architecture/phase2-residency-restoration-design.md) | Test bounded, fully charged Whisper residency restoration after VLM | P2-D2 host-only evidence path implemented and tested; no target collection authorized |
 
 Phase 0 establishes workload identities and the synchronous reference. Phase 1
 reuses those identities so that an architecture comparison does not silently
