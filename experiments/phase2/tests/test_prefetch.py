@@ -9,6 +9,7 @@ from pathlib import Path
 from experiments.phase2.residency.prefetch import (
     PREFETCH_ACTION_SCHEMA_VERSION,
     PrefetchInputError,
+    PrefetchLifecycleError,
     run_sequential_prefetch,
     validate_prefetch_action_record,
 )
@@ -71,6 +72,60 @@ class SequentialPrefetchTests(unittest.TestCase):
         self.assertTrue(value["terminate_requested"])
         self.assertTrue(value["child_joined"])
         self.assertFalse(value["child_protocol_complete"])
+
+    def test_child_observer_hook_does_not_change_published_privacy(self) -> None:
+        observed: list[int] = []
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "model.bin"
+            path.write_bytes(b"bounded")
+            record = run_sequential_prefetch(
+                path,
+                expected_size_bytes=7,
+                buffer_size_bytes=4,
+                timeout_s=5.0,
+                child_started_callback=observed.append,
+            )
+
+        self.assertEqual(len(observed), 1)
+        self.assertGreater(observed[0], 0)
+        self.assertFalse(record.pid_recorded)
+        self.assertNotIn("pid", record.to_dict())
+
+    def test_external_stop_terminates_and_reaps_owned_child(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "model.bin"
+            path.write_bytes(b"bounded")
+            record = run_sequential_prefetch(
+                path,
+                expected_size_bytes=7,
+                buffer_size_bytes=4,
+                timeout_s=5.0,
+                stop_requested=lambda: True,
+                _worker=_blocking_worker,
+            )
+
+        value = record.to_dict()
+        self.assertEqual(value["status"], "error")
+        self.assertEqual(value["error_code"], "stop_requested")
+        self.assertTrue(value["terminate_requested"])
+        self.assertTrue(value["child_joined"])
+
+    def test_stop_callback_failure_still_reaps_owned_child(self) -> None:
+        def failed_stop_check() -> bool:
+            raise RuntimeError("injected stop check failure")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "model.bin"
+            path.write_bytes(b"bounded")
+            with self.assertRaisesRegex(PrefetchLifecycleError, "supervision"):
+                run_sequential_prefetch(
+                    path,
+                    expected_size_bytes=7,
+                    buffer_size_bytes=4,
+                    timeout_s=5.0,
+                    stop_requested=failed_stop_check,
+                    _worker=_blocking_worker,
+                )
 
     def test_input_mismatch_fails_before_process_start(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

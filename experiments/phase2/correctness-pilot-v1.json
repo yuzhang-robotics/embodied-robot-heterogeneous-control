@@ -1,0 +1,52 @@
+{
+  "protocol_schema_version": "0.1.0",
+  "protocol_id": "phase2_bounded_whisper_residency_correctness_pilot_v1",
+  "status": "active_after_reviewed_merge",
+  "evidence_namespace": "phase2_nonformal_correctness_pilot",
+  "formal_evidence": false,
+  "application_slice_authorized": false,
+  "required_branch": "main",
+  "conditions": [
+    "control_vlm_then_asr",
+    "prefetch_vlm_then_asr"
+  ],
+  "unit_sequence": [
+    "pre_unit_observation",
+    "asr_primer_1",
+    "asr_primer_2",
+    "post_primer_observation",
+    "frozen_vlm",
+    "confirmed_vlm_unload_and_child_reap",
+    "common_post_vlm_observation",
+    "condition_action",
+    "measured_asr",
+    "post_asr_observation",
+    "recovery_asr"
+  ],
+  "parameters": {
+    "prefetch_buffer_size_bytes": 4194304,
+    "prefetch_timeout_s": 20.0,
+    "resource_interval_ms": 200,
+    "maximum_resource_gap_ms": 400,
+    "probe_period_ms": 100,
+    "probe_deadline_ms": 100,
+    "probe_join_timeout_s": 5.0,
+    "responsiveness_p95_reference_ms": 300,
+    "thermal_start_maximum_tj_c": 55.0,
+    "thermal_start_consecutive_samples": 10,
+    "thermal_stop_tj_c": 85.0
+  },
+  "safety": {
+    "robot_enable_motion_value": "0",
+    "motion_enabled": false,
+    "uart_access": false,
+    "application_modules_loaded": false,
+    "live_inputs": false
+  },
+  "stopping": {
+    "replacement_runs_allowed": false,
+    "outcome_driven_extension_allowed": false,
+    "threshold_changes_allowed": false,
+    "alternative_mitigation_allowed": false
+  }
+}
