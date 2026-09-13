@@ -14,7 +14,7 @@ UART or physical-motion integration.
 | Item | Reviewed decision |
 | --- | --- |
 | Phase name | Phase 2: Bounded Whisper Residency Restoration |
-| Status | P2-D3 correctness-pilot contract and runner prepared and host-tested; target pair not yet executed |
+| Status | P2-D3 target correctness pair complete and independently valid; P2-D4 commissioning and reconstruction package host-tested, target sessions not yet executed |
 | Primary system boundary | Fixed-input, motion-disabled Jetson experiment |
 | Treatment | One bounded, verified sequential prefetch of the frozen Whisper model file |
 | Control | The unchanged VLM-to-ASR path with no residency action |
@@ -333,8 +333,17 @@ an open-ended latency benchmark.
 ## Current implementation boundary
 
 P2-D0 through P2-D2 established the reviewed design, bounded prefetch action and
-host-tested evidence path. The P2-D3 package adds a fixed one-control/one-
-treatment nonformal contract, strict motion-disabled target preflight, complete
-unit orchestration and injected lifecycle/failure tests. No target data were
-collected. The reviewed package must be merged to synchronized `main` before
-the Jetson correctness pair is executed.
+host-tested evidence path. P2-D3 then completed one motion-disabled control and
+one treatment unit on the target Jetson at commit `5ef832b`. Independent review
+validated all 30 declared artifacts, 10 workload invocations, both unit records,
+1,624 resource samples and every process, probe and sampler closure. The
+treatment restored measured post-VLM file residency from zero to full, while
+the single nonformal fully charged observation was slower than control; neither
+fact is a confirmatory conclusion or permission to tune the treatment.
+
+The P2-D4 package fixes exactly two commissioning sessions with one adjacent
+pair each and complementary condition orders. It requires attempt 1, at least
+30 minutes between sessions, changed Ollama and llama-server identities, and
+deterministic reconstruction of artifact hashes, ledgers, unit evidence,
+invocation Gates, energy windows and lifecycle closure. It must be reviewed and
+merged to synchronized `main` before any commissioning session is executed.

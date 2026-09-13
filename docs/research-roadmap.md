@@ -9,8 +9,9 @@ runtime mechanisms only through measured, reviewable stages.
 > 中文简介：本页集中说明项目从本科毕设基线到异步运行时研究的演进。Phase 1 已正式
 > 关闭：运行时语义、实模型正确性验证和正式对照均已完成，但未通过冻结的工作负载
 > 性能非劣效 Gate，因此不会直接进入整机异步应用。Phase 2 的首个问题固定为有界且
-> 完整计费的 Whisper 文件驻留恢复；P2-D3 correctness-pilot contract 与 runner 已完成
-> host-only 测试，尚未运行 Jetson pilot 或授权应用接入。
+> 完整计费的 Whisper 文件驻留恢复；P2-D3 Jetson correctness pair 已完成并通过独立
+> 证据审查，P2-D4 commissioning 与 reconstruction 已完成 host-only 准备，但尚未采集
+> commissioning 数据或授权正式研究与应用接入。
 
 ## Research question
 
@@ -43,6 +44,7 @@ answer:
 | G6 formal comparison | Does the bounded asynchronous path preserve responsiveness without unacceptable workload cost? | G6 v4 completed in full; lifecycle and responsiveness passed, but workload-performance noninferiority was not established | Provides a valid negative result and prevents unsupported application claims |
 | Phase 1 closing diagnostic | What caused the large ASR position effect seen around VLM work? | Six-session diagnostic isolated near-complete loss of warmed Whisper file residency after VLM, followed by storage-backed page faults and repeatable next-invocation ASR cold starts | Converts an unexplained formal effect into a focused systems hypothesis for a separate next study |
 | Phase 2 design | Can a bounded, verified Whisper file prefetch restore post-VLM ASR readiness after charging its own cost? | P2-D0 complete; one mitigation, unchanged control and layered decision model reviewed | Turns residency into an explicit resource-management primitive without reopening Phase 1 |
+| Phase 2 correctness pilot | Can the fixed target evidence path execute with complete lifecycle, residency, cost and safety evidence? | One nonformal control/treatment pair completed and independently validated; prefetch restored file residency, while its fully charged observation was slower than control | Establishes P2-D3 correctness without converting one pilot pair into a performance claim or tuning signal |
 
 The detailed, immutable evidence for each Jetson study is indexed in
 [`experiments/README.md`](../experiments/README.md). The thesis implementation
@@ -96,10 +98,11 @@ collection.
 ## Active Phase 2 design boundary
 
 Phase 2 is a separate bounded Whisper residency-restoration study, not an
-extension or rerun of Phase 1. The P2-D3 package now adds a frozen nonformal
-pair contract, strict target preflight, a lifecycle-closing runner and
-host-injected failure tests to the P2-D2 evidence path. No Jetson pilot data
-have been collected, and machine preregistration remains inactive. The reviewed
+extension or rerun of Phase 1. The P2-D3 target correctness pair is complete
+and valid under its nonformal authority. P2-D4 now fixes two minimal
+commissioning sessions with complementary pair orders, service-restart and
+30-minute separation checks, and deterministic reconstruction. Commissioning
+has not started, and machine preregistration remains inactive. The reviewed
 direction is intentionally narrow:
 
 1. compare one bounded, verified sequential prefetch of the frozen Whisper
