@@ -5,8 +5,9 @@ move from the synchronous thesis baseline to the bounded asynchronous runtime
 study. Raw inputs and complete device runs are kept outside Git; the repository
 tracks protocols, validators, analyzers and privacy-preserving derived results.
 
-> 中文简介：本目录集中索引 Phase 0 同步基线与 Phase 1 异步运行时研究。原始输入、完整
-> 运行目录和服务日志不进入 Git；公开目录只保存协议、分析程序以及经过校验的派生结果。
+> 中文简介：本目录集中索引 Phase 0 同步基线、Phase 1 异步运行时研究与独立的 Phase 2
+> 驻留恢复研究。原始输入、完整运行目录和服务日志不进入 Git；公开目录只保存协议、
+> 分析程序以及经过校验的派生结果。
 
 ## Study map
 
@@ -14,7 +15,7 @@ tracks protocols, validators, analyzers and privacy-preserving derived results.
 | --- | --- | --- |
 | [`phase0/`](phase0/) | Measure fixed-input synchronous ASR, LLM and VLM workloads on the target Jetson | Complete baseline tooling and formal-analysis path |
 | [`phase1/`](phase1/) | Evaluate bounded task ownership, lifecycle, freshness, responsiveness and workload cost | Closed with a valid negative formal result; overall success Gate not met |
-| [Phase 2 design](../docs/architecture/phase2-residency-restoration-design.md) | Test bounded, fully charged Whisper residency restoration after VLM | P2-D3 correctness-pilot contract and runner prepared and host-tested; no target data collected |
+| [`phase2/`](phase2/) | Test bounded, fully charged Whisper residency restoration after VLM | P2-D3 target correctness pair complete and valid; P2-D4 commissioning package host-tested, with no commissioning data collected |
 
 Phase 0 establishes workload identities and the synchronous reference. Phase 1
 reuses those identities so that an architecture comparison does not silently
@@ -59,9 +60,9 @@ carryover result does not alter the closed G6 decision.
 
 This index is the frozen public record of Phase 1. New mitigation experiments
 must use a new stage, protocol and result namespace rather than appending runs
-to any Phase 1 collection. The reviewed Phase 2 design activates host-only
-design and implementation work in ordered work packages; it does not yet
-authorize a target collection.
+to any Phase 1 collection. The valid Phase 2 correctness pair remains
+nonformal. The separate P2-D4 commissioning protocol must be reviewed and
+merged before its target sessions; confirmatory collection remains inactive.
 
 ## Data boundary
 
