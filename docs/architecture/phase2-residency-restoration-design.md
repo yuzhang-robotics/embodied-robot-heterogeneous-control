@@ -1,9 +1,9 @@
 # Phase 2 Bounded Whisper Residency Restoration
 
-This document records the reviewed design direction for Phase 2. It activates
-design work only: it is not a machine-readable preregistration, does not
-authorize confirmatory data collection and does not authorize application,
-UART or physical-motion integration.
+This document records the reviewed design direction for Phase 2. The P2-D5
+machine-readable protocol now freezes that design, but neither this document
+nor the presence of a runner authorizes confirmatory data collection,
+application integration, UART access or physical motion.
 
 > 中文简介：Phase 2 已进入设计阶段。首个研究问题固定为：在相同 VLM 路径之后，
 > 一个有界、可验证且完整计费的 Whisper 模型文件预取，能否恢复下一次 ASR 的就绪状态。
@@ -14,7 +14,7 @@ UART or physical-motion integration.
 | Item | Reviewed decision |
 | --- | --- |
 | Phase name | Phase 2: Bounded Whisper Residency Restoration |
-| Status | P2-D3 target correctness pair complete and independently valid; P2-D4 commissioning and reconstruction package host-tested, target sessions not yet executed |
+| Status | P2-D4 commissioning complete and independently valid; P2-D5 confirmatory protocol, runner and analyzer host-tested, collection not authorized |
 | Primary system boundary | Fixed-input, motion-disabled Jetson experiment |
 | Treatment | One bounded, verified sequential prefetch of the frozen Whisper model file |
 | Control | The unchanged VLM-to-ASR path with no residency action |
@@ -109,10 +109,10 @@ reusable buffer. The child reports bounded metadata only and is joined and
 reaped before measured ASR starts. A second non-touching residency observation
 verifies the achieved state.
 
-The implementation candidate uses a 4 MiB reusable buffer and a 20 s action
-timeout. These values become frozen evidence parameters only in the later
-machine protocol. Any pre-formal change must be justified as a visible design
-amendment and cannot be selected from confirmatory outcomes.
+The v1 machine protocol freezes a 4 MiB reusable buffer and a 20 s action
+timeout. They were not selected from commissioning performance outcomes and
+cannot change after confirmatory collection begins. Any pre-collection change
+would require a visible protocol amendment and a new reviewed identity.
 
 The treatment must record at least:
 
@@ -154,9 +154,9 @@ post-VLM observation and ends when the measured ASR result is available.
 Primer, recovery and invocation-only durations remain useful secondary
 measurements. They do not replace the fully charged boundary.
 
-## Planned design
+## Frozen confirmatory design
 
-The current planning target is six independent sessions. Each session contains
+The v1 machine protocol fixes six independent sessions. Each session contains
 four adjacent treatment-control pairs, for eight units per session, 48 units
 and 24 paired contrasts overall. Odd and even sessions use complementary
 `prefetch-control` and `control-prefetch` orders so that each condition is
@@ -164,12 +164,11 @@ balanced across pair position and elapsed session time.
 
 Each unit reprimes ASR. Ollama and llama-server are restarted before each
 session, their identities must differ from the prior session and sessions are
-separated by at least 30 minutes. The final order, sample size, bootstrap seed
-and protocol schedule remain protocol-level decisions until commissioning has
-demonstrated that the evidence path is executable. Commissioning observations
-will never enter confirmatory analysis.
+separated by at least 30 minutes. The protocol fixes attempt 1, 100,000
+hierarchical bootstrap resamples and seed `20260920`. Commissioning
+observations never enter confirmatory analysis.
 
-The planned formal analysis uses adjacent within-session paired contrasts and
+The frozen formal analysis uses adjacent within-session paired contrasts and
 a fixed-seed hierarchical bootstrap that samples sessions and then pairs
 within sessions. No valid unusual observation is removed, no missing value is
 imputed and no additional sample is collected because a confidence interval
@@ -210,7 +209,7 @@ time:
 post-VLM observation -> treatment/control -> measured ASR result available
 ~~~
 
-The proposed confirmatory criterion is that the upper bound of the two-sided
+The frozen confirmatory criterion is that the upper bound of the two-sided
 95% confidence interval for the treatment/control geometric-mean ratio is
 below `1.0`. Crossing `1.0` is an inconclusive result, not a reason to add
 samples or change the threshold. A ratio above `1.0` supports no net latency
@@ -218,7 +217,7 @@ benefit for the tested treatment.
 
 ### `residency_mechanism_supported`
 
-The proposed mechanism criteria are evaluated at collection level rather than
+The frozen mechanism criteria are evaluated at collection level rather than
 requiring every unit to cross an arbitrary residency threshold:
 
 - the lower 95% confidence bound for the paired post-action resident-fraction
@@ -341,9 +340,17 @@ treatment restored measured post-VLM file residency from zero to full, while
 the single nonformal fully charged observation was slower than control; neither
 fact is a confirmatory conclusion or permission to tune the treatment.
 
-The P2-D4 package fixes exactly two commissioning sessions with one adjacent
-pair each and complementary condition orders. It requires attempt 1, at least
-30 minutes between sessions, changed Ollama and llama-server identities, and
-deterministic reconstruction of artifact hashes, ledgers, unit evidence,
-invocation Gates, energy windows and lifecycle closure. It must be reviewed and
-merged to synchronized `main` before any commissioning session is executed.
+P2-D4 completed exactly two commissioning sessions with one adjacent pair each
+and complementary condition orders. Independent reconstruction verified 60
+artifacts, 20 invocations, 3,255 resource samples, session separation and both
+service-identity changes. Both fully charged treatment observations were slower
+than control; these remain nonformal observations and did not change the
+treatment or thresholds.
+
+P2-D5 publishes the privacy-preserving commissioning result, frozen machine
+protocol, six-session chain preflight, non-replacement runner and deterministic
+hierarchical analyzer. Host tests cover schedule and chain enforcement,
+tampering, bootstrap determinism, decision directions, retained timeout
+outcomes, privacy and continued denial of application authority. Confirmatory
+collection still requires reviewed merge to synchronized `main` and a separate
+explicit operator authorization.

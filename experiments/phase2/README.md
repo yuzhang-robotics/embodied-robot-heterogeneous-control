@@ -4,10 +4,10 @@ This package implements the bounded Whisper residency-restoration study
 defined in the
 [Phase 2 design](../../docs/architecture/phase2-residency-restoration-design.md).
 
-> 中文简介：本目录只承载 Phase 2 的独立实验实现。P2-D3 Jetson correctness pair 已
-> 完成并通过独立证据审查；P2-D4 的两组最小 commissioning session、严格 session 链和
-> deterministic reconstruction 已完成 host-only 准备。尚未采集 commissioning 数据，
-> 也未授权 confirmatory collection、application、UART 或物理运动。
+> 中文简介：本目录只承载 Phase 2 的独立实验实现。P2-D4 两组 commissioning sessions
+> 与完整重建已通过 Jetson 和 Windows 独立审查；P2-D5 的冻结协议、六会话 chain、
+> runner 和分层 analyzer 已完成 host-only 实现。尚未采集或授权 confirmatory data，
+> 也未授权 application、UART 或物理运动。
 
 ## Current boundary
 
@@ -46,13 +46,26 @@ defined in the
   emitters, so those nested artifacts retain their correctness-pilot schema
   kinds. The enclosing commissioning session and reconstruction namespaces
   establish their nonformal commissioning authority.
-- Commissioning, machine preregistration, confirmatory collection and
-  application integration remain inactive until the required review and target
-  evidence are complete.
+- P2-D4 completed two valid nonformal sessions: 60 artifacts, 20 invocations
+  and 3,255 resource samples reconstructed without failed invocation Gates.
+- The [P2-D5 protocol](confirmatory-v1.json) freezes six sessions, four adjacent
+  pairs per session, attempt 1, 4 MiB/20 s prefetch, 100,000 hierarchical
+  bootstrap resamples and seed `20260920`.
+- Confirmatory sessions reuse the same reviewed unit and invocation emitters;
+  their nested records therefore retain correctness-pilot schema kinds and
+  false local authority flags. Only the validated confirmatory parent session
+  and complete collection analyzer establish formal interpretation authority.
+- The analyzer reports study validity, operational benefit, residency
+  mechanism, responsiveness and application authority separately. It retains
+  treatment timeouts and refuses replacement, incomplete or tampered evidence.
+- Confirmatory collection and application integration remain inactive until
+  reviewed merge and a separate explicit operator decision.
 
-The private P2-D3 archive is identified by SHA-256
-`5666bd96b83124d446f9f1582318b7a852bfe6f2dc98d3107fd2ff89691d18b3`;
-the complete archive remains outside Git.
+The complete P2-D4 archive remains outside Git. Its
+[public result](commissioning-result-v1.json) binds archive SHA-256
+`5e1178cb77e2d74dfabf02a2e259241d195960ff525b88d88bf249ca8c9d014a` to
+the independently reconstructed commissioning record without publishing
+private paths, inputs, model text or service logs.
 
 Run the current host-only tests from the repository root:
 
@@ -60,14 +73,13 @@ Run the current host-only tests from the repository root:
 python3 -m unittest discover -s experiments/phase2/tests -t .
 ```
 
-Inspect the reviewed commissioning and reconstruction interfaces without
-starting a target collection:
+Inspect the confirmatory interfaces without starting a target collection:
 
 ```bash
-python3 -m experiments.phase2.run_commissioning_session --help
-python3 -m experiments.phase2.reconstruct_commissioning --help
+python3 -m experiments.phase2.run_confirmatory_session --help
+python3 -m experiments.phase2.analyze_confirmatory --help
 ```
 
-Target commissioning still requires a reviewed merge to synchronized `main`
-and a separate explicit operator decision. The runner never imports the robot
+Confirmatory collection requires a reviewed merge to synchronized `main` and a
+separate explicit operator decision. The runner never imports the robot
 application, motion planner or UART module.

@@ -15,7 +15,7 @@ tracks protocols, validators, analyzers and privacy-preserving derived results.
 | --- | --- | --- |
 | [`phase0/`](phase0/) | Measure fixed-input synchronous ASR, LLM and VLM workloads on the target Jetson | Complete baseline tooling and formal-analysis path |
 | [`phase1/`](phase1/) | Evaluate bounded task ownership, lifecycle, freshness, responsiveness and workload cost | Closed with a valid negative formal result; overall success Gate not met |
-| [`phase2/`](phase2/) | Test bounded, fully charged Whisper residency restoration after VLM | P2-D3 target correctness pair complete and valid; P2-D4 commissioning package host-tested, with no commissioning data collected |
+| [`phase2/`](phase2/) | Test bounded, fully charged Whisper residency restoration after VLM | P2-D4 commissioning complete and valid; P2-D5 confirmatory protocol and analyzer host-tested, with collection inactive |
 
 Phase 0 establishes workload identities and the synchronous reference. Phase 1
 reuses those identities so that an architecture comparison does not silently
@@ -60,9 +60,10 @@ carryover result does not alter the closed G6 decision.
 
 This index is the frozen public record of Phase 1. New mitigation experiments
 must use a new stage, protocol and result namespace rather than appending runs
-to any Phase 1 collection. The valid Phase 2 correctness pair remains
-nonformal. The separate P2-D4 commissioning protocol must be reviewed and
-merged before its target sessions; confirmatory collection remains inactive.
+to any Phase 1 collection. The Phase 2 correctness and commissioning records
+remain nonformal. The frozen P2-D5 machine protocol and analyzer are separate
+from those records; confirmatory collection remains inactive until reviewed
+merge and a new explicit operator authorization.
 
 ## Data boundary
 

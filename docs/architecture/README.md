@@ -7,8 +7,8 @@ experimental runtime has not replaced it.
 
 > 中文简介：本页只描述三类边界：已验证的同步整机架构、已经关闭的 Phase 1 实验运行时，
 > 以及独立推进的 Phase 2 驻留恢复研究。Phase 1 的正式成功 Gate 未通过，因此异步
-> 运行时尚未接入整机应用；Phase 2 已完成一组非正式正确性验证，但 commissioning、
-> 正式预注册和应用接入仍未获授权。
+> 运行时尚未接入整机应用；Phase 2 已完成非正式正确性验证与 commissioning，并冻结
+> P2-D5 confirmatory 协议和 analyzer，但正式数据采集与应用接入仍未授权。
 
 ## Hardware-validated baseline
 
@@ -137,12 +137,13 @@ not carried forward as unfinished Phase 1 work.
 ## Active Phase 2 design boundary
 
 Phase 2 is active as a separate bounded Whisper residency-restoration study.
-The P2-D3 target pair completed with valid preflight, artifact, process, probe,
-sampler and privacy evidence. Prefetch restored the observed Whisper file pages
-after VLM, but its own time is charged through measured ASR result availability;
-the single nonformal pair cannot support a performance conclusion. P2-D4 adds
-two minimal, complementary commissioning sessions and deterministic
-reconstruction. No commissioning or confirmatory data have been collected.
+The P2-D3 target pair and both P2-D4 commissioning sessions completed with
+valid preflight, artifact, process, probe, sampler and privacy evidence. Those
+nonformal observations do not support a performance conclusion or treatment
+tuning. P2-D5 freezes six sessions, four adjacent pairs per session, strict
+session chaining and fixed-seed hierarchical decisions. The machine protocol,
+runner and analyzer are host-tested; no confirmatory data have been collected
+or authorized.
 
 ~~~mermaid
 flowchart LR
