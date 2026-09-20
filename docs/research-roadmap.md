@@ -9,9 +9,9 @@ runtime mechanisms only through measured, reviewable stages.
 > 中文简介：本页集中说明项目从本科毕设基线到异步运行时研究的演进。Phase 1 已正式
 > 关闭：运行时语义、实模型正确性验证和正式对照均已完成，但未通过冻结的工作负载
 > 性能非劣效 Gate，因此不会直接进入整机异步应用。Phase 2 的首个问题固定为有界且
-> 完整计费的 Whisper 文件驻留恢复；P2-D3 Jetson correctness pair 已完成并通过独立
-> 证据审查，P2-D4 commissioning 与 reconstruction 已完成 host-only 准备，但尚未采集
-> commissioning 数据或授权正式研究与应用接入。
+> 完整计费的 Whisper 文件驻留恢复；P2-D4 两组 commissioning sessions 与独立重建已
+> 完成并通过审查，P2-D5 的冻结协议、会话 runner 与分层 analyzer 已完成 host-only
+> 实现，但尚未采集或授权 confirmatory data，也未授权应用接入。
 
 ## Research question
 
@@ -45,6 +45,8 @@ answer:
 | Phase 1 closing diagnostic | What caused the large ASR position effect seen around VLM work? | Six-session diagnostic isolated near-complete loss of warmed Whisper file residency after VLM, followed by storage-backed page faults and repeatable next-invocation ASR cold starts | Converts an unexplained formal effect into a focused systems hypothesis for a separate next study |
 | Phase 2 design | Can a bounded, verified Whisper file prefetch restore post-VLM ASR readiness after charging its own cost? | P2-D0 complete; one mitigation, unchanged control and layered decision model reviewed | Turns residency into an explicit resource-management primitive without reopening Phase 1 |
 | Phase 2 correctness pilot | Can the fixed target evidence path execute with complete lifecycle, residency, cost and safety evidence? | One nonformal control/treatment pair completed and independently validated; prefetch restored file residency, while its fully charged observation was slower than control | Establishes P2-D3 correctness without converting one pilot pair into a performance claim or tuning signal |
+| Phase 2 commissioning | Can the complete evidence path survive independent sessions and deterministic reconstruction? | Two nonformal sessions completed and independently reconstructed; protocol-freeze readiness established | Freezes the confirmatory design without using commissioning observations as formal evidence or a tuning signal |
+| Phase 2 confirmatory preparation | Can the frozen design be enforced before any formal data exist? | Six-session protocol, session-chain preflight, non-replacement runner and hierarchical analyzer host-tested | Makes later collection reviewable while leaving confirmatory collection and application integration explicitly inactive |
 
 The detailed, immutable evidence for each Jetson study is indexed in
 [`experiments/README.md`](../experiments/README.md). The thesis implementation
@@ -98,12 +100,13 @@ collection.
 ## Active Phase 2 design boundary
 
 Phase 2 is a separate bounded Whisper residency-restoration study, not an
-extension or rerun of Phase 1. The P2-D3 target correctness pair is complete
-and valid under its nonformal authority. P2-D4 now fixes two minimal
-commissioning sessions with complementary pair orders, service-restart and
-30-minute separation checks, and deterministic reconstruction. Commissioning
-has not started, and machine preregistration remains inactive. The reviewed
-direction is intentionally narrow:
+extension or rerun of Phase 1. P2-D4 completed two valid nonformal
+commissioning sessions with complementary pair orders, changed service
+identities, at least 30 minutes of separation and deterministic reconstruction.
+P2-D5 now freezes six sessions, four adjacent pairs per session, attempt 1,
+the unchanged 4 MiB/20 s treatment and fixed-seed hierarchical analysis.
+Confirmatory collection has not started and is not authorized. The reviewed
+direction remains intentionally narrow:
 
 1. compare one bounded, verified sequential prefetch of the frozen Whisper
    model file with an unchanged post-VLM control;

@@ -1,0 +1,145 @@
+{
+  "protocol_schema_version": "0.1.0",
+  "protocol_id": "phase2_bounded_whisper_residency_confirmatory_v1",
+  "status": "active_after_reviewed_merge_and_explicit_collection_authorization",
+  "evidence_namespace": "phase2_confirmatory_v1",
+  "formal_evidence": true,
+  "confirmatory_data": true,
+  "application_slice_authorized": false,
+  "required_branch": "main",
+  "session_count": 6,
+  "pairs_per_session": 4,
+  "attempt": 1,
+  "minimum_session_separation_s": 1800,
+  "restart_model_services_each_session": true,
+  "commissioning_result": {
+    "path": "experiments/phase2/commissioning-result-v1.json",
+    "sha256": "2fa7ae0a1012eafeea68016cfcd85bc9ec7d676d5906dda9e1bbb1f2e333f125",
+    "collection_id": "20260920T123241Z_phase2_commissioning_v1",
+    "commissioning_valid": true,
+    "formal_protocol_parameters_may_be_frozen": true
+  },
+  "session_schedules": [
+    {
+      "session_index": 1,
+      "pair_conditions": [
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"]
+      ]
+    },
+    {
+      "session_index": 2,
+      "pair_conditions": [
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"]
+      ]
+    },
+    {
+      "session_index": 3,
+      "pair_conditions": [
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"]
+      ]
+    },
+    {
+      "session_index": 4,
+      "pair_conditions": [
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"]
+      ]
+    },
+    {
+      "session_index": 5,
+      "pair_conditions": [
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"],
+        ["prefetch_vlm_then_asr", "control_vlm_then_asr"]
+      ]
+    },
+    {
+      "session_index": 6,
+      "pair_conditions": [
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"],
+        ["control_vlm_then_asr", "prefetch_vlm_then_asr"]
+      ]
+    }
+  ],
+  "unit_sequence": [
+    "pre_unit_observation",
+    "asr_primer_1",
+    "asr_primer_2",
+    "post_primer_observation",
+    "frozen_vlm",
+    "confirmed_vlm_unload_and_child_reap",
+    "common_post_vlm_observation",
+    "condition_action",
+    "measured_asr",
+    "post_asr_observation",
+    "recovery_asr"
+  ],
+  "parameters": {
+    "prefetch_buffer_size_bytes": 4194304,
+    "prefetch_timeout_s": 20.0,
+    "resource_interval_ms": 200,
+    "maximum_resource_gap_ms": 400,
+    "probe_period_ms": 100,
+    "probe_deadline_ms": 100,
+    "probe_join_timeout_s": 5.0,
+    "responsiveness_p95_reference_ms": 300,
+    "thermal_start_maximum_tj_c": 55.0,
+    "thermal_start_consecutive_samples": 10,
+    "thermal_stop_tj_c": 85.0
+  },
+  "analysis": {
+    "bootstrap_method": "paired_hierarchical_percentile",
+    "bootstrap_resamples": 100000,
+    "bootstrap_seed": 20260920,
+    "confidence_level": 0.95,
+    "session_resampling_first": true,
+    "pair_resampling_within_selected_session": true,
+    "primary_estimand": "fully_charged_duration_geometric_mean_ratio_treatment_over_control",
+    "primary_support_rule": "two_sided_ci_upper_below_1",
+    "residency_estimand": "post_action_treatment_minus_post_vlm_control_resident_fraction",
+    "residency_support_rule": "two_sided_ci_lower_above_0",
+    "major_fault_estimand": "measured_asr_treatment_minus_control_major_faults",
+    "major_fault_support_rule": "two_sided_ci_upper_below_0",
+    "responsiveness_estimand": "p95_nearest_rank_unit_probe_max_gap_ms",
+    "responsiveness_support_rule": "point_estimate_at_or_below_300_ms"
+  },
+  "safety": {
+    "robot_enable_motion_value": "0",
+    "motion_enabled": false,
+    "uart_access": false,
+    "application_modules_loaded": false,
+    "live_inputs": false
+  },
+  "stopping": {
+    "replacement_sessions_allowed": false,
+    "replacement_units_allowed": false,
+    "outlier_exclusion_allowed": false,
+    "missing_value_imputation_allowed": false,
+    "outcome_driven_extension_allowed": false,
+    "threshold_changes_allowed": false,
+    "alternative_mitigation_allowed": false,
+    "first_complete_valid_collection_closes_v1": true
+  },
+  "failure_policy": {
+    "valid_treatment_timeout": "retain_as_system_under_test_outcome",
+    "valid_system_under_test_failure": "retain_as_observed_outcome",
+    "infrastructure_failure": "close_collection_without_replacement",
+    "operator_interruption": "close_collection_without_replacement",
+    "service_failure": "close_collection_without_replacement",
+    "incomplete_collection": "invalid_no_smaller_design"
+  }
+}
