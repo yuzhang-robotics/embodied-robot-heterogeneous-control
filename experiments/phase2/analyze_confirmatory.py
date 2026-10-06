@@ -149,8 +149,22 @@ def _resource_summary(
     summary = summarize_resource_samples(samples)
     ram = [_mapping(sample.get("ram"), "RAM sample") for sample in samples]
     swap = [_mapping(sample.get("swap"), "swap sample") for sample in samples]
-    emc = [_mapping(sample.get("emc"), "EMC sample") for sample in samples]
+    emc = [
+        _mapping(sample.get("emc"), "EMC sample")
+        for sample in samples
+        if isinstance(sample.get("emc"), Mapping)
+    ]
+    emc_frequencies = [
+        _finite_number(item.get("frequency_mhz"), "EMC frequency")
+        for item in emc
+        if item.get("frequency_mhz") is not None
+    ]
     gr3d = [_mapping(sample.get("gr3d"), "GR3D sample") for sample in samples]
+    gr3d_frequencies = [
+        _finite_number(frequency, "GR3D frequency")
+        for item in gr3d
+        for frequency in _list(item.get("frequencies_mhz"), "GR3D frequencies")
+    ]
     summary.update(
         {
             "ram_total_mb": _descriptive(
@@ -168,20 +182,11 @@ def _resource_summary(
             "swap_cached_mb": _descriptive(
                 [_finite_number(item.get("cached_mb"), "swap cached") for item in swap]
             ),
-            "emc_frequency_mhz": _descriptive(
-                [
-                    _finite_number(item.get("frequency_mhz"), "EMC frequency")
-                    for item in emc
-                ]
+            "emc_frequency_mhz": (
+                _descriptive(emc_frequencies) if emc_frequencies else None
             ),
-            "gr3d_frequency_mhz": _descriptive(
-                [
-                    _finite_number(frequency, "GR3D frequency")
-                    for item in gr3d
-                    for frequency in _list(
-                        item.get("frequencies_mhz"), "GR3D frequencies"
-                    )
-                ]
+            "gr3d_frequency_mhz": (
+                _descriptive(gr3d_frequencies) if gr3d_frequencies else None
             ),
         }
     )
