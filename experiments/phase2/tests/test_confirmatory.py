@@ -11,6 +11,7 @@ from unittest.mock import patch
 from experiments.phase2.analyze_confirmatory import (
     ConfirmatoryAnalysisError,
     _pair_summary,
+    _resource_summary,
     analyze_confirmatory_collection,
     classify_estimands,
     paired_hierarchical_bootstrap,
@@ -508,6 +509,26 @@ def _create_collection(root: Path) -> Path:
 
 
 class AnalysisTests(unittest.TestCase):
+    def test_resource_summary_accepts_optional_accelerator_frequencies(self) -> None:
+        samples = resource_trace()[:3]
+        samples[0]["emc"] = None
+        samples[1]["emc"]["frequency_mhz"] = None
+
+        summary = _resource_summary(samples)
+
+        self.assertEqual(summary["emc_usage_pct"]["count"], 2)
+        self.assertEqual(summary["emc_frequency_mhz"]["count"], 1)
+        self.assertEqual(summary["gr3d_frequency_mhz"]["count"], 3)
+
+        for sample in samples:
+            sample["emc"] = None
+            sample["gr3d"]["frequencies_mhz"] = []
+
+        summary = _resource_summary(samples)
+        self.assertIsNone(summary["emc_usage_pct"])
+        self.assertIsNone(summary["emc_frequency_mhz"])
+        self.assertIsNone(summary["gr3d_frequency_mhz"])
+
     def test_bootstrap_is_deterministic_and_respects_frozen_shape(self) -> None:
         log_ratios = [[-0.1] * 4 for _ in range(6)]
         residency = [[0.5] * 4 for _ in range(6)]
